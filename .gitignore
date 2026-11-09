@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+_tmp_deploy/
+*.log
+.env
+.env.production
+*.cjs
+design-*.html
+design-preview.html
+ziji-station-*.zip

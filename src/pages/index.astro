@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="子骥的小站 · 大厅">
+  <main style="max-width: 900px; margin: 0 auto; padding: 32px 16px; display: flex; gap: 24px;">
+    <div style="flex: 1; min-width: 0;">
+      <div style="background: #1b1b1b; border: 1px solid #333; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <textarea id="moment-input" placeholder="分享点新鲜事..." style="width: 100%; height: 80px; background: transparent; border: none; color: #fff; font-family: inherit; font-size: 15px; resize: none; outline: none;"></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 12px; margin-top: 8px;">
+          <span style="color: #666; font-size: 12px;">纯文本动态</span>
+          <button id="publish-btn" style="padding: 8px 20px; background: #18d1ff; color: #000; border: none; border-radius: 20px; font-weight: bold; cursor: pointer;">发布动态</button>
+        </div>
+      </div>
+      <div id="feed-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
+    </div>
+  </main>
+  <script>
+    import { api } from '../lib/api';
+    // 引入 Supabase Realtime 客户端
+    import { createClient } from '@supabase/supabase-js';
+    
+    const supabaseUrl = 'https://wgtqupyjpykaegrcmsma.supabase.co';
+    const supabaseKey = 'sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    document.getElementById('publish-btn')?.addEventListener('click', async () => {
+      const user = localStorage.getItem('ziji_user');
+      const uid = localStorage.getItem('ziji_uid');
+      if (!user || !uid) return alert('请先点击右上角登录！');
+      const input = document.getElementById('moment-input') as HTMLTextAreaElement;
+      if (!input.value.trim()) return;
+      await api.createMoment(uid, input.value.trim());
+      input.value = '';
+      loadFeed(); // 自己发的立刻拉取一次
+    });
+
+    async function loadFeed() {
+      const feedEl = document.getElementById('feed-container') as HTMLDivElement;
+      const { moments, articles } = await api.getFeed();
+      const allPosts = [...moments.map((m: any) => ({...m, type: 'moment'})), ...articles.map((a: any) => ({...a, type: 'article'}))]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      if (allPosts.length === 0) {
+        feedEl.innerHTML = '<div style="color:#666;text-align:center;">暂无动态。</div>';
+        return;
+      }
+      feedEl.innerHTML = allPosts.map((post: any) => `
+        <div style="background: #1b1b1b; border: 1px solid #333; border-radius: 12px; padding: 20px;">
+          <div style="color: #666; font-size: 11px; margin-bottom: 8px;">${new Date(post.created_at).toLocaleString()}</div>
+          <div style="font-size: 15px; line-height: 1.6; color: #d2d2d2;">${post.content || post.title}</div>
+          ${post.type === 'article' ? '<a href="/post/' + post.id + '" style="color: #18d1ff; text-decoration: none; font-size: 13px; margin-top:8px; display:inline-block;">阅读全文 →</a>' : ''}
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFeed();
+      // 订阅云端数据库变动，实现实时大厅
+      supabase.channel('public:moments')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moments' }, payload => {
+          console.log('收到新动态:', payload.new);
+          loadFeed(); // 收到别人发的动态，立刻重新拉取更新列表
+        })
+        .subscribe();
+    });
+  </script>
+</Layout>

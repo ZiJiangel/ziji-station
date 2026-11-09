@@ -1,0 +1,7 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EditorCanvas from '../components/EditorCanvas';
+---
+<Layout title="画布编辑器">
+  <EditorCanvas client:only="react" />
+</Layout>
