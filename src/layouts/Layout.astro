@@ -175,6 +175,19 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
   }
   .theme-btn:hover { color: var(--text-primary); border-color: var(--border-light); background: var(--bg-surface); }
   
+  @media (max-width: 640px) {
+    .top-nav { padding: 0 16px; gap: 8px; }
+    .logo { font-size: 12px; letter-spacing: 0; }
+    .nav-links { gap: 16px; }
+    .nav-links a { font-size: 12px; }
+    .nav-actions { gap: 8px; }
+  }
+  @media (max-width: 420px) {
+    .logo { display: none; }
+    .nav-links { gap: 14px; }
+    #nav-editor { display: none !important; }
+  }
+
   .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s; }
   .avatar:hover { border-color: var(--border-light); }
   .avatar:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
