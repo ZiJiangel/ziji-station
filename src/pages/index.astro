@@ -89,13 +89,20 @@ import Layout from '../layouts/Layout.astro';
     import { sanitizeText } from '../lib/sanitize';
 
     // 检查是否登录，如果登录了就把“发帖入口”展示出来
-    const uid = localStorage.getItem('ziji_uid');
-    const userName = localStorage.getItem('ziji_user') || 'U';
-    
-    if (uid) {
-      document.getElementById('post-trigger')!.style.display = 'flex';
-      document.querySelectorAll('.trigger-avatar').forEach(el => el.textContent = userName.charAt(0).toUpperCase());
+    function initAuthUI() {
+      const uid = localStorage.getItem('ziji_uid');
+      const userName = localStorage.getItem('ziji_user') || 'U';
+      const trigger = document.getElementById('post-trigger');
+      
+      if (uid && trigger) {
+        trigger.style.display = 'flex';
+        document.querySelectorAll('.trigger-avatar').forEach(el => el.textContent = userName.charAt(0).toUpperCase());
+      } else if (trigger) {
+        trigger.style.display = 'none';
+      }
     }
+    initAuthUI();
+    document.addEventListener('astro:page-load', initAuthUI);
 
     function fmtTime(s: string) {
       const d = new Date(s);
@@ -181,8 +188,16 @@ import Layout from '../layouts/Layout.astro';
     closeBtn?.addEventListener('click', () => toggleModal(false));
     overlay?.addEventListener('click', () => toggleModal(false));
     
+    const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement;
+    function updatePublishBtn() {
+      if (!publishBtn) return;
+      const hasContent = momentInput.value.trim().length > 0 || selectedFiles.length > 0;
+      publishBtn.disabled = !hasContent;
+    }
+
     momentInput?.addEventListener('input', () => {
       if (charCount) charCount.textContent = `${momentInput.value.length} / 300`;
+      updatePublishBtn();
     });
 
     let selectedFiles: File[] = [];
@@ -195,7 +210,13 @@ import Layout from '../layouts/Layout.astro';
       const files = Array.from((e.target as HTMLInputElement).files || []);
       if (!files.length) return;
       
-      selectedFiles = files.slice(0, 4); // 最多4张
+      if (files.length > 9) {
+        if (typeof toastModule !== 'undefined') toastModule.toastError('最多只能发 9 张图');
+        else alert('最多只能发 9 张图');
+        selectedFiles = files.slice(0, 9);
+      } else {
+        selectedFiles = files;
+      }
       previewArea.innerHTML = '';
       
       selectedFiles.forEach((file, i) => {
@@ -337,7 +358,10 @@ import Layout from '../layouts/Layout.astro';
     :global(.char-count) { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 
     /* 图片九宫格 */
-    :global(.image-grid) { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+    :global(.image-grid) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    :global(.image-grid > div:only-child) { grid-column: span 3; aspect-ratio: auto; max-height: 300px; }
+    :global(.image-grid > div:nth-child(2):nth-last-child(1)) { grid-column: span 2; aspect-ratio: auto; max-height: 300px; }
+    :global(.image-grid > div:nth-child(3):nth-last-child(1)) { grid-column: span 1; aspect-ratio: 1; }
     :global(.image-grid) > div { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
     :global(.image-grid) img { width: 100%; height: 100%; object-fit: cover; }
     :global(.image-grid) .remove-img {
