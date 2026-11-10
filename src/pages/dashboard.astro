@@ -1,75 +1,91 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="控制台 · 内容管理">
-  <main class="dash">
-    <header class="dash-head">
-      <h1>内容管理</h1>
-      <div class="links">
-        <a href="/editor">返回编辑器</a>
-        <a href="/">返回大厅</a>
-      </div>
+<Layout title="内容管理 · 控制台">
+  <main class="dash-layout">
+    <header class="dash-header">
+      <h1>内容库</h1>
+      <a href="/" class="btn-ghost">返回大厅</a>
     </header>
 
-    <section class="panel">
-      <h2>写新文章</h2>
-      <input id="title" type="text" placeholder="文章标题" />
-      <textarea id="content" rows={10} placeholder="在这里写正文，支持 Markdown…"></textarea>
-      <button id="save-btn">发布文章</button>
-    </section>
+    <div class="dash-grid">
+      <!-- 左侧：写文章 -->
+      <section class="panel">
+        <h2>新建文章</h2>
+        <div class="form-group">
+          <input id="title" type="text" placeholder="文章标题（必填）" />
+          <textarea id="summary" rows={2} placeholder="一句话摘要（可选）"></textarea>
+          <textarea id="content" rows={12} placeholder="正文内容，支持 Markdown 语法…"></textarea>
+          <button id="save-btn" class="btn-primary">发布文章</button>
+        </div>
+      </section>
 
-    <section class="panel">
-      <h2>我的文章</h2>
-      <div id="article-list"></div>
-    </section>
+      <!-- 右侧：列表 -->
+      <section class="panel">
+        <h2>已发布</h2>
+        <div id="article-list" class="article-list">
+          <div style="color: #666; font-size: 14px;">加载中…</div>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script>
     import { getFeed, createArticle } from '../lib/api';
-    import { sanitizeText, renderMarkdown } from '../lib/sanitize';
+    import { sanitizeText } from '../lib/sanitize';
 
     async function renderArticles() {
       const uid = localStorage.getItem('ziji_uid');
       const list = document.getElementById('article-list') as HTMLDivElement;
       if (!uid) {
-        list.innerHTML = '<p class="empty">请先登录</p>';
+        list.innerHTML = '<div style="color:#ef4444;">请先登录</div>';
         return;
       }
 
-      const { articles } = await getFeed(50);
-      const mine = articles.filter((a: any) => a.user_id === uid);
+      try {
+        const { articles } = await getFeed(50);
+        const mine = articles.filter((a: any) => a.user_id === uid);
 
-      if (mine.length === 0) {
-        list.innerHTML = '<p class="empty">还没有发布文章</p>';
-        return;
-      }
+        if (mine.length === 0) {
+          list.innerHTML = '<div style="color:#666; font-size:14px;">还没有发布文章</div>';
+          return;
+        }
 
-      list.innerHTML = mine
-        .map((a: any) => `
-          <div class="article-card">
+        list.innerHTML = mine.map((a: any) => `
+          <div class="article-item">
             <h3>${sanitizeText(a.title)}</h3>
             <p>${sanitizeText(a.summary || '')}</p>
-            <div class="article-meta">${new Date(a.published_at).toLocaleString('zh-CN')}</div>
+            <div class="meta">${new Date(a.published_at).toLocaleString('zh-CN')}</div>
+            <a href="/post/${a.id}" target="_blank" class="link">查看 →</a>
           </div>
-        `)
-        .join('');
+        `).join('');
+      } catch (e: any) {
+        list.innerHTML = `<div style="color:#ef4444;">加载失败: ${e.message}</div>`;
+      }
     }
 
     document.getElementById('save-btn')?.addEventListener('click', async () => {
       const titleEl = document.getElementById('title') as HTMLInputElement;
+      const summaryEl = document.getElementById('summary') as HTMLTextAreaElement;
       const contentEl = document.getElementById('content') as HTMLTextAreaElement;
       const uid = localStorage.getItem('ziji_uid');
 
       if (!uid) return alert('请先登录');
       if (!titleEl.value.trim() || !contentEl.value.trim()) return alert('标题和正文不能为空');
 
+      const btn = document.getElementById('save-btn') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.innerText = '发布中…';
+
       try {
-        await createArticle(uid, titleEl.value.trim(), contentEl.value.trim());
-        titleEl.value = '';
-        contentEl.value = '';
+        await createArticle(uid, titleEl.value.trim(), contentEl.value.trim(), summaryEl.value.trim());
+        titleEl.value = ''; summaryEl.value = ''; contentEl.value = '';
         renderArticles();
       } catch (e: any) {
-        alert('发布失败：' + e.message);
+        alert('发布失败: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '发布文章';
       }
     });
 
@@ -77,66 +93,40 @@ import Layout from '../layouts/Layout.astro';
   </script>
 
   <style>
-    .dash {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 40px 20px 80px;
+    .dash-layout { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .dash-header h1 { font-family: var(--font-round); font-size: 24px; color: var(--ink); margin: 0; }
+    .btn-ghost { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .btn-ghost:hover { color: var(--ink); }
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+    
+    .panel { background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; padding: 28px; }
+    .panel h2 { font-family: var(--font-round); font-size: 16px; color: var(--ink); margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line-soft); }
+    
+    .form-group { display: flex; flex-direction: column; gap: 16px; }
+    input, textarea {
+      width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line-soft); border-radius: 8px;
+      color: var(--ink); font-size: 14px; outline: none; font-family: inherit; line-height: 1.6;
     }
-    .dash-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #2a2a2a;
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; }
+    
+    .btn-primary {
+      padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 8px;
+      font-weight: 600; font-size: 14px; cursor: pointer; transition: opacity 0.2s;
     }
-    .dash-head h1 { margin: 0; font-size: 22px; color: #18d1ff; }
-    .links { display: flex; gap: 16px; }
-    .links a { font-size: 13px; color: #888; text-decoration: none; }
-    .links a:hover { color: #18d1ff; }
-    .panel {
-      padding: 24px;
-      background: #1b1b1b;
-      border: 1px solid #2a2a2a;
-      border-radius: 16px;
-      margin-bottom: 20px;
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .article-list { display: flex; flex-direction: column; gap: 16px; }
+    .article-item { padding: 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--line-soft); border-radius: 12px; }
+    .article-item h3 { margin: 0 0 8px 0; font-size: 15px; color: var(--ink); }
+    .article-item p { margin: 0 0 12px 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .article-item .meta { font-size: 11px; color: #555; margin-bottom: 8px; }
+    .article-item .link { font-size: 12px; color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .dash-grid { grid-template-columns: 1fr; }
     }
-    .panel h2 { margin: 0 0 16px; font-size: 14px; color: #888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
-    #title, #content {
-      width: 100%;
-      padding: 12px;
-      background: #111;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      color: #d2d2d2;
-      font-size: 14px;
-      outline: none;
-      margin-bottom: 12px;
-      font-family: inherit;
-      line-height: 1.6;
-    }
-    #title:focus, #content:focus { border-color: #18d1ff; }
-    #content { resize: vertical; }
-    #save-btn {
-      padding: 10px 24px;
-      background: #18d1ff;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .article-card {
-      padding: 14px;
-      background: #111;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-    .article-card h3 { margin: 0 0 6px; font-size: 15px; color: #fff; }
-    .article-card p { margin: 0 0 8px; font-size: 13px; color: #888; }
-    .article-meta { font-size: 11px; color: #555; }
-    .empty { color: #555; font-size: 13px; }
   </style>
 </Layout>

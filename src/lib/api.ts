@@ -104,8 +104,8 @@ export async function createMoment(uid: string, content: string) {
 }
 
 /** 发文章 */
-export async function createArticle(uid: string, title: string, content: string) {
-  const { error } = await supabase.from('articles').insert({ user_id: uid, title, content });
+export async function createArticle(uid: string, title: string, content: string, summary?: string) {
+  const { error } = await supabase.from('articles').insert({ user_id: uid, title, content, summary });
   if (error) throw error;
 }
 
