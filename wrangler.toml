@@ -3,5 +3,9 @@ compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./dist"
 
+[vars]
+PUBLIC_SUPABASE_URL = "https://wgtquypjypkaegrcsmsa.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM"
+
 [observability]
 enabled = true
