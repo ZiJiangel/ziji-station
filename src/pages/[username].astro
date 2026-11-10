@@ -1,0 +1,73 @@
+---
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import BlockRenderer from '../components/blocks/BlockRenderer.astro';
+import { getPublicPage } from '../lib/api';
+
+const { username } = Astro.params;
+
+if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) {
+  return Astro.redirect('/404');
+}
+
+const result = await getPublicPage(username);
+if (!result || !result.page || !result.page.blocks || result.page.blocks.length === 0) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const { profile, page } = result;
+const displayName = profile.display_name || profile.username;
+const bio = profile.bio || '';
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+---
+
+<Layout
+  title={displayName + ' 的主页'}
+  description={bio}
+  hideNav={true}
+>
+  <main class="public-page">
+    <BlockRenderer blocks={page.blocks} userId={profile.id} />
+  </main>
+  <a href="/" class="back-badge" aria-label="返回主站">
+    <span>⚡</span> 主站
+  </a>
+</Layout>
+
+<style is:global>
+  body { background: #0d0d0d; }
+</style>
+
+<style>
+  .public-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, #18d1ff10, transparent),
+      #0d0d0d;
+  }
+  .back-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 8px 16px;
+    background: rgba(24, 209, 255, 0.08);
+    border: 1px solid rgba(24, 209, 255, 0.25);
+    color: #18d1ff;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    z-index: 50;
+  }
+  .back-badge:hover {
+    background: rgba(24, 209, 255, 0.16);
+    transform: translateY(-2px);
+  }
+</style>

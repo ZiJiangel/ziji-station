@@ -1,0 +1,43 @@
+---
+import type { LinksBlock } from '../../lib/blocks';
+import { sanitizeText, safeUrl } from '../../lib/sanitize';
+
+interface Props { block: LinksBlock }
+const { block } = Astro.props;
+const valid = block.props.links
+  .map(l => ({ label: sanitizeText(l.label), url: safeUrl(l.url) }))
+  .filter(l => l.url && l.label);
+---
+
+{valid.length > 0 && (
+  <section class="block links">
+    {valid.map(l => (
+      <a href={l.url!} target="_blank" rel="noopener noreferrer nofollow" class="link">
+        {l.label}
+      </a>
+    ))}
+  </section>
+)}
+
+<style>
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .link {
+    padding: 8px 18px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #d2d2d2;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .link:hover {
+    border-color: #18d1ff;
+    color: #18d1ff;
+    transform: translateY(-1px);
+  }
+</style>

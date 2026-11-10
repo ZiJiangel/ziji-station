@@ -1,20 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  --font-mono: 'JetBrains Mono', monospace;
-  --bg: #1b1b1b;
+  --font-mono: 'JetBrains Mono', 'PingFang SC', 'Microsoft YaHei', monospace;
+  --bg: #0d0d0d;
   --text: #d2d2d2;
   --accent: #18d1ff;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-mono);
   background: var(--bg);
   color: var(--text);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 a { color: var(--accent); text-decoration: none; }
+button { font-family: inherit; }
+input, textarea { font-family: inherit; }
+
 ::view-transition-old(root) { animation: 200ms cubic-bezier(0.4, 0, 1, 1) both fade-out; }
 ::view-transition-new(root) { animation: 300ms cubic-bezier(0, 0, 0.2, 1) both fade-in; }
 @keyframes fade-out { to { opacity: 0; } }

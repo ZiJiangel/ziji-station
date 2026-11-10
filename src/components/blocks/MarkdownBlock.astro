@@ -1,0 +1,64 @@
+---
+import type { MarkdownBlock } from '../../lib/blocks';
+import { renderMarkdown } from '../../lib/sanitize';
+
+interface Props { block: MarkdownBlock }
+const { block } = Astro.props;
+const html = renderMarkdown(block.props.content || '');
+---
+
+<section class="block markdown" set:html={html} />
+
+<style>
+  .markdown {
+    padding: 24px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #d2d2d2;
+    word-break: break-word;
+  }
+  .markdown :global(h1),
+  .markdown :global(h2),
+  .markdown :global(h3) {
+    margin: 1.2em 0 0.6em;
+    color: #fff;
+    line-height: 1.4;
+  }
+  .markdown :global(h1) { font-size: 22px; }
+  .markdown :global(h2) { font-size: 19px; }
+  .markdown :global(h3) { font-size: 16px; }
+  .markdown :global(h1:first-child),
+  .markdown :global(h2:first-child),
+  .markdown :global(h3:first-child) { margin-top: 0; }
+  .markdown :global(p) { margin: 0 0 1em; }
+  .markdown :global(p:last-child) { margin-bottom: 0; }
+  .markdown :global(a) { color: #18d1ff; text-decoration: underline; text-underline-offset: 3px; }
+  .markdown :global(code) {
+    padding: 2px 6px;
+    background: #111;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #18d1ff;
+  }
+  .markdown :global(pre) {
+    padding: 14px;
+    background: #111;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 1em;
+  }
+  .markdown :global(pre code) { padding: 0; background: none; color: #d2d2d2; }
+  .markdown :global(blockquote) {
+    margin: 0 0 1em;
+    padding-left: 14px;
+    border-left: 3px solid #18d1ff55;
+    color: #888;
+  }
+  .markdown :global(ul),
+  .markdown :global(ol) { margin: 0 0 1em; padding-left: 1.5em; }
+  .markdown :global(img) { max-width: 100%; border-radius: 8px; }
+  .markdown :global(hr) { border: none; border-top: 1px solid #333; margin: 1.5em 0; }
+</style>

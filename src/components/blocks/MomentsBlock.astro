@@ -1,0 +1,91 @@
+---
+import type { MomentsBlock } from '../../lib/blocks';
+import { getMoments } from '../../lib/api';
+import { sanitizeText } from '../../lib/sanitize';
+
+interface Props {
+  block: MomentsBlock;
+  userId: string;
+}
+const { block, userId } = Astro.props;
+const items = await getMoments(userId, block.props.limit || 10);
+
+function fmtTime(s: string) {
+  const d = new Date(s);
+  const diff = Date.now() - d.getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '刚刚';
+  if (min < 60) return min + ' 分钟前';
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + ' 小时前';
+  const day = Math.floor(hr / 24);
+  if (day < 30) return day + ' 天前';
+  return d.toLocaleDateString('zh-CN');
+}
+---
+
+<section class="block moments">
+  <header class="head">
+    <h2>碎碎念</h2>
+  </header>
+  {items.length === 0 ? (
+    <p class="empty">还没有碎碎念</p>
+  ) : (
+    <ul class="items">
+      {items.map((m) => (
+        <li class="item">
+          <div class="content">{sanitizeText(m.content)}</div>
+          <div class="time">{fmtTime(m.created_at)}</div>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+
+<style>
+  .moments {
+    padding: 24px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+  }
+  .head { margin-bottom: 14px; }
+  .head h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #18d1ff;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .empty {
+    margin: 0;
+    color: #555;
+    font-size: 14px;
+  }
+  .items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .item {
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .item:last-child { padding-bottom: 0; border-bottom: none; }
+  .content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d2d2d2;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .time {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #555;
+  }
+</style>

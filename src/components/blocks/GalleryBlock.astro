@@ -1,0 +1,55 @@
+---
+import type { GalleryBlock } from '../../lib/blocks';
+import { safeUrl, sanitizeText } from '../../lib/sanitize';
+
+interface Props { block: GalleryBlock }
+const { block } = Astro.props;
+const cols = Math.max(1, Math.min(6, block.props.columns || 3));
+const images = block.props.images
+  .map(i => ({ url: safeUrl(i.url), caption: sanitizeText(i.caption || '') }))
+  .filter(i => i.url);
+---
+
+{images.length > 0 && (
+  <section class="block gallery">
+    <div class="grid" style={"grid-template-columns: repeat(" + cols + ", 1fr)"}>
+      {images.map((img) => (
+        <figure class="item">
+          <img src={img.url!} alt={img.caption} loading="lazy" />
+          {img.caption && <figcaption>{img.caption}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .gallery {
+    padding: 24px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+  }
+  .grid {
+    display: grid;
+    gap: 8px;
+  }
+  .item { margin: 0; }
+  .item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    background: #111;
+  }
+  figcaption {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+</style>

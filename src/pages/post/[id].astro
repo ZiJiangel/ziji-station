@@ -1,0 +1,139 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+import { renderMarkdown, sanitizeText } from '../../lib/sanitize';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/404');
+
+const { data: article } = await supabase
+  .from('articles')
+  .select('id, title, content, summary, created_at, user_id, profiles(username, display_name, avatar_url)')
+  .eq('id', id)
+  .eq('is_public', true)
+  .maybeSingle();
+
+if (!article) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const profile = (article as any).profiles || {};
+const authorName = profile.display_name || profile.username || '匿名';
+const html = renderMarkdown(article.content);
+const dateStr = new Date(article.created_at).toLocaleDateString('zh-CN', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+---
+
+<Layout title={sanitizeText(article.title)} description={sanitizeText(article.summary || '')}>
+  <article class="post">
+    <header class="post-head">
+      <h1>{sanitizeText(article.title)}</h1>
+      <div class="meta">
+        <a href={"/" + profile.username} class="author">{sanitizeText(authorName)}</a>
+        <span class="dot">·</span>
+        <time>{dateStr}</time>
+      </div>
+    </header>
+    <div class="content" set:html={html} />
+    <footer class="post-foot">
+      <a href="/" class="back">← 返回大厅</a>
+    </footer>
+  </article>
+</Layout>
+
+<style>
+  .post {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 20px 96px;
+  }
+  .post-head {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .post-head h1 {
+    margin: 0 0 16px;
+    font-size: 30px;
+    line-height: 1.35;
+    color: #fff;
+    font-weight: 700;
+    word-break: break-word;
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+  }
+  .author {
+    color: #18d1ff;
+    text-decoration: none;
+  }
+  .author:hover { text-decoration: underline; }
+  .content {
+    font-size: 15.5px;
+    line-height: 1.85;
+    color: #d2d2d2;
+    word-break: break-word;
+  }
+  .content :global(h1),
+  .content :global(h2),
+  .content :global(h3) {
+    margin: 1.6em 0 0.7em;
+    color: #fff;
+    line-height: 1.4;
+  }
+  .content :global(h1) { font-size: 26px; }
+  .content :global(h2) { font-size: 21px; }
+  .content :global(h3) { font-size: 17px; }
+  .content :global(p) { margin: 0 0 1.3em; }
+  .content :global(a) { color: #18d1ff; text-decoration: underline; text-underline-offset: 3px; }
+  .content :global(code) {
+    padding: 2px 6px;
+    background: #1b1b1b;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #18d1ff;
+  }
+  .content :global(pre) {
+    padding: 16px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 0 0 1.3em;
+  }
+  .content :global(pre code) { padding: 0; background: none; color: #d2d2d2; }
+  .content :global(blockquote) {
+    margin: 0 0 1.3em;
+    padding-left: 16px;
+    border-left: 3px solid #18d1ff55;
+    color: #888;
+  }
+  .content :global(img) { max-width: 100%; border-radius: 10px; }
+  .content :global(ul),
+  .content :global(ol) { margin: 0 0 1.3em; padding-left: 1.6em; }
+  .content :global(hr) { border: none; border-top: 1px solid #333; margin: 2em 0; }
+  .post-foot {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #2a2a2a;
+  }
+  .back {
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+  }
+  .back:hover { color: #18d1ff; }
+  @media (max-width: 640px) {
+    .post { padding: 32px 16px 64px; }
+    .post-head h1 { font-size: 24px; }
+  }
+</style>

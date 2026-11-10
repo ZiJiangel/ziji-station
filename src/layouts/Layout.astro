@@ -4,46 +4,50 @@ import { ViewTransitions } from 'astro:transitions';
 
 interface Props {
   title: string;
+  description?: string;
   hideNav?: boolean;
 }
-const { title, hideNav = false } = Astro.props;
+const { title, description = '子骥的小站 · 个人主页与动态大厅', hideNav = false } = Astro.props;
+const user = Astro.locals?.user;
 ---
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
     <ViewTransitions />
     <title>{title}</title>
   </head>
-  <body style="margin: 0; background: #111; color: #d2d2d2; font-family: 'JetBrains Mono', monospace;">
-    
+  <body>
     {!hideNav && (
-      <header style="position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(27,27,27,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid #333; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;">
-        <div style="display: flex; align-items: center; gap: 32px;">
-          <a href="/" style="color: #18d1ff; font-size: 18px; font-weight: bold; text-decoration: none; letter-spacing: 0.1em;">ZIJI.STATION</a>
-          <nav style="display: flex; gap: 16px;">
-            <a href="/" style="color: #d2d2d2; text-decoration: none; font-size: 14px;">动态大厅</a>
-            <a href="/dashboard" style="color: #888; text-decoration: none; font-size: 14px;">内容管理</a>
-            <a href="/arcade" style="color: #888; text-decoration: none; font-size: 14px;">游戏厅</a>
+      <header class="nav">
+        <div class="nav-left">
+          <a href="/" class="brand">ZIJI.STATION</a>
+          <nav class="nav-links">
+            <a href="/">动态大厅</a>
+            <a href="/dashboard">内容管理</a>
+            <a href="/arcade">游戏厅</a>
           </nav>
         </div>
-        <div id="nav-actions" style="display: flex; gap: 12px; align-items: center;">
-          <a href="/login" id="nav-login" style="color: #18d1ff; text-decoration: none; font-size: 14px;">登录</a>
-          <a href="/editor" id="nav-editor" style="display: none; color: #000; background: #18d1ff; padding: 6px 16px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold;">进入编辑器</a>
-          <div id="nav-avatar" style="display: none; width: 32px; height: 32px; border-radius: 50%; background: #333; color: #18d1ff; display: grid; place-items: center; font-size: 14px; cursor: pointer;">Z</div>
+        <div id="nav-actions" class="nav-actions">
+          <a href="/login" id="nav-login" class="btn-login">登录</a>
+          <a href="/editor" id="nav-editor" class="btn-editor" style="display:none">进入编辑器</a>
+          <div id="nav-avatar" class="nav-avatar" style="display:none"></div>
         </div>
       </header>
     )}
 
-    <div style="padding-top: 60px;">
+    <div class={hideNav ? '' : 'page-body'}>
       <slot />
     </div>
-    
+
     <script>
       import { gsap } from 'gsap';
-      window.gsap = gsap;
+      (window as any).gsap = gsap;
 
-      // 检查登录状态并切换导航按钮
       const user = localStorage.getItem('ziji_user');
       if (user) {
         const loginBtn = document.getElementById('nav-login');
@@ -54,9 +58,88 @@ const { title, hideNav = false } = Astro.props;
         if (avatar) {
           avatar.style.display = 'grid';
           avatar.innerText = user.charAt(0).toUpperCase();
-          avatar.onclick = () => window.location.href = '/' + user;
+          avatar.onclick = () => (window.location.href = '/' + user);
         }
       }
     </script>
   </body>
 </html>
+
+<style>
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid #2a2a2a;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .brand {
+    color: #18d1ff;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.12em;
+  }
+  .nav-links {
+    display: flex;
+    gap: 20px;
+  }
+  .nav-links a {
+    color: #888;
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: #d2d2d2; }
+  .nav-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn-login {
+    color: #18d1ff;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .btn-editor {
+    color: #000;
+    background: #18d1ff;
+    padding: 6px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .nav-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    color: #18d1ff;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .page-body { padding-top: 60px; }
+
+  @media (max-width: 640px) {
+    .nav { padding: 0 16px; }
+    .nav-links { display: none; }
+  }
+</style>

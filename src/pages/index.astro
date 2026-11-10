@@ -2,66 +2,245 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="子骥的小站 · 大厅">
-  <main style="max-width: 900px; margin: 0 auto; padding: 32px 16px; display: flex; gap: 24px;">
-    <div style="flex: 1; min-width: 0;">
-      <div style="background: #1b1b1b; border: 1px solid #333; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
-        <textarea id="moment-input" placeholder="分享点新鲜事..." style="width: 100%; height: 80px; background: transparent; border: none; color: #fff; font-family: inherit; font-size: 15px; resize: none; outline: none;"></textarea>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 12px; margin-top: 8px;">
-          <span style="color: #666; font-size: 12px;">纯文本动态</span>
-          <button id="publish-btn" style="padding: 8px 20px; background: #18d1ff; color: #000; border: none; border-radius: 20px; font-weight: bold; cursor: pointer;">发布动态</button>
-        </div>
+  <main class="home">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>子骥的小站</h1>
+      <p class="lead">一块属于你自己的主页。拖拽式区块搭建，发布即分享。</p>
+      <div class="cta">
+        <a href="/login" class="btn-primary">创建我的主页</a>
+        <a href="/arcade" class="btn-ghost">游戏厅 →</a>
       </div>
-      <div id="feed-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
-    </div>
+    </section>
+
+    <!-- 发布框 -->
+    <section class="composer" id="composer" style="display:none">
+      <textarea id="moment-input" placeholder="分享点新鲜事…"></textarea>
+      <div class="composer-foot">
+        <span class="hint">纯文本 · 上限 300 字</span>
+        <button id="publish-btn">发布动态</button>
+      </div>
+    </section>
+
+    <!-- 信息流 -->
+    <section class="feed-wrap">
+      <h2 class="section-title">最新动态</h2>
+      <div id="feed-container" class="feed"></div>
+    </section>
   </main>
+
   <script>
-    import { api } from '../lib/api';
-    // 引入 Supabase Realtime 客户端
-    import { createClient } from '@supabase/supabase-js';
-    
-    const supabaseUrl = 'https://wgtqupyjpykaegrcmsma.supabase.co';
-    const supabaseKey = 'sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    import { getFeed, createMoment } from '../lib/api';
+    import { sanitizeText } from '../lib/sanitize';
 
-    document.getElementById('publish-btn')?.addEventListener('click', async () => {
-      const user = localStorage.getItem('ziji_user');
-      const uid = localStorage.getItem('ziji_uid');
-      if (!user || !uid) return alert('请先点击右上角登录！');
-      const input = document.getElementById('moment-input') as HTMLTextAreaElement;
-      if (!input.value.trim()) return;
-      await api.createMoment(uid, input.value.trim());
-      input.value = '';
-      loadFeed(); // 自己发的立刻拉取一次
-    });
+    const composer = document.getElementById('composer') as HTMLElement;
+    const momentInput = document.getElementById('moment-input') as HTMLTextAreaElement;
+    const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement;
 
-    async function loadFeed() {
-      const feedEl = document.getElementById('feed-container') as HTMLDivElement;
-      const { moments, articles } = await api.getFeed();
-      const allPosts = [...moments.map((m: any) => ({...m, type: 'moment'})), ...articles.map((a: any) => ({...a, type: 'article'}))]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    if (localStorage.getItem('ziji_uid')) composer.style.display = 'block';
 
-      if (allPosts.length === 0) {
-        feedEl.innerHTML = '<div style="color:#666;text-align:center;">暂无动态。</div>';
-        return;
-      }
-      feedEl.innerHTML = allPosts.map((post: any) => `
-        <div style="background: #1b1b1b; border: 1px solid #333; border-radius: 12px; padding: 20px;">
-          <div style="color: #666; font-size: 11px; margin-bottom: 8px;">${new Date(post.created_at).toLocaleString()}</div>
-          <div style="font-size: 15px; line-height: 1.6; color: #d2d2d2;">${post.content || post.title}</div>
-          ${post.type === 'article' ? '<a href="/post/' + post.id + '" style="color: #18d1ff; text-decoration: none; font-size: 13px; margin-top:8px; display:inline-block;">阅读全文 →</a>' : ''}
-        </div>
-      `).join('');
+    function fmtTime(s: string) {
+      const d = new Date(s);
+      const diff = Date.now() - d.getTime();
+      const min = Math.floor(diff / 60000);
+      if (min < 1) return '刚刚';
+      if (min < 60) return min + ' 分钟前';
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return hr + ' 小时前';
+      const day = Math.floor(hr / 24);
+      if (day < 30) return day + ' 天前';
+      return d.toLocaleDateString('zh-CN');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadFeed();
-      // 订阅云端数据库变动，实现实时大厅
-      supabase.channel('public:moments')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moments' }, payload => {
-          console.log('收到新动态:', payload.new);
-          loadFeed(); // 收到别人发的动态，立刻重新拉取更新列表
-        })
-        .subscribe();
+    async function loadFeed() {
+      const el = document.getElementById('feed-container') as HTMLElement;
+      try {
+        const { moments, articles } = await getFeed(30);
+        const all = [
+          ...moments.map((m: any) => ({ ...m, _type: 'moment' })),
+          ...articles.map((a: any) => ({ ...a, _type: 'article' })),
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        if (all.length === 0) {
+          el.innerHTML = '<p class="empty">还没有动态。登录后发布第一条吧。</p>';
+          return;
+        }
+
+        el.innerHTML = all
+          .map((item: any) => {
+            const profile = item.profiles || {};
+            const name = sanitizeText(profile.display_name || profile.username || '匿名');
+            const username = profile.username || '';
+            return `
+              <article class="post">
+                <header class="post-head">
+                  <a href="/${username}" class="post-author">${name}</a>
+                  <time>${fmtTime(item.created_at)}</time>
+                </header>
+                ${
+                  item._type === 'article'
+                    ? `<a href="/post/${item.id}" class="post-title">${sanitizeText(item.title)}</a>
+                       <p class="post-excerpt">${sanitizeText(item.summary || '')}</p>`
+                    : `<p class="post-content">${sanitizeText(item.content)}</p>`
+                }
+              </article>
+            `;
+          })
+          .join('');
+      } catch (e: any) {
+        el.innerHTML = '<p class="empty">加载失败：' + e.message + '</p>';
+      }
+    }
+
+    publishBtn?.addEventListener('click', async () => {
+      const uid = localStorage.getItem('ziji_uid');
+      const content = momentInput.value.trim();
+      if (!uid) return alert('请先登录');
+      if (!content) return;
+      if (content.length > 300) return alert('动态不能超过 300 字');
+
+      publishBtn.disabled = true;
+      try {
+        await createMoment(uid, content);
+        momentInput.value = '';
+        loadFeed();
+      } catch (e: any) {
+        alert('发布失败：' + e.message);
+      } finally {
+        publishBtn.disabled = false;
+      }
     });
+
+    document.addEventListener('DOMContentLoaded', loadFeed);
   </script>
+
+  <style>
+    .home {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    .hero {
+      text-align: center;
+      padding: 40px 0 48px;
+    }
+    .hero h1 {
+      margin: 0 0 16px;
+      font-size: 32px;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .lead {
+      margin: 0 0 28px;
+      font-size: 15px;
+      color: #888;
+      line-height: 1.7;
+    }
+    .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 11px 24px;
+      background: #18d1ff;
+      color: #000;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .btn-ghost {
+      padding: 11px 24px;
+      background: transparent;
+      color: #d2d2d2;
+      border: 1px solid #2a2a2a;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .composer {
+      padding: 20px;
+      background: #1b1b1b;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      margin-bottom: 24px;
+    }
+    #moment-input {
+      width: 100%;
+      height: 80px;
+      background: transparent;
+      border: none;
+      color: #d2d2d2;
+      font-size: 14px;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+    }
+    .composer-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #2a2a2a;
+      margin-top: 8px;
+    }
+    .hint { font-size: 11px; color: #555; }
+    #publish-btn {
+      padding: 7px 20px;
+      background: #18d1ff;
+      color: #000;
+      border: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #publish-btn:disabled { opacity: 0.5; }
+    .section-title {
+      margin: 0 0 16px;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+    .feed { display: flex; flex-direction: column; gap: 12px; }
+    .post {
+      padding: 18px;
+      background: #1b1b1b;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+    }
+    .post-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .post-author {
+      font-size: 13px;
+      color: #18d1ff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .post-head time { font-size: 11px; color: #555; }
+    .post-content {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #d2d2d2;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .post-title {
+      display: block;
+      font-size: 16px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .post-title:hover { color: #18d1ff; }
+    .post-excerpt { margin: 0; font-size: 13px; color: #888; line-height: 1.6; }
+    .empty { color: #555; text-align: center; padding: 40px 0; font-size: 13px; }
+  </style>
 </Layout>

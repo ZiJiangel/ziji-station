@@ -1,85 +1,53 @@
 ---
+import Layout from '../layouts/Layout.astro';
 ---
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>加载中...</title>
-    <style>body { margin: 0; background: #1b1b1b; overflow: hidden; font-family: "JetBrains Mono", monospace; }</style>
-  </head>
-  <body>
-    <div id="app" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;">
-      <div style="width: 40px; height: 40px; border: 3px solid #333; border-top-color: #18d1ff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      <div style="color: #18d1ff; font-size: 14px;">正在连接云端...</div>
-      <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-    </div>
-    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script is:inline>
-      document.addEventListener('DOMContentLoaded', async () => {
-        const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
-        if (!path || ['index.html', 'login', 'editor', 'dashboard', 'arcade', '404.html'].includes(path)) {
-          window.location.href = '/';
-          return;
-        }
-        
-        const SUPABASE_URL = 'https://wgtqupyjpykaegrcmsma.supabase.co/rest/v1';
-        const SUPABASE_KEY = 'sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM';
-        const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
-        
-        if (path.startsWith('post/')) {
-          // ... (文章阅读逻辑与之前相同) ...
-          return;
-        }
-        
-        const username = decodeURIComponent(path);
-        document.title = username + ' 的主页';
-        try {
-          const pRes = await fetch(SUPABASE_URL + '/profiles?username=eq.' + username + '&select=id', { headers });
-          const pData = await pRes.json();
-          if (!pData[0]) throw new Error('找不到该用户');
-          const pageRes = await fetch(SUPABASE_URL + '/pages?user_id=eq.' + pData[0].id + '&is_public=eq.true&select=published_data', { headers });
-          const pageData = await pageRes.json();
-          if (!pageData[0] || !pageData[0].published_data) throw new Error('该主页未公开');
-          
-          const elements = pageData[0].published_data.elements || [];
-          const scale = Math.min(window.innerWidth / 1440, window.innerHeight / 900) * 0.95;
-          
-          let html = '<div style="width:1440px; height:900px; background:#242424; background-image:linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size:20px 20px; box-shadow:0 0 50px rgba(0,0,0,0.8); border-radius:12px; border:1px solid #444; transform: scale(' + scale + '); transform-origin: center center; position:relative; overflow:hidden;">';
-          
-          elements.forEach((el) => {
-            const op = el.opacity !== undefined ? el.opacity : 1;
-            const br = el.borderRadius !== undefined ? el.borderRadius + 'px' : '0px';
-            html += '<div class="anim-el" data-anim="' + (el.animation || 'none') + '" data-dur="' + (el.animDuration || 1) + '" data-delay="' + (el.animDelay || 0) + '" data-y="' + el.y + '" style="position:absolute; left:' + el.x + 'px; top:' + el.y + 'px; width:' + el.w + 'px; height:' + el.h + 'px; display:flex; align-items:center; justify-content:center; opacity:' + op + '; border-radius:' + br + '; overflow:hidden;">';
-            
-            if (el.type === 'text') html += '<div style="color:' + el.color + '; font-size:' + el.fontSize + 'px; width:100%; text-align:center; white-space:pre-wrap;">' + el.content + '</div>';
-            else if (el.type === 'image') html += el.src ? '<img src="' + el.src + '" style="width:100%; height:100%; object-fit:cover;" />' : '<div style="width:100%; height:100%; background:#333;"></div>';
-            else if (el.type === 'rect') html += '<div style="width:100%; height:100%; background:' + el.bgColor + ';"></div>';
-            else if (el.type === 'line') html += '<div style="width:100%; height:100%; background:' + el.bgColor + ';"></div>';
-            html += '</div>';
-          });
-          
-          html += '</div>';
-          html += '<a href="/" style="position:absolute; bottom:24px; right:24px; background:rgba(24,209,255,0.1); border:1px solid rgba(24,209,255,0.3); color:#18d1ff; padding:8px 16px; border-radius:30px; font-size:12px; font-weight:bold; text-decoration:none; backdrop-filter:blur(10px); transition: all 0.2s;">⚡ ziji.zh.kg</a>';
-          
-          document.getElementById('app').innerHTML = html;
-          
-          setTimeout(() => {
-            document.querySelectorAll('.anim-el').forEach(el => {
-              const anim = el.getAttribute('data-anim');
-              if (!anim || anim === 'none') return;
-              const dur = parseFloat(el.getAttribute('data-dur') || '1');
-              const delay = parseFloat(el.getAttribute('data-delay') || '0');
-              const targetY = parseFloat(el.getAttribute('data-y') || '0');
-              if (anim === 'fade') gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: dur, delay, ease: 'power3.out' });
-              else if (anim === 'slideUp') gsap.fromTo(el, { y: targetY + 50, opacity: 0 }, { y: targetY, opacity: 1, duration: dur, delay, ease: 'power3.out' });
-              else if (anim === 'slideDown') gsap.fromTo(el, { y: targetY - 50, opacity: 0 }, { y: targetY, opacity: 1, duration: dur, delay, ease: 'power3.out' });
-              else if (anim === 'zoomIn') gsap.fromTo(el, { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: dur, delay, ease: 'power3.out' });
-            });
-          }, 100);
-        } catch (e) {
-          document.getElementById('app').innerHTML = '<div style="color:#ff4d4d;text-align:center;">主页加载失败: ' + e.message + '</div>';
-        }
-      });
-    </script>
-  </body>
-</html>
+<Layout title="404 · 页面不存在">
+  <main class="nf">
+    <div class="code">404</div>
+    <h1>页面不存在</h1>
+    <p>你要找的页面可能已被删除，或者从未存在过。</p>
+    <a href="/" class="home">返回大厅</a>
+  </main>
+</Layout>
+
+<style>
+  .nf {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .code {
+    font-size: 96px;
+    font-weight: 700;
+    color: #18d1ff;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+  h1 {
+    margin: 16px 0 8px;
+    font-size: 22px;
+    color: #fff;
+    font-weight: 500;
+  }
+  p {
+    margin: 0 0 32px;
+    color: #666;
+    font-size: 14px;
+  }
+  .home {
+    padding: 10px 24px;
+    background: #18d1ff;
+    color: #000;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: opacity 0.15s;
+  }
+  .home:hover { opacity: 0.85; }
+</style>

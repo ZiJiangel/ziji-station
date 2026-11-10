@@ -1,85 +1,143 @@
-const SUPABASE_URL = 'https://wgtqupyjpykaegrcmsma.supabase.co/rest/v1';
-const SUPABASE_KEY = 'sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM';
+import { supabase } from './supabase';
+import type { PageData } from './blocks';
 
-const headers = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': `Bearer ${SUPABASE_KEY}`,
-  'Content-Type': 'application/json',
-  'Prefer': 'return=representation'
-};
+/** 登录：注册用户名，创建初始 page 记录 */
+export async function login(username: string) {
+  // 用 anonymous auth 拿到一个稳定的 uid（Supabase 提供的匿名会话）
+  const { data: { user } } = await supabase.auth.getUser();
+  let uid = user?.id ?? localStorage.getItem('ziji_uid');
 
-export const api = {
-  async login(username: string) {
-    let id = localStorage.getItem('ziji_uid');
-    if (!id) id = crypto.randomUUID();
-    localStorage.setItem('ziji_uid', id);
-
-    // 尝试插入用户，失败则忽略（假设已存在）
-    await fetch(`${SUPABASE_URL}/profiles`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ id, username })
-    }).catch(() => {});
-
-    // 尝试初始化空主页，失败则忽略
-    await fetch(`${SUPABASE_URL}/pages`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ user_id: id, draft_data: { elements: [] }, is_public: false })
-    }).catch(() => {});
-
-    return { id, username };
-  },
-
-  async getPage(userId: string) {
-    const res = await fetch(`${SUPABASE_URL}/pages?user_id=eq.${userId}&select=*`, { headers });
-    const data = await res.json();
-    return data[0] || null;
-  },
-
-  async savePage(userId: string, draft: any) {
-    const res = await fetch(`${SUPABASE_URL}/pages?user_id=eq.${userId}`, {
-      method: 'PATCH', headers,
-      body: JSON.stringify({ draft_data: draft })
-    });
-    return res.ok;
-  },
-
-  async publishPage(userId: string, data: any) {
-    const res = await fetch(`${SUPABASE_URL}/pages?user_id=eq.${userId}`, {
-      method: 'PATCH', headers,
-      body: JSON.stringify({ published_data: data, is_public: true })
-    });
-    return res.ok;
-  },
-
-  async getPublishedPage(username: string) {
-    const pRes = await fetch(`${SUPABASE_URL}/profiles?username=eq.${username}&select=id`, { headers });
-    const pData = await pRes.json();
-    if (!pData[0]) return null;
-    
-    const pageRes = await fetch(`${SUPABASE_URL}/pages?user_id=eq.${pData[0].id}&is_public=eq.true&select=published_data`, { headers });
-    const pageData = await pageRes.json();
-    return pageData[0] ? pageData[0].published_data : null;
-  },
-  
-  async createMoment(userId: string, content: string) {
-    await fetch(`${SUPABASE_URL}/moments`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ user_id: userId, content })
-    });
-  },
-
-  async getFeed() {
-    const mRes = await fetch(`${SUPABASE_URL}/moments?select=*&order=created_at.desc&limit=20`, { headers });
-    const moments = await mRes.json();
-    const aRes = await fetch(`${SUPABASE_URL}/articles?select=*&order=created_at.desc&limit=10`, { headers });
-    const articles = await aRes.json();
-    return { moments, articles };
-  },
-
-  async createArticle(userId: string, title: string, content: string) {
-    await fetch(`${SUPABASE_URL}/articles`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ user_id: userId, title, content })
-    });
+  if (!uid) {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) throw new Error('匿名登录失败：' + error.message);
+    uid = data.user!.id;
+    localStorage.setItem('ziji_uid', uid);
   }
-};
+
+  // 插入 profiles（忽略重复）
+  await supabase.from('profiles').upsert({ id: uid, username }, { onConflict: 'id' });
+
+  // 插入 pages 初始记录（忽略重复）
+  await supabase.from('pages').upsert(
+    { user_id: uid, draft_data: { blocks: [] }, is_public: false },
+    { onConflict: 'user_id' }
+  );
+
+  localStorage.setItem('ziji_user', username);
+  return { id: uid, username };
+}
+
+/** 拉当前用户的画布草稿 */
+export async function getMyPage(uid: string): Promise<PageData | null> {
+  const { data, error } = await supabase
+    .from('pages')
+    .select('draft_data')
+    .eq('user_id', uid)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.draft_data as PageData) ?? null;
+}
+
+/** 保存草稿 */
+export async function saveDraft(uid: string, data: PageData) {
+  const { error } = await supabase
+    .from('pages')
+    .update({ draft_data: data })
+    .eq('user_id', uid);
+  if (error) throw error;
+}
+
+/** 发布（草稿 → 已发布） */
+export async function publishPage(uid: string) {
+  const { data, error } = await supabase
+    .from('pages')
+    .select('draft_data')
+    .eq('user_id', uid)
+    .single();
+  if (error) throw error;
+
+  const { error: e2 } = await supabase
+    .from('pages')
+    .update({ published_data: data.draft_data, is_public: true })
+    .eq('user_id', uid);
+  if (e2) throw e2;
+}
+
+/** 按用户名读公开主页 */
+export async function getPublicPage(username: string) {
+  const { data: profile, error: pe } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, bio, avatar_url')
+    .eq('username', username)
+    .maybeSingle();
+  if (pe) throw pe;
+  if (!profile) return null;
+
+  const { data: page, error: pageErr } = await supabase
+    .from('pages')
+    .select('published_data')
+    .eq('user_id', profile.id)
+    .eq('is_public', true)
+    .maybeSingle();
+  if (pageErr) throw pageErr;
+
+  return { profile, page: page?.published_data as PageData | null };
+}
+
+/** 发碎碎念 */
+export async function createMoment(uid: string, content: string) {
+  const { error } = await supabase.from('moments').insert({ user_id: uid, content });
+  if (error) throw error;
+}
+
+/** 发文章 */
+export async function createArticle(uid: string, title: string, content: string) {
+  const { error } = await supabase.from('articles').insert({ user_id: uid, title, content });
+  if (error) throw error;
+}
+
+/** 大厅 Feed：最近动态 + 最近文章 */
+export async function getFeed(limit = 20) {
+  const [m, a] = await Promise.all([
+    supabase
+      .from('moments')
+      .select('id, user_id, content, created_at, profiles(username, display_name, avatar_url)')
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+    supabase
+      .from('articles')
+      .select('id, user_id, title, summary, created_at, profiles(username, display_name, avatar_url)')
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
+  return {
+    moments: m.data ?? [],
+    articles: a.data ?? [],
+  };
+}
+
+/** 读某用户文章列表（区块用） */
+export async function getArticles(uid: string, limit: number) {
+  const { data } = await supabase
+    .from('articles')
+    .select('id, title, summary, created_at')
+    .eq('user_id', uid)
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}
+
+/** 读某用户碎碎念列表（区块用） */
+export async function getMoments(uid: string, limit: number) {
+  const { data } = await supabase
+    .from('moments')
+    .select('id, content, created_at')
+    .eq('user_id', uid)
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}

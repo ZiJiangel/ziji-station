@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/prebuild.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "build:check": "astro check && astro build"
+    "build:check": "astro check && node scripts/prebuild.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "11.0.0",
@@ -18,6 +18,8 @@
     "dompurify": "^3.0.0",
     "gsap": "^3.12.0",
     "interactjs": "^1.10.0",
+    "isomorphic-dompurify": "^4.7.0",
+    "marked": "^18.2.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
