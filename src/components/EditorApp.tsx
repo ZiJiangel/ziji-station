@@ -155,28 +155,24 @@ export default function EditorApp() {
 
       <div style={s.layout}>
         <aside style={s.sidebar}>
-          <div style={s.areaTabs}>
-            <button onClick={() => { setActiveArea('main'); setSelectedId(null); }} style={s.areaTab(activeArea === 'main')}>主区域</button>
-            <button onClick={() => { setActiveArea('sidebar'); setSelectedId(null); }} style={s.areaTab(activeArea === 'sidebar')}>侧边栏</button>
+          <div style={s.sectionTitle}>侧栏宽度</div>
+          <div style={{ ...s.widthRow, marginBottom: '24px' }}>
+            {([
+              ['无', 'none'],
+              ['260', 260],
+              ['320', 320],
+              ['380', 380],
+            ] as const).map(([label, val]) => (
+              <button key={label} onClick={() => commit(mainBlocks, sidebarBlocks, val)} style={s.widthBtn(sidebarWidth === val)}>{label}</button>
+            ))}
           </div>
 
-          {activeArea === 'sidebar' && (
-            <div style={{ marginBottom: '24px' }}>
-              <div style={s.sectionTitle}>侧栏宽度</div>
-              <div style={s.widthRow}>
-                {([
-                  ['无', 'none'],
-                  ['260', 260],
-                  ['320', 320],
-                  ['380', 380],
-                ] as const).map(([label, val]) => (
-                  <button key={label} onClick={() => commit(mainBlocks, sidebarBlocks, val)} style={s.widthBtn(sidebarWidth === val)}>{label}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div style={s.sectionTitle}>添加区块</div>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <button onClick={() => setActiveArea('main')} style={s.areaBtn(activeArea === 'main')}>加到主区</button>
+            <button onClick={() => setActiveArea('sidebar')} style={s.areaBtn(activeArea === 'sidebar')}>加到侧栏</button>
+          </div>
+          
           <div style={s.blockList}>
             {BLOCK_TYPES.map(t => (
               <button key={t} onClick={() => addBlock(t)} style={s.typeBtn}>
@@ -187,30 +183,66 @@ export default function EditorApp() {
         </aside>
 
         <main style={s.canvas}>
-          <div style={s.previewWrap}>
-            {currentBlocks.map(b => (
-              <div 
-                key={b.id} 
-                onClick={() => setSelectedId(b.id)} 
-                style={s.blockCard(selectedId === b.id)}
-              >
-                <div style={s.blockHeader}>
-                  <span style={s.typeLabel}>{BLOCK_LABELS[b.type]}</span>
-                  <div style={s.blockActions}>
-                    <button onClick={e => { e.stopPropagation(); moveBlock(b.id, -1); }} style={s.iconBtn}>↑</button>
-                    <button onClick={e => { e.stopPropagation(); moveBlock(b.id, 1); }} style={s.iconBtn}>↓</button>
-                    <button onClick={e => { e.stopPropagation(); updateBlock(b.id, x => ({ ...x, visible: !x.visible } as Block)); }} style={s.iconBtn}>
-                      {b.visible ? '👁' : '🚫'}
-                    </button>
-                    <button onClick={e => { e.stopPropagation(); removeBlock(b.id); }} style={{ ...s.iconBtn, color: 'var(--danger)' }}>✕</button>
+          <div style={{ ...s.previewWrap, maxWidth: '100%', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+            
+            {/* 主区域 */}
+            <div style={{ flex: 1, minWidth: 0 }} onClick={() => setActiveArea('main')}>
+              <div style={s.areaLabel(activeArea === 'main')}>主区域</div>
+              {mainBlocks.map(b => (
+                <div 
+                  key={b.id} 
+                  onClick={(e) => { e.stopPropagation(); setSelectedId(b.id); setActiveArea('main'); }} 
+                  style={s.blockCard(selectedId === b.id)}
+                >
+                  <div style={s.blockHeader}>
+                    <span style={s.typeLabel}>{BLOCK_LABELS[b.type]}</span>
+                    <div style={s.blockActions}>
+                      <button onClick={e => { e.stopPropagation(); setActiveArea('main'); moveBlock(b.id, -1); }} style={s.iconBtn}>↑</button>
+                      <button onClick={e => { e.stopPropagation(); setActiveArea('main'); moveBlock(b.id, 1); }} style={s.iconBtn}>↓</button>
+                      <button onClick={e => { e.stopPropagation(); setActiveArea('main'); updateBlock(b.id, x => ({ ...x, visible: !x.visible } as Block)); }} style={s.iconBtn}>
+                        {b.visible ? '👁' : '🚫'}
+                      </button>
+                      <button onClick={e => { e.stopPropagation(); setActiveArea('main'); removeBlock(b.id); }} style={{ ...s.iconBtn, color: 'var(--danger)' }}>✕</button>
+                    </div>
+                  </div>
+                  <div style={{ opacity: b.visible ? 1 : 0.3, pointerEvents: 'none' }}>
+                    <BlockPreview block={b} />
                   </div>
                 </div>
-                <div style={{ opacity: b.visible ? 1 : 0.3, pointerEvents: 'none' }}>
-                  <BlockPreview block={b} />
-                </div>
+              ))}
+              {mainBlocks.length === 0 && <div style={s.empty}>主区域为空</div>}
+            </div>
+
+            {/* 侧栏区域 */}
+            {sidebarWidth !== 'none' && (
+              <div style={{ width: typeof sidebarWidth === 'number' ? `${sidebarWidth}px` : '320px', flexShrink: 0 }} onClick={() => setActiveArea('sidebar')}>
+                <div style={s.areaLabel(activeArea === 'sidebar')}>侧栏</div>
+                {sidebarBlocks.map(b => (
+                  <div 
+                    key={b.id} 
+                    onClick={(e) => { e.stopPropagation(); setSelectedId(b.id); setActiveArea('sidebar'); }} 
+                    style={s.blockCard(selectedId === b.id)}
+                  >
+                    <div style={s.blockHeader}>
+                      <span style={s.typeLabel}>{BLOCK_LABELS[b.type]}</span>
+                      <div style={s.blockActions}>
+                        <button onClick={e => { e.stopPropagation(); setActiveArea('sidebar'); moveBlock(b.id, -1); }} style={s.iconBtn}>↑</button>
+                        <button onClick={e => { e.stopPropagation(); setActiveArea('sidebar'); moveBlock(b.id, 1); }} style={s.iconBtn}>↓</button>
+                        <button onClick={e => { e.stopPropagation(); setActiveArea('sidebar'); updateBlock(b.id, x => ({ ...x, visible: !x.visible } as Block)); }} style={s.iconBtn}>
+                          {b.visible ? '👁' : '🚫'}
+                        </button>
+                        <button onClick={e => { e.stopPropagation(); setActiveArea('sidebar'); removeBlock(b.id); }} style={{ ...s.iconBtn, color: 'var(--danger)' }}>✕</button>
+                      </div>
+                    </div>
+                    <div style={{ opacity: b.visible ? 1 : 0.3, pointerEvents: 'none' }}>
+                      <BlockPreview block={b} />
+                    </div>
+                  </div>
+                ))}
+                {sidebarBlocks.length === 0 && <div style={s.empty}>侧栏为空</div>}
               </div>
-            ))}
-            {currentBlocks.length === 0 && <div style={s.empty}>当前区域还是空的，从左侧添加内容吧。</div>}
+            )}
+
           </div>
         </main>
 
@@ -304,8 +336,8 @@ const s = {
   topRight: { display: 'flex', alignItems: 'center', gap: '16px' },
   layout: { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar: { width: '240px', borderRight: '1px solid var(--border)', padding: '24px 20px', overflowY: 'auto' },
-  areaTabs: { display: 'flex', gap: '4px', marginBottom: '24px', padding: '4px', background: 'var(--bg-elevated)', borderRadius: '10px' },
-  areaTab: (active: boolean) => ({ flex: 1, padding: '7px 0', background: active ? 'var(--bg-surface)' : 'transparent', border: 'none', borderRadius: '7px', color: active ? 'var(--text-primary)' : 'var(--text-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }),
+  areaBtn: (active: boolean) => ({ flex: 1, padding: '8px 0', background: active ? 'var(--text-primary)' : 'transparent', border: '1px solid var(--border)', borderRadius: '8px', color: active ? 'var(--bg)' : 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s' }),
+  areaLabel: (active: boolean) => ({ display: 'inline-block', padding: '2px 8px', background: active ? 'var(--text-primary)' : 'var(--bg-elevated)', color: active ? 'var(--bg)' : 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)', borderRadius: '4px', marginBottom: '12px' }),
   widthRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
   widthBtn: (active: boolean) => ({ padding: '6px 12px', background: active ? 'var(--text-primary)' : 'transparent', border: '1px solid var(--border)', borderRadius: '99px', color: active ? 'var(--bg)' : 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s' }),
   sectionTitle: { fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' },
