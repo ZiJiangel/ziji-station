@@ -18,6 +18,15 @@ const { title, description = '子骥的小站 · 构建你的数字自留地', h
     <ViewTransitions />
   </head>
   <body>
+    <script is:inline>
+      // 如果在登录页或者已有 token，不显示登录按钮
+      if (localStorage.getItem('ziji_uid')) {
+        document.addEventListener('DOMContentLoaded', () => {
+          const btn = document.getElementById('nav-login');
+          if (btn) btn.style.display = 'none';
+        });
+      }
+    </script>
     {!hideNav && (
       <header class="nav-header">
         <a href="/" class="nav-brand">
@@ -44,19 +53,29 @@ const { title, description = '子骥的小站 · 构建你的数字自留地', h
     </div>
 
     <script>
-      const user = localStorage.getItem('ziji_user');
-      if (user) {
+      import { supabase } from '../lib/supabase';
+      
+      // 全局监听 Auth 状态变化，确保切换页面不丢失
+      supabase.auth.onAuthStateChange((event, session) => {
         const loginBtn = document.getElementById('nav-login');
         const editorBtn = document.getElementById('nav-editor');
         const avatar = document.getElementById('nav-avatar');
-        if (loginBtn) loginBtn.style.display = 'none';
-        if (editorBtn) editorBtn.style.display = 'inline-flex';
-        if (avatar) {
-          avatar.style.display = 'grid';
-          avatar.innerText = user.charAt(0).toUpperCase();
-          avatar.onclick = () => window.location.href = '/' + user;
+        
+        if (session) {
+          const user = localStorage.getItem('ziji_user') || session.user.email?.split('@')[0] || 'U';
+          if (loginBtn) loginBtn.style.display = 'none';
+          if (editorBtn) editorBtn.style.display = 'inline-flex';
+          if (avatar) {
+            avatar.style.display = 'grid';
+            avatar.innerText = user.charAt(0).toUpperCase();
+            avatar.onclick = () => window.location.href = '/' + user;
+          }
+        } else {
+          if (loginBtn) loginBtn.style.display = 'inline-flex';
+          if (editorBtn) editorBtn.style.display = 'none';
+          if (avatar) avatar.style.display = 'none';
         }
-      }
+      });
     </script>
   </body>
 </html>

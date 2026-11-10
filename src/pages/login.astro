@@ -2,35 +2,36 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="登录 · 子骥的小站" hideNav={true}>
-  <div class="login-bg">
-    <div class="login-wrap animate-fade-up">
-      <a href="/" class="back-home">← 返回大厅</a>
+  <div class="auth-container">
+    <div class="auth-bg-glow"></div>
+    <div class="auth-card">
+      <a href="/" class="back-link">← 返回大厅</a>
       
-      <div class="card login-card">
-        <div class="header">
-          <div class="logo-box">z</div>
-          <h1>欢迎回来</h1>
-          <p>邀请制社区 · 你的数字自留地</p>
+      <div class="auth-header">
+        <h1 class="glow-text">进入子骥的小站</h1>
+        <p>邀请制 · 沉浸式个人空间</p>
+      </div>
+      
+      <form id="login-form" class="auth-form">
+        <div class="input-wrap">
+          <input type="text" id="invite" placeholder="邀请码" required value="ZIJI2026" />
+          <span class="focus-border"></span>
+        </div>
+        <div class="input-wrap">
+          <input type="text" id="username" placeholder="用户名（小写字母/数字）" pattern="[a-z0-9_]{3,20}" required autocomplete="username" />
+          <span class="focus-border"></span>
+        </div>
+        <div class="input-wrap">
+          <input type="password" id="password" placeholder="密码（自动注册/登录）" required minlength="6" autocomplete="current-password" />
+          <span class="focus-border"></span>
         </div>
         
-        <form id="login-form" class="form">
-          <div class="input-group">
-            <label>邀请码</label>
-            <input type="text" id="invite" placeholder="请输入邀请码" required autocomplete="off" />
-          </div>
-          <div class="input-group">
-            <label>用户名</label>
-            <input type="text" id="username" placeholder="英文字母，3-20位" pattern="[a-z0-9_]{3,20}" required autocomplete="username" />
-          </div>
-          <div class="input-group">
-            <label>密码</label>
-            <input type="password" id="password" placeholder="输入密码（无账号将自动注册）" required minlength="6" autocomplete="current-password" />
-          </div>
-          <button type="submit" id="submit-btn" class="btn btn-primary submit-btn">验证并进入</button>
-        </form>
-        
-        <div id="status" class="status"></div>
-      </div>
+        <button type="submit" id="submit-btn" class="submit-btn">
+          <span>进入终端</span>
+        </button>
+      </form>
+      
+      <div id="status" class="status-msg"></div>
     </div>
   </div>
 
@@ -38,7 +39,6 @@ import Layout from '../layouts/Layout.astro';
     import { login } from '../lib/api';
     import { supabase } from '../lib/supabase';
 
-    const INVITE_CODE = 'ZIJI2026';
     const form = document.getElementById('login-form') as HTMLFormElement;
     const statusEl = document.getElementById('status') as HTMLDivElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -49,93 +49,102 @@ import Layout from '../layouts/Layout.astro';
       const username = (document.getElementById('username') as HTMLInputElement).value.trim().toLowerCase();
       const password = (document.getElementById('password') as HTMLInputElement).value;
 
-      if (invite !== INVITE_CODE) {
-        statusEl.textContent = '邀请码错误，请联系管理员。';
+      if (invite !== 'ZIJI2026') {
+        statusEl.textContent = '邀请码错误';
         statusEl.style.color = '#ef4444';
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = '正在验证…';
+      submitBtn.classList.add('loading');
       statusEl.textContent = '';
 
       try {
         await login(username, password);
-        statusEl.textContent = '验证成功，正在进入…';
-        statusEl.style.color = 'var(--accent)';
+        statusEl.textContent = '验证成功，即将跳转…';
+        statusEl.style.color = '#38bdf8';
         
         const { data: page } = await supabase.from('pages').select('is_public').eq('user_id', localStorage.getItem('ziji_uid')).maybeSingle();
         
         setTimeout(() => {
-          if (page && page.is_public) {
-            window.location.href = '/' + username;
-          } else {
-            window.location.href = '/'; 
-          }
-        }, 500);
+          if (page && page.is_public) window.location.href = '/' + username;
+          else window.location.href = '/';
+        }, 800);
       } catch (err: any) {
         statusEl.textContent = err.message;
         statusEl.style.color = '#ef4444';
         submitBtn.disabled = false;
-        submitBtn.textContent = '验证并进入';
+        submitBtn.classList.remove('loading');
       }
     });
   </script>
 
   <style>
-    .login-bg {
+    .auth-container {
       min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
-      padding: 24px;
-      background-image: radial-gradient(circle at 50% 0%, var(--accent-glow) 0%, transparent 60%);
+      position: relative; overflow: hidden;
     }
-    .login-wrap {
-      width: 100%; max-width: 400px;
-      position: relative;
+    .auth-bg-glow {
+      position: absolute; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      filter: blur(60px); z-index: 0; pointer-events: none;
     }
-    .back-home {
-      position: absolute; top: -40px; left: 0;
-      font-size: 13px; color: var(--text-muted); transition: color 0.2s;
+    .auth-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 420px; padding: 48px 40px;
+      background: rgba(18, 18, 20, 0.6);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
     }
-    .back-home:hover { color: var(--text-primary); }
-    
-    .login-card {
-      padding: 40px 32px;
-      box-shadow: var(--shadow-lg);
+    .back-link {
+      position: absolute; top: 24px; left: 24px;
+      color: var(--text-secondary); font-size: 13px; text-decoration: none;
+      transition: color 0.2s;
     }
-    .header {
-      text-align: center; margin-bottom: 32px;
+    .back-link:hover { color: var(--text-primary); }
+
+    .auth-header { text-align: center; margin-bottom: 40px; }
+    .auth-header h1 {
+      font-size: 28px; font-weight: 700; margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff, #a1a1aa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .logo-box {
-      width: 48px; height: 48px; margin: 0 auto 16px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--accent), #818cf8);
-      color: #000; display: grid; place-items: center;
-      font-family: var(--font-hand); font-size: 28px;
-      box-shadow: 0 0 20px var(--accent-glow);
+    .auth-header p { color: var(--text-secondary); font-size: 14px; }
+
+    .auth-form { display: flex; flex-direction: column; gap: 24px; }
+    .input-wrap { position: relative; }
+    .input-wrap input {
+      width: 100%; padding: 16px 20px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; color: #fff; font-size: 15px;
+      outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .header h1 { font-size: 22px; margin-bottom: 8px; color: var(--text-primary); }
-    .header p { font-size: 13px; color: var(--text-secondary); }
-    
-    .form { display: flex; flex-direction: column; gap: 20px; }
-    .input-group { display: flex; flex-direction: column; gap: 6px; }
-    .input-group label {
-      font-size: 12px; font-weight: 500; color: var(--text-secondary); padding-left: 4px;
+    .input-wrap input:focus {
+      background: rgba(0,0,0,0.6);
+      border-color: rgba(56,189,248,0.5);
+      box-shadow: 0 0 0 4px rgba(56,189,248,0.1);
     }
-    .input-group input {
-      width: 100%; padding: 12px 16px;
-      background: var(--bg-base); border: 1px solid var(--border);
-      border-radius: var(--radius-md); color: var(--text-primary);
-      font-size: 14px; outline: none; transition: all 0.2s;
-    }
-    .input-group input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-    
+    .input-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+
     .submit-btn {
-      margin-top: 8px; padding: 14px; font-size: 15px;
+      position: relative; overflow: hidden;
+      padding: 16px; margin-top: 8px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      border: none; border-radius: 12px;
+      color: #000; font-weight: 700; font-size: 16px;
+      cursor: pointer; transition: all 0.3s;
     }
-    .status { margin-top: 20px; text-align: center; font-size: 13px; min-height: 20px; }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(56,189,248,0.4);
+    }
+    .submit-btn:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
+
+    .status-msg { text-align: center; margin-top: 24px; font-size: 14px; min-height: 20px; }
   </style>
 </Layout>

@@ -26,6 +26,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
     <span class="nav-title">{displayName}</span>
   </header>
 
+  <div class="bg-glow"></div>
   <main class="pub-layout">
     <!-- 左侧流式内容 -->
     <div class="pub-main">
@@ -68,6 +69,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 </Layout>
 
 <style>
+  .bg-glow {
+    position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 600px; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 60%);
+    filter: blur(60px); pointer-events: none; z-index: -1;
+  }
   .pub-nav {
     position: fixed; top: 0; left: 0; right: 0; height: 64px;
     background: rgba(9, 9, 11, 0.7); backdrop-filter: blur(16px);
