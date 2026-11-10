@@ -94,8 +94,8 @@ export async function getPublicPage(username: string) {
 }
 
 /** 发碎碎念 */
-export async function createMoment(uid: string, content: string) {
-  const { error } = await supabase.from('moments').insert({ user_id: uid, content });
+export async function createMoment(uid: string, content: string, images: string[] = []) {
+  const { error } = await supabase.from('moments').insert({ user_id: uid, content, images });
   if (error) throw error;
 }
 

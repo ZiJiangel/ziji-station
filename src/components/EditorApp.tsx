@@ -315,6 +315,22 @@ function BlockInspector({ block, onChange }: { block: Block; onChange: (u: (b: B
       <Field label="Markdown 内容"><textarea value={block.props.content || ''} onChange={e => setProps({ content: e.target.value })} rows={16} style={s.textarea} /></Field>
     </div>
   );
+  if (block.type === 'gallery') return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <Field label="图片列表（逗号分隔 URL）">
+        <textarea 
+          value={block.props.images.map(i => i.url).join(', ')} 
+          onChange={e => {
+            const urls = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+            setProps({ images: urls.map(url => ({ url })) });
+          }} 
+          rows={6} 
+          style={s.textarea} 
+          placeholder="https://a.jpg, https://b.jpg"
+        />
+      </Field>
+    </div>
+  );
   if (block.type === 'music') return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Field label="曲名"><input value={block.props.title || ''} onChange={e => setProps({ title: e.target.value })} style={s.input} /></Field>
