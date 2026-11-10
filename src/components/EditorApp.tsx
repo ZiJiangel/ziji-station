@@ -105,24 +105,26 @@ export default function EditorApp() {
     <div style={s.root}>
       <header style={s.topbar}>
         <div style={s.brand}>
+          <a href="/" style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>← 返回大厅</a>
+          <span style={{ color: 'var(--border)', fontSize: '13px' }}>|</span>
           <span style={{ fontFamily: 'var(--font-serif)', fontSize: '20px' }}>工作室</span>
           <span style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>/{username}</span>
         </div>
         <div style={s.topRight}>
           <span style={s.saveStatus(saveStatus)}>
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Error' : ''}
+            {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : ''}
           </span>
-          <button onClick={() => setShowTemplates(true)} style={s.btnGhost}>Templates</button>
-          <a href={username ? '/' + username : '/'} target="_blank" style={s.btnGhost}>Preview</a>
+          <button onClick={() => setShowTemplates(true)} style={s.btnGhost}>模板</button>
+          <a href={username ? '/' + username : '/'} target="_blank" style={s.btnGhost}>预览</a>
           <button onClick={handlePublish} disabled={publishing} style={s.btnPrimary}>
-            {publishing ? 'Publishing...' : 'Publish'}
+            {publishing ? '发布中…' : '发布'}
           </button>
         </div>
       </header>
 
       <div style={s.layout}>
         <aside style={s.sidebar}>
-          <div style={s.sectionTitle}>Add Block</div>
+          <div style={s.sectionTitle}>添加区块</div>
           <div style={s.blockList}>
             {BLOCK_TYPES.map(t => (
               <button key={t} onClick={() => addBlock(t)} style={s.typeBtn}>
@@ -172,7 +174,7 @@ export default function EditorApp() {
       {showTemplates && (
         <div style={s.modalOverlay}>
           <div style={s.modalBox}>
-            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '28px', fontWeight: 400, marginBottom: '32px' }}>Select Template</h2>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '28px', fontWeight: 400, marginBottom: '32px' }}>选择模板</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
               {Object.entries(getTemplates()).map(([key, t]) => (
                 <div key={key} onClick={() => {
@@ -186,7 +188,7 @@ export default function EditorApp() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setShowTemplates(false)} style={{ ...s.btnGhost, marginTop: '32px', width: '100%' }}>Cancel</button>
+            <button onClick={() => setShowTemplates(false)} style={{ ...s.btnGhost, marginTop: '32px', width: '100%' }}>取消</button>
           </div>
         </div>
       )}
