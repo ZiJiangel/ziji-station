@@ -59,7 +59,7 @@ import Layout from '../layouts/Layout.astro';
         const all = [
           ...moments.map((m: any) => ({ ...m, _type: 'moment' })),
           ...articles.map((a: any) => ({ ...a, _type: 'article' })),
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        ].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
 
         if (all.length === 0) {
           el.innerHTML = '<p class="empty">还没有动态。登录后发布第一条吧。</p>';
@@ -75,7 +75,7 @@ import Layout from '../layouts/Layout.astro';
               <article class="post">
                 <header class="post-head">
                   <a href="/${username}" class="post-author">${name}</a>
-                  <time>${fmtTime(item.created_at)}</time>
+                  <time>${fmtTime(item.published_at || item.created_at)}</time>
                 </header>
                 ${
                   item._type === 'article'

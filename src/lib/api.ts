@@ -101,13 +101,13 @@ export async function getFeed(limit = 20) {
   const [m, a] = await Promise.all([
     supabase
       .from('moments')
-      .select('id, user_id, content, created_at, profiles(username, display_name, avatar_url)')
+      .select('id, user_id, content, published_at, profiles(username, display_name, avatar_url)')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(limit),
     supabase
       .from('articles')
-      .select('id, user_id, title, summary, created_at, profiles(username, display_name, avatar_url)')
+      .select('id, user_id, title, summary, published_at, profiles(username, display_name, avatar_url)')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(10),
@@ -122,10 +122,10 @@ export async function getFeed(limit = 20) {
 export async function getArticles(uid: string, limit: number) {
   const { data } = await supabase
     .from('articles')
-    .select('id, title, summary, created_at')
+    .select('id, title, summary, published_at')
     .eq('user_id', uid)
     .eq('is_public', true)
-    .order('created_at', { ascending: false })
+    .order('published_at', { ascending: false })
     .limit(limit);
   return data ?? [];
 }

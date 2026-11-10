@@ -10,7 +10,7 @@ if (!id) return Astro.redirect('/404');
 
 const { data: article } = await supabase
   .from('articles')
-  .select('id, title, content, summary, created_at, user_id, profiles(username, display_name, avatar_url)')
+  .select('id, title, content, summary, published_at, user_id, profiles(username, display_name, avatar_url)')
   .eq('id', id)
   .eq('is_public', true)
   .maybeSingle();
@@ -22,7 +22,7 @@ if (!article) {
 const profile = (article as any).profiles || {};
 const authorName = profile.display_name || profile.username || '匿名';
 const html = renderMarkdown(article.content);
-const dateStr = new Date(article.created_at).toLocaleDateString('zh-CN', {
+const dateStr = new Date(article.published_at).toLocaleDateString('zh-CN', {
   year: 'numeric', month: 'long', day: 'numeric',
 });
 

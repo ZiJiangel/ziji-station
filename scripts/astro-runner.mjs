@@ -13,9 +13,9 @@ for (const rel of candidates) {
   const abs = resolve(process.cwd(), rel);
   if (existsSync(abs)) {
     process.env.ESBUILD_BINARY_PATH = abs;
-    console.log('[prebuild] ESBUILD_BINARY_PATH =', abs);
     break;
   }
 }
 
-execSync('astro build', { stdio: 'inherit', env: process.env });
+const sub = process.argv[2] || 'build';
+execSync('astro ' + sub, { stdio: 'inherit', env: process.env });

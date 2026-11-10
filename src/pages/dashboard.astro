@@ -49,7 +49,7 @@ import Layout from '../layouts/Layout.astro';
           <div class="article-card">
             <h3>${sanitizeText(a.title)}</h3>
             <p>${sanitizeText(a.summary || '')}</p>
-            <div class="article-meta">${new Date(a.created_at).toLocaleString('zh-CN')}</div>
+            <div class="article-meta">${new Date(a.published_at).toLocaleString('zh-CN')}</div>
           </div>
         `)
         .join('');

@@ -3,11 +3,11 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "astro dev",
-    "build": "node scripts/prebuild.mjs",
-    "preview": "astro preview",
+    "dev": "node scripts/astro-runner.mjs dev",
+    "build": "node scripts/astro-runner.mjs build",
+    "preview": "node scripts/astro-runner.mjs preview",
     "astro": "astro",
-    "build:check": "astro check && node scripts/prebuild.mjs"
+    "build:check": "astro check && node scripts/astro-runner.mjs build"
   },
   "dependencies": {
     "@astrojs/cloudflare": "11.0.0",
