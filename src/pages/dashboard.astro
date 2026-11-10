@@ -1,34 +1,39 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="内容管理 · 控制台">
-  <main class="dash-layout">
-    <header class="dash-header">
-      <h1>内容库</h1>
-      <a href="/" class="btn-ghost">返回大厅</a>
-    </header>
+<Layout title="写作 · 子骥的小站">
+  <div class="dash-layout">
+    
+    <!-- 左侧：沉浸式写文章 -->
+    <main class="main-col reveal">
+      <header class="header">
+        <h1 class="title">写新文章</h1>
+        <p class="sub">记录你的思考、总结或故事。支持 Markdown 语法。</p>
+      </header>
 
-    <div class="dash-grid">
-      <!-- 左侧：写文章 -->
-      <section class="panel">
-        <h2>新建文章</h2>
-        <div class="form-group">
-          <input id="title" type="text" placeholder="文章标题（必填）" />
-          <textarea id="summary" rows={2} placeholder="一句话摘要（可选）"></textarea>
-          <textarea id="content" rows={12} placeholder="正文内容，支持 Markdown 语法…"></textarea>
-          <button id="save-btn" class="btn-primary">发布文章</button>
+      <section class="editor-box">
+        <input id="title" type="text" placeholder="文章标题" class="title-input" />
+        <input id="summary" type="text" placeholder="一句话摘要（可选）" class="summary-input" />
+        <textarea id="content" placeholder="正文内容，支持 Markdown…" class="content-input"></textarea>
+        
+        <div class="editor-footer">
+          <span>Markdown enabled</span>
+          <button id="save-btn" class="btn btn-accent">发布文章</button>
         </div>
       </section>
+    </main>
 
-      <!-- 右侧：列表 -->
-      <section class="panel">
-        <h2>已发布</h2>
-        <div id="article-list" class="article-list">
-          <div style="color: #666; font-size: 14px;">加载中…</div>
+    <!-- 右侧：文章归档 -->
+    <aside class="sidebar-col reveal" style="animation-delay: 0.2s;">
+      <div class="side-card">
+        <h3>Archive</h3>
+        <div id="article-list" class="article-timeline">
+          <div class="loading">加载中…</div>
         </div>
-      </section>
-    </div>
-  </main>
+      </div>
+    </aside>
+
+  </div>
 
   <script>
     import { getFeed, createArticle } from '../lib/api';
@@ -36,9 +41,9 @@ import Layout from '../layouts/Layout.astro';
 
     async function renderArticles() {
       const uid = localStorage.getItem('ziji_uid');
-      const list = document.getElementById('article-list') as HTMLDivElement;
+      const list = document.getElementById('article-list') as HTMLElement;
       if (!uid) {
-        list.innerHTML = '<div style="color:#ef4444;">请先登录</div>';
+        list.innerHTML = '<div class="empty">请先登录。</div>';
         return;
       }
 
@@ -47,26 +52,27 @@ import Layout from '../layouts/Layout.astro';
         const mine = articles.filter((a: any) => a.user_id === uid);
 
         if (mine.length === 0) {
-          list.innerHTML = '<div style="color:#666; font-size:14px;">还没有发布文章</div>';
+          list.innerHTML = '<div class="empty">还没有发布文章。</div>';
           return;
         }
 
         list.innerHTML = mine.map((a: any) => `
-          <div class="article-item">
-            <h3>${sanitizeText(a.title)}</h3>
-            <p>${sanitizeText(a.summary || '')}</p>
-            <div class="meta">${new Date(a.published_at).toLocaleString('zh-CN')}</div>
-            <a href="/post/${a.id}" target="_blank" class="link">查看 →</a>
-          </div>
+          <a href="/post/${a.id}" target="_blank" class="timeline-item">
+            <div class="time">${new Date(a.published_at).toLocaleDateString('zh-CN')}</div>
+            <div class="content">
+              <h4>${sanitizeText(a.title)}</h4>
+              <p>${sanitizeText(a.summary || '')}</p>
+            </div>
+          </a>
         `).join('');
       } catch (e: any) {
-        list.innerHTML = `<div style="color:#ef4444;">加载失败: ${e.message}</div>`;
+        list.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
       }
     }
 
     document.getElementById('save-btn')?.addEventListener('click', async () => {
       const titleEl = document.getElementById('title') as HTMLInputElement;
-      const summaryEl = document.getElementById('summary') as HTMLTextAreaElement;
+      const summaryEl = document.getElementById('summary') as HTMLInputElement;
       const contentEl = document.getElementById('content') as HTMLTextAreaElement;
       const uid = localStorage.getItem('ziji_uid');
 
@@ -80,7 +86,7 @@ import Layout from '../layouts/Layout.astro';
       try {
         await createArticle(uid, titleEl.value.trim(), contentEl.value.trim(), summaryEl.value.trim());
         titleEl.value = ''; summaryEl.value = ''; contentEl.value = '';
-        renderArticles();
+        await renderArticles();
       } catch (e: any) {
         alert('发布失败: ' + e.message);
       } finally {
@@ -89,44 +95,57 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    document.addEventListener('DOMContentLoaded', renderArticles);
+    renderArticles();
+    document.addEventListener('astro:page-load', renderArticles);
   </script>
 
   <style>
-    .dash-layout { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
-    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-    .dash-header h1 { font-family: var(--font-round); font-size: 24px; color: var(--ink); margin: 0; }
-    .btn-ghost { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    .btn-ghost:hover { color: var(--ink); }
-    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
-    
-    .panel { background: var(--card); border: 1px solid var(--line-soft); border-radius: 16px; padding: 28px; }
-    .panel h2 { font-family: var(--font-round); font-size: 16px; color: var(--ink); margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line-soft); }
-    
-    .form-group { display: flex; flex-direction: column; gap: 16px; }
-    input, textarea {
-      width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line-soft); border-radius: 8px;
-      color: var(--ink); font-size: 14px; outline: none; font-family: inherit; line-height: 1.6;
+    .dash-layout {
+      max-width: 1200px; margin: 0 auto; padding: 120px 32px 80px;
+      display: grid; grid-template-columns: 1fr 320px; gap: 64px; align-items: start;
     }
-    input:focus, textarea:focus { border-color: var(--accent); }
-    textarea { resize: vertical; }
+
+    .header { margin-bottom: 48px; }
+    .title { font-family: var(--font-serif); font-size: 48px; font-weight: 400; color: var(--text-primary); margin-bottom: 12px; }
+    .sub { font-size: 15px; color: var(--text-secondary); }
+
+    .editor-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; display: flex; flex-direction: column; gap: 16px; }
     
-    .btn-primary {
-      padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 8px;
-      font-weight: 600; font-size: 14px; cursor: pointer; transition: opacity 0.2s;
-    }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .title-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border); padding-bottom: 16px; color: var(--text-primary); font-family: var(--font-serif); font-size: 28px; outline: none; transition: border-color 0.2s; }
+    .title-input:focus { border-bottom-color: var(--accent); }
+    .title-input::placeholder { color: var(--text-muted); }
+    
+    .summary-input { width: 100%; background: transparent; border: none; color: var(--text-secondary); font-size: 15px; outline: none; padding: 8px 0; }
+    .summary-input::placeholder { color: var(--text-muted); }
+    
+    .content-input { width: 100%; height: 400px; background: transparent; border: none; color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; line-height: 1.8; resize: vertical; outline: none; margin-top: 16px; }
+    .content-input::placeholder { color: var(--text-muted); }
 
-    .article-list { display: flex; flex-direction: column; gap: 16px; }
-    .article-item { padding: 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--line-soft); border-radius: 12px; }
-    .article-item h3 { margin: 0 0 8px 0; font-size: 15px; color: var(--ink); }
-    .article-item p { margin: 0 0 12px 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
-    .article-item .meta { font-size: 11px; color: #555; margin-bottom: 8px; }
-    .article-item .link { font-size: 12px; color: var(--accent); text-decoration: none; }
+    .editor-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 24px; margin-top: 16px; }
+    .editor-footer span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 
-    @media (max-width: 768px) {
-      .dash-grid { grid-template-columns: 1fr; }
+    /* 右侧归档 */
+    .sidebar-col { position: sticky; top: 120px; }
+    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 24px; }
+    .side-card h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 24px; }
+    
+    .article-timeline { display: flex; flex-direction: column; gap: 20px; position: relative; }
+    .article-timeline::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 0; width: 1px; background: var(--border); }
+    
+    .timeline-item { display: flex; gap: 16px; text-decoration: none; position: relative; padding-left: 16px; }
+    .timeline-item::before { content: ""; position: absolute; left: -3px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+    .timeline-item:hover::before { background: var(--accent); }
+    
+    .timeline-item .time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-top: 2px; }
+    .timeline-item .content h4 { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; transition: color 0.2s; }
+    .timeline-item:hover .content h4 { color: var(--accent); }
+    .timeline-item .content p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .loading, .empty { font-size: 13px; color: var(--text-muted); }
+
+    @media (max-width: 900px) {
+      .dash-layout { grid-template-columns: 1fr; padding-top: 100px; gap: 40px; }
+      .sidebar-col { position: static; order: -1; }
     }
   </style>
 </Layout>

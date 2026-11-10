@@ -1,45 +1,48 @@
 import { supabase } from './supabase';
-import type { PageData } from './canvas';
+import type { PageData } from './blocks';
 
-/** 登录：注册用户名，创建初始 page 记录 */
-export async function login(username: string, password?: string) {
-  // 如果没有传密码，说明是老用户走老逻辑，或者测试，但新架构必须传
+const INVITE_CODE = 'ZIJI2026';
+const emailOf = (username: string) => `${username}@ziji.local`;
+
+/** 登录：仅做密码登录，不需要邀请码 */
+export async function login(username: string, password: string) {
   if (!password) throw new Error('密码不能为空');
-
-  const email = `${username}@ziji.local`;
-
-  // 1. 尝试用密码登录
-  let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
-
-  // 2. 如果登录失败（说明账号不存在），尝试静默注册
-  if (authErr && authErr.message.includes('Invalid login credentials')) {
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
-    if (signUpErr) throw new Error('注册失败：' + signUpErr.message);
-    authData = signUpData;
-  } else if (authErr) {
-    throw new Error('登录失败：' + authErr.message);
-  }
-
-  const user = authData.user;
+  const { data, error } = await supabase.auth.signInWithPassword({ email: emailOf(username), password });
+  if (error) throw new Error('用户名或密码错误');
+  const user = data.user;
   if (!user) throw new Error('无法获取用户信息');
 
-  const uid = user.id;
-  localStorage.setItem('ziji_uid', uid);
+  localStorage.setItem('ziji_uid', user.id);
   localStorage.setItem('ziji_user', username);
 
-  // 3. 确保 profiles 表有记录
-  const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle();
+  // 兜底：老用户若无 profiles 记录则补建
+  const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
   if (!existingProfile) {
-    const { error: pErr } = await supabase.from('profiles').insert({ id: uid, username });
-    if (pErr) {
-      if (pErr.code === '23505') throw new Error('该用户名已被占用，请换一个');
-      throw new Error('创建档案失败: ' + pErr.message);
-    }
-    // 初始化 pages 表
-    await supabase.from('pages').insert({ user_id: uid, draft_data: { blocks: [] }, is_public: false });
+    await supabase.from('profiles').insert({ id: user.id, username });
   }
+  return { id: user.id, username };
+}
 
-  return { id: uid, username };
+/** 注册：需要邀请码，创建 profiles + pages 初始记录 */
+export async function register(username: string, password: string, inviteCode: string) {
+  if (!password) throw new Error('密码不能为空');
+  if (inviteCode !== INVITE_CODE) throw new Error('邀请码不正确');
+
+  const { data, error } = await supabase.auth.signUp({ email: emailOf(username), password });
+  if (error) {
+    if (error.message.includes('already registered')) throw new Error('该用户名已被注册');
+    throw new Error('注册失败：' + error.message);
+  }
+  const user = data.user;
+  if (!user) throw new Error('注册失败：无法创建用户');
+
+  localStorage.setItem('ziji_uid', user.id);
+  localStorage.setItem('ziji_user', username);
+
+  const { error: pErr } = await supabase.from('profiles').insert({ id: user.id, username });
+  if (pErr && pErr.code !== '23505') throw new Error('创建档案失败: ' + pErr.message);
+  await supabase.from('pages').insert({ user_id: user.id, draft_data: { blocks: [] }, is_public: false });
+  return { id: user.id, username };
 }
 
 /** 拉当前用户的画布草稿 */

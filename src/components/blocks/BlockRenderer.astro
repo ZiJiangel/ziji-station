@@ -76,12 +76,11 @@ function fmtDate(s: string) {
 
 <style>
   .card {
-    background: var(--bg-surface);
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: 20px;
     padding: 32px;
     margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
     transition: border-color 0.3s;
   }
   .card:hover { border-color: var(--border-hover); }
@@ -89,7 +88,7 @@ function fmtDate(s: string) {
   /* Profile */
   .profile-card { padding: 40px; }
   .p-inner { display: flex; gap: 24px; align-items: center; }
-  .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+  .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-highlight); }
   .p-info h1 { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; letter-spacing: -0.02em; }
   .status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--accent); margin-bottom: 12px; font-weight: 500; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }

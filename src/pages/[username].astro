@@ -1,18 +1,39 @@
 ---
 export const prerender = false;
 import Layout from '../layouts/Layout.astro';
-import BlockRenderer from '../components/blocks/BlockRenderer.astro';
-import { getPublicPage } from '../lib/api';
+import { supabase } from '../lib/supabase';
+import { sanitizeText, renderMarkdown } from '../lib/sanitize';
+import ProfileBlock from '../components/blocks/ProfileBlock.astro';
+import MarkdownBlock from '../components/blocks/MarkdownBlock.astro';
+import LinksBlock from '../components/blocks/LinksBlock.astro';
+import ArticlesBlock from '../components/blocks/ArticlesBlock.astro';
+import MomentsBlock from '../components/blocks/MomentsBlock.astro';
+import GalleryBlock from '../components/blocks/GalleryBlock.astro';
+import type { Block } from '../lib/blocks';
 
 const { username } = Astro.params;
 if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) return Astro.redirect('/404');
 
-const result = await getPublicPage(username);
-if (!result || !result.page || !result.page.blocks || result.page.blocks.length === 0) {
-  return new Response(null, { status: 404, statusText: 'Not Found' });
-}
+// 查资料
+const { data: profile } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle();
+if (!profile) return new Response(null, { status: 404, statusText: 'Not Found' });
 
-const { profile, page } = result;
+// 查动态
+const { data: moments } = await supabase.from('moments').select('*').eq('user_id', profile.id).eq('is_public', true).order('created_at', { ascending: false }).limit(20);
+
+// 查文章
+const { data: articles } = await supabase.from('articles').select('*').eq('user_id', profile.id).eq('is_public', true).order('published_at', { ascending: false }).limit(10);
+
+// 查已发布的主页区块
+const { data: pageRow } = await supabase
+  .from('pages')
+  .select('published_data')
+  .eq('user_id', profile.id)
+  .eq('is_public', true)
+  .maybeSingle();
+const blocks: Block[] = (pageRow?.published_data as any)?.blocks || [];
+const hasBlocks = blocks.filter(b => b.visible).length > 0;
+
 const displayName = profile.display_name || profile.username;
 const bio = profile.bio || '这个人很懒，什么都没写。';
 const avatar = profile.avatar_url;
@@ -21,137 +42,175 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 ---
 
 <Layout title={displayName + ' 的主页'} hideNav={true}>
-  <header class="pub-nav">
-    <a href="/" class="btn btn-ghost" style="padding: 6px 16px; font-size: 13px;">← 主站</a>
+  <header class="pub-header">
+    <a href="/" class="back-link">← 返回大厅</a>
     <span class="nav-title">{displayName}</span>
   </header>
 
-  <div class="bg-glow"></div>
-  <main class="pub-layout">
-    <!-- 左侧流式内容 -->
-    <div class="pub-main">
-      {page.blocks.filter((b: any) => b.visible).map((block: any) => (
-        <BlockRenderer block={block} userId={profile.id} />
-      ))}
-    </div>
+  <div class="pub-layout">
+    <!-- 左侧主内容 -->
+    <main class="pub-main">
+      {hasBlocks ? (
+        <div class="blocks-stack">
+          {blocks.filter(b => b.visible).map(b => (
+            b.type === 'profile' ? <ProfileBlock block={b} /> :
+            b.type === 'markdown' ? <MarkdownBlock block={b} /> :
+            b.type === 'links' ? <LinksBlock block={b} /> :
+            b.type === 'articles' ? <ArticlesBlock block={b} userId={profile.id} /> :
+            b.type === 'moments' ? <MomentsBlock block={b} userId={profile.id} /> :
+            b.type === 'gallery' ? <GalleryBlock block={b} /> : null
+          ))}
+        </div>
+      ) : (
+        <>
+          {articles && articles.length > 0 && (
+            <section class="content-section reveal">
+              <h2 class="section-title">文章</h2>
+              <div class="article-list">
+                {articles.map(a => (
+                  <a href={"/post/" + a.id} class="article-item">
+                    <h3>{sanitizeText(a.title)}</h3>
+                    {a.summary && <p>{sanitizeText(a.summary)}</p>}
+                    <span class="meta">{new Date(a.published_at).toLocaleDateString()}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {moments && moments.length > 0 && (
+            <section class="content-section reveal" style="animation-delay: 0.1s;">
+              <h2 class="section-title">碎碎念</h2>
+              <div class="moment-list">
+                {moments.map(m => (
+                  <div class="moment-item">
+                    <p>{sanitizeText(m.content)}</p>
+                    <span class="meta">{new Date(m.created_at).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(!articles || articles.length === 0) && (!moments || moments.length === 0) && (
+            <div class="empty-state">这个朋友还没有留下任何足迹。</div>
+          )}
+        </>
+      )}
+    </main>
 
     <!-- 右侧粘性侧栏 -->
-    <aside class="pub-sidebar">
-      <div class="side-card card reveal">
-        {avatar 
-          ? <img src={avatar} class="side-avatar" alt="avatar" />
-          : <div class="side-avatar placeholder">{displayName.charAt(0).toUpperCase()}</div>
-        }
-        <h2>{displayName}</h2>
-        <p class="side-bio">{bio}</p>
-        <a href="/editor" class="btn btn-ghost" style="width:100%; margin-top:16px;">编辑我的主页</a>
+    <aside class="pub-sidebar reveal">
+      <div class="side-card">
+        <div class="avatar-wrap">
+          {avatar 
+            ? <img src={avatar} class="avatar" alt="avatar" />
+            : <div class="avatar ph">{displayName.charAt(0).toUpperCase()}</div>
+          }
+        </div>
+        <h2 class="name">{displayName}</h2>
+        <p class="bio">{bio}</p>
       </div>
 
-      <!-- 高级质感音乐播放器 -->
-      <div class="music-widget card reveal">
+      <!-- 黑胶播放器 -->
+      <div class="side-card music-card" style="animation-delay: 0.1s;">
         <div class="vinyl-wrap">
           <div class="vinyl">
             <div class="center"></div>
           </div>
         </div>
         <div class="m-info">
-          <div class="m-title">Akari Theme</div>
-          <div class="m-artist">Unknown Artist</div>
+          <div class="m-title">Ambient Music</div>
+          <div class="m-artist">Unknown</div>
         </div>
         <div class="m-controls">
-          <span>⏮</span>
-          <span class="play-btn">▶</span>
-          <span>⏭</span>
+          <button class="play-btn">▶</button>
         </div>
       </div>
     </aside>
-  </main>
+  </div>
 </Layout>
 
 <style>
-  .bg-glow {
-    position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
-    width: 600px; height: 600px; background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 60%);
-    filter: blur(60px); pointer-events: none; z-index: -1;
+  .pub-header { 
+    position: fixed; top: 0; left: 0; right: 0; height: 64px; 
+    background: var(--nav-bg); backdrop-filter: blur(12px); 
+    border-bottom: 1px solid var(--border); 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 0 32px; z-index: 100; 
   }
-  .pub-nav {
-    position: fixed; top: 0; left: 0; right: 0; height: 64px;
-    background: rgba(9, 9, 11, 0.7); backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; z-index: 100;
-  }
-  .nav-title { font-weight: 600; font-size: 15px; color: var(--text-primary); }
+  .back-link { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); transition: color 0.2s; }
+  .back-link:hover { color: var(--text-primary); }
+  .nav-title { font-family: var(--font-serif); font-size: 16px; color: var(--text-primary); }
 
-  .pub-layout {
-    max-width: 1040px; margin: 0 auto; padding: 104px 24px 80px;
-    display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start;
+  .pub-layout { 
+    max-width: 1100px; margin: 0 auto; padding: 120px 32px 80px; 
+    display: grid; grid-template-columns: 1fr 340px; gap: 48px; align-items: start; 
   }
+  
+  .pub-sidebar { position: sticky; top: 120px; display: flex; flex-direction: column; gap: 24px; }
+  .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; }
+  
+  .avatar-wrap { margin-bottom: 20px; }
+  .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light); }
+  .avatar.ph { display: grid; place-items: center; background: var(--bg-elevated); font-size: 32px; font-weight: 500; color: var(--text-muted); margin: 0 auto; }
+  
+  .name { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); margin-bottom: 12px; }
+  .bio { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
 
-  .pub-sidebar { position: sticky; top: 104px; display: flex; flex-direction: column; gap: 24px; }
-  .side-card { padding: 32px 24px; text-align: center; }
-  .side-avatar {
-    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-    margin: 0 auto 16px; border: 2px solid var(--border);
-  }
-  .side-avatar.placeholder {
-    display: grid; place-items: center; background: var(--bg-elevated);
-    color: var(--text-secondary); font-size: 28px; font-weight: 700;
-  }
-  .side-card h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-  .side-bio { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 0; }
-
-  /* Music Widget */
-  .music-widget { padding: 24px; }
-  .vinyl-wrap {
-    width: 100%; aspect-ratio: 1; background: var(--bg-base); border-radius: var(--radius-md);
-    display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
-    border: 1px solid var(--border); overflow: hidden;
-  }
-  .vinyl {
-    width: 85%; aspect-ratio: 1; border-radius: 50%;
-    background: repeating-radial-gradient(#18181b, #18181b 2px, #27272a 3px, #18181b 4px);
-    display: flex; align-items: center; justify-content: center;
-    animation: spin 4s linear infinite; animation-play-state: paused;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-  }
-  .center { width: 32%; aspect-ratio: 1; border-radius: 50%; background: var(--accent); border: 4px solid #000; }
+  /* 黑胶播放器 */
+  .music-card { padding: 24px; }
+  .vinyl-wrap { width: 100%; aspect-ratio: 1; background: var(--bg); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid var(--border); overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.1); }
+  .vinyl { width: 85%; aspect-ratio: 1; border-radius: 50%; background: repeating-radial-gradient(#111, #111 2px, #222 4px, #111 5px); display: flex; align-items: center; justify-content: center; animation: spin 4s linear infinite; animation-play-state: paused; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .center { width: 32%; aspect-ratio: 1; border-radius: 50%; background: var(--text-primary); border: 4px solid var(--bg); }
   @keyframes spin { 100% { transform: rotate(360deg); } }
   
   .m-info { text-align: center; margin-bottom: 16px; }
-  .m-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-  .m-artist { font-size: 12px; color: var(--text-muted); }
-  .m-controls { display: flex; justify-content: center; gap: 24px; font-size: 18px; color: var(--text-primary); user-select: none; }
-  .play-btn { cursor: pointer; transition: transform 0.1s; }
-  .play-btn:active { transform: scale(0.9); }
+  .m-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; font-family: var(--font-serif); }
+  .m-artist { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .m-controls { display: flex; justify-content: center; }
+  .play-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--text-primary); color: var(--bg); display: grid; place-items: center; font-size: 16px; transition: all 0.2s; }
+  .play-btn:hover { transform: scale(1.05); }
 
-  @media (max-width: 860px) {
-    .pub-layout { grid-template-columns: 1fr; padding-top: 88px; }
+  /* 内容区 */
+  .content-section { margin-bottom: 64px; }
+  .section-title { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+  
+  .blocks-stack { display: flex; flex-direction: column; gap: 24px; }
+  .article-list { display: flex; flex-direction: column; gap: 32px; }
+  .article-item { display: block; }
+  .article-item h3 { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; transition: color 0.2s; }
+  .article-item:hover h3 { color: var(--text-secondary); }
+  .article-item p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px; }
+  .article-item .meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+
+  .moment-list { display: flex; flex-direction: column; gap: 24px; }
+  .moment-item { padding-left: 24px; border-left: 2px solid var(--border); }
+  .moment-item p { font-size: 15px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; margin-bottom: 8px; }
+  .moment-item .meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  
+  .empty-state { font-size: 15px; color: var(--text-muted); padding: 64px 0; text-align: center; }
+
+  @media (max-width: 900px) {
+    .pub-layout { grid-template-columns: 1fr; padding-top: 100px; }
     .pub-sidebar { position: static; flex-direction: row; flex-wrap: wrap; }
-    .side-card, .music-widget { flex: 1; min-width: 250px; }
+    .side-card { flex: 1; min-width: 280px; }
   }
 </style>
 
 <script>
-  import { gsap } from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  gsap.registerPlugin(ScrollTrigger);
-
-  document.addEventListener('DOMContentLoaded', () => {
-    gsap.utils.toArray('.reveal').forEach((el: any) => {
-      gsap.fromTo(el, 
-        { y: 30, opacity: 0 }, 
-        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 95%" } }
-      );
-    });
-
+  function bindVinyl() {
     const vinyl = document.querySelector('.vinyl') as HTMLElement;
-    const playBtn = document.querySelector('.play-btn') as HTMLElement;
+    const btn = document.querySelector('.play-btn') as HTMLButtonElement;
+    if (!vinyl || !btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
     let playing = false;
-    playBtn?.addEventListener('click', () => {
+    btn.addEventListener('click', () => {
       playing = !playing;
-      playBtn.textContent = playing ? '⏸' : '▶';
+      btn.textContent = playing ? '⏸' : '▶';
       vinyl.style.animationPlayState = playing ? 'running' : 'paused';
     });
-  });
+  }
+  bindVinyl();
+  document.addEventListener('astro:page-load', bindVinyl);
 </script>

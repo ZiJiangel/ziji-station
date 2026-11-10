@@ -11,54 +11,58 @@ const html = renderMarkdown(block.props.content || '');
 
 <style>
   .markdown {
-    padding: 24px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
+    padding: 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     font-size: 15px;
     line-height: 1.8;
-    color: #d2d2d2;
+    color: var(--text-secondary);
     word-break: break-word;
   }
   .markdown :global(h1),
   .markdown :global(h2),
   .markdown :global(h3) {
     margin: 1.2em 0 0.6em;
-    color: #fff;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    color: var(--text-primary);
     line-height: 1.4;
   }
-  .markdown :global(h1) { font-size: 22px; }
-  .markdown :global(h2) { font-size: 19px; }
-  .markdown :global(h3) { font-size: 16px; }
+  .markdown :global(h1) { font-size: 24px; }
+  .markdown :global(h2) { font-size: 20px; }
+  .markdown :global(h3) { font-size: 17px; }
   .markdown :global(h1:first-child),
   .markdown :global(h2:first-child),
   .markdown :global(h3:first-child) { margin-top: 0; }
   .markdown :global(p) { margin: 0 0 1em; }
   .markdown :global(p:last-child) { margin-bottom: 0; }
-  .markdown :global(a) { color: #18d1ff; text-decoration: underline; text-underline-offset: 3px; }
+  .markdown :global(a) { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
   .markdown :global(code) {
     padding: 2px 6px;
-    background: #111;
+    background: var(--bg-elevated);
     border-radius: 4px;
+    font-family: var(--font-mono);
     font-size: 0.9em;
-    color: #18d1ff;
+    color: var(--text-primary);
   }
   .markdown :global(pre) {
     padding: 14px;
-    background: #111;
-    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     overflow-x: auto;
     margin: 0 0 1em;
   }
-  .markdown :global(pre code) { padding: 0; background: none; color: #d2d2d2; }
+  .markdown :global(pre code) { padding: 0; background: none; color: var(--text-secondary); }
   .markdown :global(blockquote) {
     margin: 0 0 1em;
     padding-left: 14px;
-    border-left: 3px solid #18d1ff55;
-    color: #888;
+    border-left: 3px solid var(--border-light);
+    color: var(--text-muted);
   }
   .markdown :global(ul),
   .markdown :global(ol) { margin: 0 0 1em; padding-left: 1.5em; }
-  .markdown :global(img) { max-width: 100%; border-radius: 8px; }
-  .markdown :global(hr) { border: none; border-top: 1px solid #333; margin: 1.5em 0; }
+  .markdown :global(img) { max-width: 100%; border-radius: var(--radius-sm); }
+  .markdown :global(hr) { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
 </style>

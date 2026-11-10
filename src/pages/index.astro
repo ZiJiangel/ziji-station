@@ -1,65 +1,77 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="子骥的小站 · 大厅">
-  <main class="home-main">
-    <section class="hero">
-      <div class="hero-badge">✨ Digital Sanctuary</div>
-      <h1 class="hero-title blur-text">
-        构建属于你的<br><span class="gradient-text">数字自留地</span>
-      </h1>
-      <p class="hero-desc">抛弃算法的喧嚣。在这里，用流式排版搭建一个纯粹的、有厚度的个人主页。</p>
-      <div class="hero-actions">
-        <a href="/login" class="btn-glow">创建我的主页</a>
-        <a href="/arcade" class="btn-ghost">闲逛游戏厅</a>
-      </div>
-    </section>
+<Layout title="大厅 · 子骥的小站">
+  <div class="home-layout">
+    <!-- 左侧：主内容 -->
+    <main class="main-col">
+      <!-- 欢迎区域，改为社区感 -->
+      <section class="hero-section reveal">
+        <div class="hero-kicker">ZIJI.STATION</div>
+        <h1 class="hero-title">日常的<br/>回声。</h1>
+        <p class="hero-sub">在算法的缝隙里，留存一点真实的文字与碎碎念。欢迎来到子骥的小站，这里只有朋友们的日常切片。</p>
+      </section>
 
-    <section id="composer" class="composer glass-card" style="display:none;">
-      <textarea id="moment-input" placeholder="记录此刻的灵感..."></textarea>
-      <div class="composer-footer">
-        <span>上限 300 字</span>
-        <button id="publish-btn" class="btn-sm-glow">发布</button>
-      </div>
-    </section>
+      <!-- 发帖区域 (已登录可见) -->
+      <section id="composer" class="composer-box reveal" style="display: none; animation-delay: 0.1s;">
+        <textarea id="moment-input" placeholder="和朋友们分享点新鲜事..."></textarea>
+        <div class="composer-footer">
+          <span>不超过 300 字</span>
+          <button id="publish-btn" class="btn btn-primary" style="padding: 6px 20px; font-size: 13px;">发布动态</button>
+        </div>
+      </section>
 
-    <section class="feed-section">
-      <h2 class="section-title">最新动态</h2>
-      <div id="feed-container" class="feed-grid"></div>
-    </section>
-  </main>
+      <!-- 动态流 -->
+      <section class="feed-section reveal" style="animation-delay: 0.2s;">
+        <header class="section-header">
+          <h2>最近动态</h2>
+          <div class="line"></div>
+        </header>
+        <div id="feed-container" class="feed-list"></div>
+      </section>
+    </main>
+
+    <!-- 右侧：粘性侧边栏 -->
+    <aside class="sidebar-col reveal" style="animation-delay: 0.3s;">
+      <div class="side-card sticky">
+        <h3>Manifesto</h3>
+        <p class="about-text">
+          这是一个不对外公开的私有空间。<br/>
+          我们拒绝信息流算法，拒绝喧哗。<br/>
+          只在这里记录文字、生活，与老友重逢。
+        </p>
+        
+        <div class="side-divider"></div>
+        
+        <h3>Quick Links</h3>
+        <div class="status-list">
+          <a href="/dashboard" class="status-item link-item">
+            <span>写长文章</span>
+            <strong>→</strong>
+          </a>
+          <a href="/arcade" class="status-item link-item">
+            <span>去游戏厅</span>
+            <strong>→</strong>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
 
   <script>
     import { getFeed, createMoment } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
 
+    // 检查是否登录，如果登录了就把“发帖框”展示出来
     if (localStorage.getItem('ziji_uid')) {
-      document.getElementById('composer')!.style.display = 'block';
+      document.getElementById('composer')!.style.display = 'flex';
     }
-
-    // 模拟 BlurText 动效 (原生 JS 实现，无需引入 react 库)
-    document.addEventListener('DOMContentLoaded', () => {
-      const title = document.querySelector('.blur-text') as HTMLElement;
-      if (title) {
-        title.style.opacity = '0';
-        title.style.filter = 'blur(10px)';
-        title.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          title.style.transition = 'all 1s cubic-bezier(0.22, 1, 0.36, 1)';
-          title.style.opacity = '1';
-          title.style.filter = 'blur(0)';
-          title.style.transform = 'translateY(0)';
-        }, 100);
-      }
-    });
 
     function fmtTime(s: string) {
       const d = new Date(s); const diff = Date.now() - d.getTime();
       const min = Math.floor(diff / 60000);
       if (min < 60) return min + ' 分钟前';
-      const hr = Math.floor(min / 60);
-      if (hr < 24) return hr + ' 小时前';
-      return Math.floor(hr / 24) + ' 天前';
+      return Math.floor(min / 60) + ' 小时前';
     }
 
     async function loadFeed() {
@@ -72,147 +84,106 @@ import Layout from '../layouts/Layout.astro';
         ].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
 
         if (all.length === 0) {
-          el.innerHTML = '<div class="empty-state">还没有动态，成为第一个发声的人吧。</div>';
+          el.innerHTML = '<div class="empty-state">还没有人说话，来发第一条动态打破安静吧。</div>';
           return;
         }
 
         el.innerHTML = all.map((item: any) => {
-          const profile = item.profiles || {};
-          const name = sanitizeText(profile.display_name || profile.username || '匿名');
-          const avatar = profile.avatar_url;
+          const p = item.profiles || {};
+          const name = sanitizeText(p.display_name || p.username || '匿名');
           return `
-            <div class="feed-card glass-card">
-              <div class="feed-header">
-                <a href="/${profile.username || '#'}" class="author">
-                  ${avatar ? `<img src="${avatar}" class="avatar" />` : `<div class="avatar placeholder">${name.charAt(0)}</div>`}
-                  <span class="name">${name}</span>
-                </a>
+            <article class="feed-item">
+              <div class="feed-meta">
+                <a href="/${p.username || '#'}" class="author">${name}</a>
                 <span class="time">${fmtTime(item.published_at || item.created_at)}</span>
               </div>
               <div class="feed-body">
                 ${item._type === 'article' 
-                  ? `<a href="/post/${item.id}" class="article-link"><div class="art-title">${sanitizeText(item.title)}</div><div class="art-summary">${sanitizeText(item.summary || '')}</div></a>`
-                  : `<div class="moment-content">${sanitizeText(item.content)}</div>`
+                  ? `<a href="/post/${item.id}" class="article-link"><h3>${sanitizeText(item.title)}</h3><p>${sanitizeText(item.summary || '')}</p></a>`
+                  : `<p class="moment-text">${sanitizeText(item.content)}</p>`
                 }
               </div>
-            </div>
+            </article>
           `;
         }).join('');
       } catch (e: any) {
-        el.innerHTML = `<div class="empty-state" style="color:#ef4444">加载失败: ${e.message}</div>`;
+        el.innerHTML = `<div class="empty-state" style="color: var(--danger);">加载失败: ${e.message}</div>`;
       }
     }
 
     document.getElementById('publish-btn')?.addEventListener('click', async () => {
       const uid = localStorage.getItem('ziji_uid');
       const input = document.getElementById('moment-input') as HTMLTextAreaElement;
-      if (!uid) return alert('请先登录');
-      if (!input.value.trim()) return;
-
-      const btn = document.getElementById('publish-btn') as HTMLButtonElement;
-      btn.disabled = true; btn.innerText = '发布中...';
+      if (!uid || !input.value.trim()) return;
       
+      const btn = document.getElementById('publish-btn') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = '发布中…';
       try {
         await createMoment(uid, input.value.trim());
         input.value = '';
         await loadFeed();
-      } catch(e: any) { alert('发布失败: ' + e.message); }
-      finally { btn.disabled = false; btn.innerText = '发布'; }
+      } finally { 
+        btn.disabled = false; 
+        btn.textContent = '发布动态';
+      }
     });
 
-    document.addEventListener('DOMContentLoaded', loadFeed);
+    loadFeed();
+    document.addEventListener('astro:page-load', loadFeed);
   </script>
 
   <style>
-    .home-main { max-width: 760px; margin: 0 auto; padding: 100px 24px; }
+    .home-layout {
+      max-width: 1100px; margin: 0 auto; padding: 120px 32px 80px;
+      display: grid; grid-template-columns: 1fr 340px; gap: 64px; align-items: start;
+    }
     
-    .hero { text-align: center; margin-bottom: 80px; }
-    .hero-badge {
-      display: inline-block; padding: 8px 20px; margin-bottom: 32px;
-      background: rgba(56,189,248,0.1); color: #38bdf8;
-      border: 1px solid rgba(56,189,248,0.2); border-radius: 99px;
-      font-size: 13px; font-weight: 600; letter-spacing: 0.05em;
-    }
-    .hero-title {
-      font-size: clamp(40px, 7vw, 64px); line-height: 1.1;
-      font-weight: 800; letter-spacing: -0.04em; margin-bottom: 24px;
-      color: #fff;
-    }
-    .gradient-text {
-      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .hero-desc {
-      font-size: 17px; color: var(--text-secondary);
-      max-width: 500px; margin: 0 auto 48px; line-height: 1.7;
-    }
-    .hero-actions { display: flex; justify-content: center; gap: 16px; }
-    
-    .btn-glow {
-      padding: 14px 32px; border-radius: 99px;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      color: #000; font-weight: 700; font-size: 15px; text-decoration: none;
-      transition: all 0.3s; box-shadow: 0 4px 16px rgba(56,189,248,0.3);
-    }
-    .btn-glow:hover {
-      transform: translateY(-2px); box-shadow: 0 8px 24px rgba(56,189,248,0.5);
-    }
-    .btn-ghost {
-      padding: 14px 32px; border-radius: 99px;
-      background: transparent; color: #fff; font-weight: 600; font-size: 15px;
-      text-decoration: none; border: 1px solid rgba(255,255,255,0.1);
-      transition: all 0.3s;
-    }
-    .btn-ghost:hover { background: rgba(255,255,255,0.05); }
+    .hero-section { margin-bottom: 64px; }
+    .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; }
+    .hero-title { font-family: var(--font-serif); font-size: clamp(44px, 5vw, 64px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.02em; }
+    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }
 
-    .glass-card {
-      background: rgba(18, 18, 20, 0.4);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-    }
-    .composer { padding: 24px; margin-bottom: 48px; }
-    .composer textarea {
-      width: 100%; height: 100px; background: transparent; border: none;
-      color: #fff; font-size: 16px; resize: none; outline: none; font-family: inherit;
-    }
-    .composer-footer {
-      display: flex; justify-content: space-between; align-items: center;
-      border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px; margin-top: 8px;
-    }
-    .composer-footer span { font-size: 12px; color: var(--text-muted); }
-    .btn-sm-glow {
-      padding: 8px 20px; border-radius: 99px; border: none;
-      background: #38bdf8; color: #000; font-weight: 600; font-size: 13px; cursor: pointer;
-      transition: opacity 0.2s;
-    }
+    .composer-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 48px; display: flex; flex-direction: column; }
+    #moment-input { width: 100%; height: 100px; background: transparent; border: none; color: var(--text-primary); font-size: 16px; resize: none; outline: none; line-height: 1.6; }
+    .composer-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; }
+    .composer-footer span { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 
-    .section-title {
-      font-size: 14px; color: #fff; font-weight: 600;
-      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .feed-grid { display: flex; flex-direction: column; gap: 20px; }
+    .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .section-header h2 { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); }
+    .line { flex: 1; height: 1px; background: var(--border); }
+
+    .feed-list { display: flex; flex-direction: column; }
+    .feed-item { padding: 32px 0; border-bottom: 1px solid var(--border); }
+    .feed-item:last-child { border-bottom: none; }
     
-    .feed-card { padding: 24px; transition: transform 0.3s, border-color 0.3s; }
-    .feed-card:hover { transform: translateY(-2px); border-color: rgba(56,189,248,0.3); }
-    .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .author { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-    .avatar {
-      width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .avatar.placeholder {
-      display: grid; place-items: center; background: rgba(255,255,255,0.1);
-      color: #fff; font-size: 14px; font-weight: 600;
-    }
-    .name { font-size: 15px; font-weight: 600; color: #fff; }
-    .time { font-size: 12px; color: var(--text-muted); }
+    .feed-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .author { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+    .time { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
     
-    .moment-content { font-size: 15px; line-height: 1.7; color: #d4d4d8; white-space: pre-wrap; }
-    .article-link { display: block; }
-    .art-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-    .art-summary { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .feed-body .moment-text { font-size: 15px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; }
+    .feed-body .article-link { display: block; }
+    .feed-body h3 { font-family: var(--font-serif); font-size: 22px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; }
+    .feed-body p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+    .empty-state { font-size: 14px; color: var(--text-muted); padding: 40px 0; text-align: center; }
+
+    /* 右侧侧栏 */
+    .sidebar-col { position: sticky; top: 120px; }
+    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; }
+    .side-card h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 20px; }
     
-    .empty-state { text-align: center; color: var(--text-muted); font-size: 14px; padding: 40px 0; }
+    .status-list { display: flex; flex-direction: column; gap: 12px; }
+    .status-item { display: flex; justify-content: space-between; font-size: 14px; text-decoration: none; color: var(--text-primary); }
+    .link-item { padding: 8px 0; border-bottom: 1px solid var(--border); transition: opacity 0.2s; }
+    .link-item:hover { opacity: 0.7; }
+    .link-item span { color: var(--text-secondary); }
+    
+    .side-divider { height: 1px; background: var(--border); margin: 28px 0; }
+    .about-text { font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
+
+    @media (max-width: 900px) {
+      .home-layout { grid-template-columns: 1fr; padding-top: 100px; gap: 48px; }
+      .sidebar-col { position: static; order: -1; }
+    }
   </style>
 </Layout>

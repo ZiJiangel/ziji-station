@@ -27,17 +27,16 @@ const valid = block.props.links
   }
   .link {
     padding: 8px 18px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-radius: 999px;
     font-size: 13px;
-    color: #d2d2d2;
+    color: var(--text-secondary);
     text-decoration: none;
-    transition: all 0.15s;
+    transition: border-color 0.15s, color 0.15s;
   }
   .link:hover {
-    border-color: #18d1ff;
-    color: #18d1ff;
-    transform: translateY(-1px);
+    border-color: var(--border-light);
+    color: var(--text-primary);
   }
 </style>

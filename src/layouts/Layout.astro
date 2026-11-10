@@ -2,12 +2,8 @@
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
 
-interface Props {
-  title: string;
-  description?: string;
-  hideNav?: boolean;
-}
-const { title, description = '子骥的小站 · 构建你的数字自留地', hideNav = false } = Astro.props;
+interface Props { title: string; description?: string; hideNav?: boolean; }
+const { title, description = '朋友们的数字客厅', hideNav = false } = Astro.props;
 ---
 <html lang="zh-CN">
   <head>
@@ -16,120 +12,128 @@ const { title, description = '子骥的小站 · 构建你的数字自留地', h
     <meta name="description" content={description} />
     <title>{title}</title>
     <ViewTransitions />
-  </head>
-  <body>
     <script is:inline>
-      // 如果在登录页或者已有 token，不显示登录按钮
-      if (localStorage.getItem('ziji_uid')) {
-        document.addEventListener('DOMContentLoaded', () => {
-          const btn = document.getElementById('nav-login');
-          if (btn) btn.style.display = 'none';
-        });
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
       }
     </script>
+  </head>
+  <body>
     {!hideNav && (
-      <header class="nav-header">
-        <a href="/" class="nav-brand">
-          <div class="brand-icon">z</div>
-          <span>子骥的小站</span>
-        </a>
-        
+      <header class="top-nav">
+        <a href="/" class="logo">ZIJI.STATION</a>
         <nav class="nav-links">
           <a href="/">大厅</a>
-          <a href="/dashboard">内容库</a>
+          <a href="/dashboard">写作</a>
           <a href="/arcade">游戏厅</a>
         </nav>
-        
         <div class="nav-actions">
-          <a href="/login" id="nav-login" class="btn btn-primary">登录 / 入驻</a>
-          <a href="/editor" id="nav-editor" class="btn btn-ghost" style="display:none">编辑器</a>
-          <div id="nav-avatar" class="nav-avatar" style="display:none"></div>
+          <button id="theme-toggle" class="theme-btn" title="切换主题">
+            <svg id="icon-sun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg id="icon-moon" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <a href="/login" id="nav-login" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px;">登录</a>
+          <a href="/editor" id="nav-editor" class="btn btn-ghost" style="display:none; padding: 6px 16px; font-size: 13px;">工作室</a>
+          <div id="nav-avatar" class="avatar" style="display:none"></div>
         </div>
       </header>
     )}
-
-    <div class={hideNav ? "" : "page-wrapper"}>
-      <slot />
-    </div>
-
+    <slot />
     <script>
       import { supabase } from '../lib/supabase';
-      
-      // 全局监听 Auth 状态变化，确保切换页面不丢失
-      supabase.auth.onAuthStateChange((event, session) => {
-        const loginBtn = document.getElementById('nav-login');
-        const editorBtn = document.getElementById('nav-editor');
-        const avatar = document.getElementById('nav-avatar');
-        
+
+      function updateIcons() {
+        const iconSun = document.getElementById('icon-sun');
+        const iconMoon = document.getElementById('icon-moon');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (iconSun) iconSun.style.display = isDark ? 'block' : 'none';
+        if (iconMoon) iconMoon.style.display = isDark ? 'none' : 'block';
+      }
+
+      function applySession(session) {
+        const lb = document.getElementById('nav-login');
+        const eb = document.getElementById('nav-editor');
+        const av = document.getElementById('nav-avatar');
+        if (!lb || !eb || !av) return;
         if (session) {
-          const user = localStorage.getItem('ziji_user') || session.user.email?.split('@')[0] || 'U';
-          if (loginBtn) loginBtn.style.display = 'none';
-          if (editorBtn) editorBtn.style.display = 'inline-flex';
-          if (avatar) {
-            avatar.style.display = 'grid';
-            avatar.innerText = user.charAt(0).toUpperCase();
-            avatar.onclick = () => window.location.href = '/' + user;
+          const u = localStorage.getItem('ziji_user') || 'U';
+          lb.style.display = 'none';
+          eb.style.display = 'inline-flex';
+          av.style.display = 'grid';
+          av.textContent = u.charAt(0).toUpperCase();
+          av.title = u;
+          if (av.dataset.bound !== '1') {
+            av.dataset.bound = '1';
+            av.addEventListener('click', () => { window.location.href = '/' + u; });
           }
         } else {
-          if (loginBtn) loginBtn.style.display = 'inline-flex';
-          if (editorBtn) editorBtn.style.display = 'none';
-          if (avatar) avatar.style.display = 'none';
+          lb.style.display = 'inline-flex';
+          eb.style.display = 'none';
+          av.style.display = 'none';
         }
-      });
+      }
+
+      function bindNav() {
+        // ViewTransitions 切页后 html 属性会被重置，需重新应用主题
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved || (prefersDark ? 'dark' : 'light');
+        if (document.documentElement.getAttribute('data-theme') !== theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+        updateIcons();
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle && !themeToggle.dataset.bound) {
+          themeToggle.dataset.bound = '1';
+          themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateIcons();
+          });
+        }
+      }
+
+      // 每次页面就绪都重绑主题 + 重新读一次 session（ViewTransitions 会替换导航栏 DOM）
+      function refresh() {
+        bindNav();
+        supabase.auth.getSession().then(({ data }) => applySession(data.session));
+      }
+      refresh();
+      supabase.auth.onAuthStateChange((_e, session) => applySession(session));
+      document.addEventListener('astro:after-swap', () => { bindNav(); });
+      document.addEventListener('astro:page-load', refresh);
     </script>
   </body>
 </html>
 
 <style>
-  .nav-header {
+  .top-nav {
     position: fixed; top: 0; left: 0; right: 0; height: 64px;
-    background: rgba(9, 9, 11, 0.7);
-    backdrop-filter: blur(16px) saturate(1.5);
-    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    background: var(--nav-bg); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; z-index: 100;
+    padding: 0 24px; z-index: 100; max-width: 1400px; margin: 0 auto;
+    transition: background-color 0.3s;
   }
-  .nav-brand {
-    display: flex; align-items: center; gap: 12px;
-    font-weight: 700; font-size: 16px; color: var(--text-primary);
-    letter-spacing: -0.02em;
-  }
-  .brand-icon {
-    width: 28px; height: 28px; border-radius: 8px;
-    background: linear-gradient(135deg, var(--accent), #818cf8);
-    color: #000; display: grid; place-items: center;
-    font-family: var(--font-hand); font-size: 18px;
-    box-shadow: 0 0 12px var(--accent-glow);
-  }
-  .nav-links {
-    display: flex; gap: 8px;
-  }
-  .nav-links a {
-    padding: 8px 16px; border-radius: 99px;
-    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+  .logo { font-family: var(--font-mono); font-weight: 600; font-size: 14px; letter-spacing: 0.05em; }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-actions { display: flex; gap: 12px; align-items: center; }
+  
+  .theme-btn {
+    display: grid; place-items: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    color: var(--text-secondary); border: 1px solid var(--border);
     transition: all 0.2s;
   }
-  .nav-links a:hover {
-    color: var(--text-primary); background: var(--bg-surface);
-  }
-  .nav-actions {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .nav-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--bg-elevated); color: var(--accent);
-    font-weight: 600; font-size: 14px; cursor: pointer;
-    border: 1px solid var(--border); transition: all 0.2s;
-  }
-  .nav-avatar:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .theme-btn:hover { color: var(--text-primary); border-color: var(--border-light); background: var(--bg-surface); }
   
-  .page-wrapper {
-    padding-top: 64px;
-    min-height: 100vh;
-  }
-  
-  @media (max-width: 640px) {
-    .nav-links { display: none; }
-  }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); }
 </style>

@@ -25,10 +25,10 @@ const images = block.props.images
 
 <style>
   .gallery {
-    padding: 24px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
+    padding: 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
   }
   .grid {
     display: grid;
@@ -39,14 +39,15 @@ const images = block.props.images
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     display: block;
-    background: #111;
+    background: var(--bg-elevated);
   }
   figcaption {
-    margin-top: 4px;
+    margin-top: 6px;
+    font-family: var(--font-mono);
     font-size: 11px;
-    color: #666;
+    color: var(--text-muted);
     text-align: center;
   }
   @media (max-width: 640px) {

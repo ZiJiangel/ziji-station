@@ -2,149 +2,161 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="登录 · 子骥的小站" hideNav={true}>
-  <div class="auth-container">
-    <div class="auth-bg-glow"></div>
-    <div class="auth-card">
-      <a href="/" class="back-link">← 返回大厅</a>
-      
-      <div class="auth-header">
-        <h1 class="glow-text">进入子骥的小站</h1>
-        <p>邀请制 · 沉浸式个人空间</p>
+  <div class="split-login">
+    <div class="left-panel">
+      <a href="/" class="back-link">← 返回主站</a>
+      <div class="hero-text">
+        <h1>Join the<br/>Sanctuary.</h1>
+        <p>邀请制沉浸式个人空间。<br/>在这里，构建属于你的数字自留地。</p>
       </div>
-      
-      <form id="login-form" class="auth-form">
-        <div class="input-wrap">
-          <input type="text" id="invite" placeholder="邀请码" required value="ZIJI2026" />
-          <span class="focus-border"></span>
+      <div class="footer-note">ZIJI.STATION © 2026</div>
+    </div>
+
+    <div class="right-panel">
+      <div class="form-container">
+        <h2 id="form-title">进入小站</h2>
+        <p class="form-desc" id="form-desc">已有账号？直接登录即可。没有账号请切换到注册。</p>
+
+        <div class="tabs">
+          <button type="button" class="tab active" data-mode="login">登录</button>
+          <button type="button" class="tab" data-mode="register">注册</button>
         </div>
-        <div class="input-wrap">
-          <input type="text" id="username" placeholder="用户名（小写字母/数字）" pattern="[a-z0-9_]{3,20}" required autocomplete="username" />
-          <span class="focus-border"></span>
-        </div>
-        <div class="input-wrap">
-          <input type="password" id="password" placeholder="密码（自动注册/登录）" required minlength="6" autocomplete="current-password" />
-          <span class="focus-border"></span>
-        </div>
-        
-        <button type="submit" id="submit-btn" class="submit-btn">
-          <span>进入终端</span>
-        </button>
-      </form>
-      
-      <div id="status" class="status-msg"></div>
+
+        <form id="auth-form">
+          <div class="input-group">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="小写字母 / 数字" pattern="[a-z0-9_]{3,20}" required autocomplete="username" />
+          </div>
+          <div class="input-group">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="输入密码（至少 6 位）" required minlength="6" autocomplete="current-password" />
+          </div>
+          <div class="input-group" id="invite-group" style="display:none">
+            <label>邀请码</label>
+            <input type="text" id="invite" placeholder="注册需要邀请码" autocomplete="off" />
+          </div>
+          <button type="submit" id="submit-btn" class="btn btn-primary">进入主站</button>
+        </form>
+        <div id="status" class="status-msg"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    import { login } from '../lib/api';
-    import { supabase } from '../lib/supabase';
+    import { login, register } from '../lib/api';
 
-    const form = document.getElementById('login-form') as HTMLFormElement;
+    let mode: 'login' | 'register' = 'login';
+
+    const form = document.getElementById('auth-form') as HTMLFormElement;
     const statusEl = document.getElementById('status') as HTMLDivElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const inviteGroup = document.getElementById('invite-group') as HTMLDivElement;
+    const inviteInput = document.getElementById('invite') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
+    const titleEl = document.getElementById('form-title') as HTMLHeadingElement;
+    const descEl = document.getElementById('form-desc') as HTMLParagraphElement;
+    const tabs = Array.from(document.querySelectorAll('.tab')) as HTMLButtonElement[];
+
+    function applyMode(next: 'login' | 'register') {
+      mode = next;
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === next));
+      if (next === 'login') {
+        titleEl.textContent = '进入小站';
+        descEl.textContent = '已有账号？直接登录即可。没有账号请切换到注册。';
+        inviteGroup.style.display = 'none';
+        inviteInput.required = false;
+        submitBtn.textContent = '进入主站';
+        passwordInput.autocomplete = 'current-password';
+      } else {
+        titleEl.textContent = '加入小站';
+        descEl.textContent = '注册需要邀请码。邀请码由站长发放。';
+        inviteGroup.style.display = 'block';
+        inviteInput.required = true;
+        submitBtn.textContent = '创建账号';
+        passwordInput.autocomplete = 'new-password';
+      }
+      statusEl.textContent = '';
+    }
+
+    tabs.forEach(t => t.addEventListener('click', () => {
+      applyMode((t.dataset.mode as 'login' | 'register'));
+    }));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const invite = (document.getElementById('invite') as HTMLInputElement).value.trim();
       const username = (document.getElementById('username') as HTMLInputElement).value.trim().toLowerCase();
-      const password = (document.getElementById('password') as HTMLInputElement).value;
-
-      if (invite !== 'ZIJI2026') {
-        statusEl.textContent = '邀请码错误';
-        statusEl.style.color = '#ef4444';
-        return;
-      }
+      const password = passwordInput.value;
+      const invite = inviteInput.value.trim();
 
       submitBtn.disabled = true;
-      submitBtn.classList.add('loading');
+      submitBtn.textContent = mode === 'login' ? '验证中…' : '创建中…';
       statusEl.textContent = '';
 
       try {
-        await login(username, password);
-        statusEl.textContent = '验证成功，即将跳转…';
-        statusEl.style.color = '#38bdf8';
-        
-        const { data: page } = await supabase.from('pages').select('is_public').eq('user_id', localStorage.getItem('ziji_uid')).maybeSingle();
-        
-        setTimeout(() => {
-          if (page && page.is_public) window.location.href = '/' + username;
-          else window.location.href = '/';
-        }, 800);
+        if (mode === 'login') {
+          await login(username, password);
+        } else {
+          await register(username, password, invite);
+        }
+        statusEl.textContent = mode === 'login' ? '登录成功，正在进入主站…' : '注册成功，正在进入主站…';
+        statusEl.style.color = 'var(--text-primary)';
+        setTimeout(() => { window.location.href = '/'; }, 600);
       } catch (err: any) {
-        statusEl.textContent = err.message;
-        statusEl.style.color = '#ef4444';
+        statusEl.textContent = err.message || '操作失败';
+        statusEl.style.color = 'var(--danger)';
         submitBtn.disabled = false;
-        submitBtn.classList.remove('loading');
+        submitBtn.textContent = mode === 'login' ? '进入主站' : '创建账号';
       }
     });
   </script>
 
   <style>
-    .auth-container {
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      position: relative; overflow: hidden;
-    }
-    .auth-bg-glow {
-      position: absolute; width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
-      top: 50%; left: 50%; transform: translate(-50%, -50%);
-      filter: blur(60px); z-index: 0; pointer-events: none;
-    }
-    .auth-card {
-      position: relative; z-index: 1;
-      width: 100%; max-width: 420px; padding: 48px 40px;
-      background: rgba(18, 18, 20, 0.6);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-    }
-    .back-link {
-      position: absolute; top: 24px; left: 24px;
-      color: var(--text-secondary); font-size: 13px; text-decoration: none;
-      transition: color 0.2s;
-    }
+    .split-login { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; background: var(--bg); }
+    .left-panel { padding: 64px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid var(--border); }
+    .back-link { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); transition: color 0.2s; text-decoration: none; }
     .back-link:hover { color: var(--text-primary); }
+    .hero-text h1 { font-family: var(--font-serif); font-size: clamp(48px, 6vw, 80px); font-weight: 400; line-height: 1.1; margin-bottom: 24px; color: var(--text-primary); }
+    .hero-text p { font-size: 16px; color: var(--text-secondary); line-height: 1.8; }
+    .footer-note { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
 
-    .auth-header { text-align: center; margin-bottom: 40px; }
-    .auth-header h1 {
-      font-size: 28px; font-weight: 700; margin-bottom: 8px;
-      background: linear-gradient(135deg, #fff, #a1a1aa);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .auth-header p { color: var(--text-secondary); font-size: 14px; }
+    .right-panel { display: flex; align-items: center; justify-content: center; padding: 64px; }
+    .form-container { width: 100%; max-width: 360px; }
+    .form-container h2 { font-family: var(--font-serif); font-size: 32px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; }
+    .form-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
 
-    .auth-form { display: flex; flex-direction: column; gap: 24px; }
-    .input-wrap { position: relative; }
-    .input-wrap input {
-      width: 100%; padding: 16px 20px;
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; color: #fff; font-size: 15px;
-      outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .input-wrap input:focus {
-      background: rgba(0,0,0,0.6);
-      border-color: rgba(56,189,248,0.5);
-      box-shadow: 0 0 0 4px rgba(56,189,248,0.1);
-    }
-    .input-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .tab { flex: 1; padding: 10px 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; margin-bottom: -1px; }
+    .tab:hover { color: var(--text-secondary); }
+    .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
 
-    .submit-btn {
-      position: relative; overflow: hidden;
-      padding: 16px; margin-top: 8px;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      border: none; border-radius: 12px;
-      color: #000; font-weight: 700; font-size: 16px;
-      cursor: pointer; transition: all 0.3s;
-    }
-    .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(56,189,248,0.4);
-    }
-    .submit-btn:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
+    .input-group { margin-bottom: 24px; }
+    .input-group label { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
 
-    .status-msg { text-align: center; margin-top: 24px; font-size: 14px; min-height: 20px; }
+    .input-group input {
+      width: 100%; background-color: transparent !important;
+      border: none; border-bottom: 1px solid var(--border-light);
+      padding: 12px 0; color: var(--text-primary) !important;
+      font-size: 16px; outline: none; transition: border-color 0.2s;
+      box-shadow: none !important;
+    }
+    .input-group input:focus { border-bottom-color: var(--text-primary); }
+    .input-group input::placeholder { color: var(--text-muted); }
+    .input-group input:-webkit-autofill,
+    .input-group input:-webkit-autofill:hover,
+    .input-group input:-webkit-autofill:focus,
+    .input-group input:-webkit-autofill:active {
+      -webkit-text-fill-color: var(--text-primary) !important;
+      -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    #submit-btn { width: 100%; margin-top: 8px; padding: 14px; font-size: 15px; }
+    .status-msg { text-align: center; margin-top: 24px; font-size: 14px; min-height: 20px; color: var(--text-secondary); }
+
+    @media (max-width: 860px) {
+      .split-login { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 32px; }
+    }
   </style>
 </Layout>

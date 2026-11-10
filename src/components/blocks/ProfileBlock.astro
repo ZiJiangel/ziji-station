@@ -24,37 +24,39 @@ const avatarUrl = safeUrl(avatar || '');
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 28px 24px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
+    padding: 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
   }
   .avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #18d1ff33;
+    border: 2px solid var(--border-light);
     flex-shrink: 0;
   }
   .info { min-width: 0; }
   .name {
     margin: 0 0 6px;
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--text-primary);
     word-break: break-word;
   }
   .status {
     margin: 0 0 8px;
-    font-size: 13px;
-    color: #18d1ff;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
   }
   .bio {
     margin: 0;
     font-size: 14px;
     line-height: 1.7;
-    color: #999;
+    color: var(--text-secondary);
     word-break: break-word;
   }
   @media (max-width: 640px) {

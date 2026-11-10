@@ -38,23 +38,24 @@ function fmtDate(s: string) {
 
 <style>
   .articles {
-    padding: 24px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
+    padding: 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
   }
-  .head { margin-bottom: 14px; }
+  .head { margin-bottom: 16px; }
   .head h2 {
     margin: 0;
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 12px;
     font-weight: 500;
-    color: #18d1ff;
+    color: var(--text-muted);
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .empty {
     margin: 0;
-    color: #555;
+    color: var(--text-muted);
     font-size: 14px;
   }
   .items {
@@ -68,21 +69,21 @@ function fmtDate(s: string) {
   .item {
     display: block;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     transition: background 0.15s;
   }
-  .item:hover { background: #242424; }
+  .item:hover { background: var(--bg-elevated); }
   .title {
     font-size: 15px;
-    color: #fff;
+    color: var(--text-primary);
     font-weight: 500;
     margin-bottom: 4px;
     line-height: 1.5;
   }
   .summary {
     font-size: 13px;
-    color: #888;
+    color: var(--text-secondary);
     line-height: 1.6;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -91,8 +92,9 @@ function fmtDate(s: string) {
   }
   .meta {
     margin-top: 6px;
+    font-family: var(--font-mono);
     font-size: 11px;
-    color: #555;
+    color: var(--text-muted);
   }
   .items.card {
     display: grid;
@@ -100,7 +102,7 @@ function fmtDate(s: string) {
     gap: 10px;
   }
   .items.card .item {
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--border);
     height: 100%;
   }
 </style>

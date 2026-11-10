@@ -44,23 +44,24 @@ function fmtTime(s: string) {
 
 <style>
   .moments {
-    padding: 24px;
-    background: #1b1b1b;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
+    padding: 32px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
   }
-  .head { margin-bottom: 14px; }
+  .head { margin-bottom: 16px; }
   .head h2 {
     margin: 0;
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 12px;
     font-weight: 500;
-    color: #18d1ff;
+    color: var(--text-muted);
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .empty {
     margin: 0;
-    color: #555;
+    color: var(--text-muted);
     font-size: 14px;
   }
   .items {
@@ -73,19 +74,20 @@ function fmtTime(s: string) {
   }
   .item {
     padding-bottom: 16px;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid var(--border);
   }
   .item:last-child { padding-bottom: 0; border-bottom: none; }
   .content {
     font-size: 14px;
     line-height: 1.7;
-    color: #d2d2d2;
+    color: var(--text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
   }
   .time {
     margin-top: 6px;
+    font-family: var(--font-mono);
     font-size: 11px;
-    color: #555;
+    color: var(--text-muted);
   }
 </style>
