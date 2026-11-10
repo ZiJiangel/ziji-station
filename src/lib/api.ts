@@ -141,3 +141,26 @@ export async function getMoments(uid: string, limit: number) {
     .limit(limit);
   return data ?? [];
 }
+
+
+/** 获取某篇文章的留言 */
+export async function getComments(targetId: string) {
+  const { data } = await supabase
+    .from('comments')
+    .select('id, content, created_at, profiles(username, display_name, avatar_url)')
+    .eq('target_type', 'article')
+    .eq('target_id', targetId)
+    .order('created_at', { ascending: true });
+  return data || [];
+}
+
+/** 发表留言 */
+export async function createComment(uid: string, targetId: string, content: string) {
+  const { error } = await supabase.from('comments').insert({
+    user_id: uid,
+    target_type: 'article',
+    target_id: targetId,
+    content
+  });
+  if (error) throw error;
+}
