@@ -1,44 +1,125 @@
 ---
 import type { Block } from '../../lib/blocks';
-import ProfileBlock from './ProfileBlock.astro';
-import MarkdownBlock from './MarkdownBlock.astro';
-import LinksBlock from './LinksBlock.astro';
-import ArticlesBlock from './ArticlesBlock.astro';
-import MomentsBlock from './MomentsBlock.astro';
-import GalleryBlock from './GalleryBlock.astro';
+import { getArticles, getMoments } from '../../lib/api';
+import { sanitizeText, renderMarkdown, safeUrl } from '../../lib/sanitize';
 
-interface Props {
-  blocks: Block[];
-  userId: string;
+interface Props { block: Block; userId: string; }
+const { block, userId } = Astro.props;
+
+function fmtDate(s: string) {
+  return new Date(s).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
-const { blocks, userId } = Astro.props;
-const visible = blocks.filter(b => b.visible);
 ---
 
-<div class="blocks">
-  {visible.map((block) => {
-    switch (block.type) {
-      case 'profile': return <ProfileBlock block={block} />;
-      case 'markdown': return <MarkdownBlock block={block} />;
-      case 'links': return <LinksBlock block={block} />;
-      case 'articles': return <ArticlesBlock block={block} userId={userId} />;
-      case 'moments': return <MomentsBlock block={block} userId={userId} />;
-      case 'gallery': return <GalleryBlock block={block} />;
-    }
-  })}
-</div>
+{block.type === 'profile' && (
+  <section class="ak-block profile-block reveal">
+    {block.props.avatar && <img class="avatar" src={safeUrl(block.props.avatar) || ''} alt="avatar" />}
+    <div class="info">
+      {block.props.name && <h1 class="name">{sanitizeText(block.props.name)}</h1>}
+      {block.props.status && <div class="status"><span class="dot"></span>{sanitizeText(block.props.status)}</div>}
+      {block.props.bio && <p class="bio">{sanitizeText(block.props.bio)}</p>}
+    </div>
+  </section>
+)}
+
+{block.type === 'markdown' && (
+  <section class="ak-block markdown-block reveal" set:html={renderMarkdown(block.props.content)} />
+)}
+
+{block.type === 'links' && (
+  <section class="ak-block links-block reveal">
+    {block.props.links.map(l => {
+      const url = safeUrl(l.url);
+      return url ? <a href={url} target="_blank" rel="noopener noreferrer" class="link-btn">{sanitizeText(l.label)}</a> : null;
+    })}
+  </section>
+)}
+
+{block.type === 'articles' && (async () => {
+  const items = await getArticles(userId, block.props.limit);
+  if (items.length === 0) return null;
+  return (
+    <section class="ak-block articles-block reveal">
+      <h2 class="block-title">最新文章</h2>
+      <div class={"article-list " + block.props.layout}>
+        {items.map(a => (
+          <a href={"/post/" + a.id} class="article-card">
+            <div class="a-title">{sanitizeText(a.title)}</div>
+            {a.summary && <div class="a-summary">{sanitizeText(a.summary)}</div>}
+            <div class="a-meta">{fmtDate(a.published_at)}</div>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+})()}
+
+{block.type === 'moments' && (async () => {
+  const items = await getMoments(userId, block.props.limit);
+  if (items.length === 0) return null;
+  return (
+    <section class="ak-block moments-block reveal">
+      <h2 class="block-title">碎碎念</h2>
+      <div class="moment-list">
+        {items.map(m => (
+          <div class="moment-item">
+            <p>{sanitizeText(m.content)}</p>
+            <span class="m-time">{fmtDate(m.created_at)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+})()}
 
 <style>
-  .blocks {
-    width: 100%;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 48px 20px 96px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+  .ak-block {
+    margin-bottom: 32px;
+    background: var(--card, #1b1b1b);
+    border: 1px solid var(--line-soft, #2a2a2a);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
   }
+  
+  /* Profile */
+  .profile-block { display: flex; align-items: center; gap: 24px; }
+  .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line-soft, #333); }
+  .name { font-family: var(--font-round, inherit); font-size: 28px; font-weight: 800; margin: 0 0 8px 0; color: var(--ink, #fff); }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--accent, #18d1ff); margin-bottom: 8px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #18d1ff); }
+  .bio { font-size: 15px; color: var(--muted, #888); margin: 0; line-height: 1.6; }
+
+  /* Markdown */
+  .markdown-block { font-size: 15px; line-height: 1.8; color: var(--ink-2, #d2d2d2); }
+  .markdown-block :global(h2) { font-size: 20px; margin-top: 0; color: var(--ink, #fff); }
+  .markdown-block :global(h3) { font-size: 17px; color: var(--ink, #fff); }
+  .markdown-block :global(p) { margin-bottom: 1em; }
+  .markdown-block :global(a) { color: var(--accent, #18d1ff); text-decoration: underline; }
+
+  /* Links */
+  .links-block { display: flex; flex-wrap: wrap; gap: 12px; }
+  .link-btn { padding: 10px 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--line-soft, #333); border-radius: 999px; font-size: 14px; color: var(--ink, #fff); transition: all 0.2s; }
+  .link-btn:hover { border-color: var(--accent, #18d1ff); color: var(--accent, #18d1ff); transform: translateY(-2px); }
+
+  /* Articles */
+  .block-title { font-family: var(--font-round, inherit); font-size: 18px; color: var(--ink, #fff); margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line-soft, #333); }
+  .article-list { display: flex; flex-direction: column; gap: 16px; }
+  .article-list.card { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .article-card { display: block; padding: 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--line-soft, #333); border-radius: 12px; text-decoration: none; transition: background 0.2s; }
+  .article-card:hover { background: rgba(0,0,0,0.4); }
+  .a-title { font-size: 16px; font-weight: 600; color: var(--ink, #fff); margin-bottom: 6px; }
+  .a-summary { font-size: 13px; color: var(--muted, #888); line-height: 1.6; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .a-meta { font-size: 11px; color: #555; }
+
+  /* Moments */
+  .moment-list { display: flex; flex-direction: column; gap: 20px; }
+  .moment-item { position: relative; padding-left: 20px; border-left: 2px solid var(--line-soft, #333); }
+  .moment-item p { margin: 0 0 6px 0; font-size: 14px; line-height: 1.7; color: var(--ink-2, #d2d2d2); }
+  .m-time { font-size: 11px; color: #555; }
+  
   @media (max-width: 640px) {
-    .blocks { padding: 32px 16px 64px; gap: 16px; }
+    .ak-block { padding: 24px; }
+    .profile-block { flex-direction: column; text-align: center; gap: 16px; }
   }
 </style>

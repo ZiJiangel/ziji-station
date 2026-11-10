@@ -1,185 +1,141 @@
 ---
 export const prerender = false;
 import Layout from '../layouts/Layout.astro';
+import BlockRenderer from '../components/blocks/BlockRenderer.astro';
 import { getPublicPage } from '../lib/api';
-import type { CanvasElement } from '../lib/canvas';
+import type { PageData } from '../lib/blocks';
 
 const { username } = Astro.params;
 if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) return Astro.redirect('/404');
 
 const result = await getPublicPage(username);
-if (!result || !result.page || !result.page.elements) {
+if (!result || !result.page || !result.page.blocks || result.page.blocks.length === 0) {
   return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
 const { profile, page } = result;
-const elements = page.elements as CanvasElement[];
-const bg = page.background || 'var(--paper)';
+const displayName = profile.display_name || profile.username;
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 ---
 
-<Layout title={profile.display_name || username + ' 的主页'} hideNav={true}>
-  <main class="akari-layout">
-    <!-- 左侧画布区 -->
-    <section class="canvas-area" id="canvas-area">
-      <div class="canvas-container" style={`background: ${bg};`}>
-        {elements.map((el) => (
-          <div
-            class="anim-el"
-            data-anim={el.animation || 'none'}
-            data-dur={el.animDuration || 0.5}
-            data-delay={el.animDelay || 0}
-            data-x={el.x} data-y={el.y}
-            style={`position:absolute; left:${el.x}px; top:${el.y}px; width:${el.w}px; height:${el.h}px; z-index:${el.zIndex}; opacity:0; transform:translate(${el.x}px, ${el.y}px);`}
-          >
-            {el.type === 'text' && (
-              <div style={`width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:${el.fontSize}px; color:${el.color}; white-space:pre-wrap; line-height:1.2;`}>{el.content}</div>
-            )}
-            {el.type === 'rect' && (
-              <div style={`width:100%; height:100%; background:${el.bgColor}; border-radius:${el.borderRadius}px;`}></div>
-            )}
-            {el.type === 'image' && el.src && (
-              <img src={el.src} style={`width:100%; height:100%; object-fit:cover; border-radius:${el.borderRadius}px;`} />
-            )}
-            {el.type === 'article_list' && (
-              <div style={`width:100%; height:100%; background:${el.bgColor}; border-radius:${el.borderRadius}px; padding:20px; display:flex; flex-direction:column; gap:10px; overflow:hidden;`}>
-                <h3 style="font-family:var(--font-round); color:var(--ink); margin-bottom:10px;">最新文章</h3>
-                <div style="color:var(--muted); font-size:13px;">（等待加载真实数据）</div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
+<Layout title={displayName + ' 的主页'} hideNav={true}>
+  <!-- 顶部导航 -->
+  <header class="pub-header">
+    <a href="/" class="back-link">← 回到主站</a>
+    <div class="pub-brand">{displayName}</div>
+  </header>
+
+  <div class="pub-layout">
+    <!-- 左侧主内容（渲染区块） -->
+    <main class="pub-main">
+      {page.blocks.filter(b => b.visible).map(block => (
+        <BlockRenderer block={block} userId={profile.id} />
+      ))}
+    </main>
 
     <!-- 右侧粘性侧边栏 -->
-    <aside class="sidebar">
-      <div class="profile-card ak-card">
-        <div class="avatar-wrap">
-          {profile.avatar_url ? <img src={profile.avatar_url} class="avatar" /> : <div class="avatar" style="display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-deep);font-size:24px;font-weight:bold;">{(profile.display_name || profile.username).charAt(0).toUpperCase()}</div>}
-        </div>
-        <h1>{profile.display_name || profile.username}</h1>
-        <p class="bio">{profile.bio || '这个人很懒，什么都没写。'}</p>
-        <div class="actions">
-          <a href="/" class="ak-btn ak-btn--pri">回主站</a>
-          <a href="/editor" class="ak-btn ak-btn--line">编辑主页</a>
-        </div>
-      </div>
-
-      <div class="music-widget ak-card" style="margin-top:16px; padding:20px;">
-        <h3 style="font-family:var(--font-round); font-size:16px; margin-bottom:12px; color:var(--ink);">🎵 正在播放</h3>
-        <div style="background:var(--paper-3); height:48px; border-radius:8px; display:flex; align-items:center; padding:0 12px; font-size:12px; color:var(--muted);">
-          尚未添加音乐
+    <aside class="pub-sidebar">
+      <div class="sticky-card">
+        <h3>关于我</h3>
+        <p>{profile.bio || '这个人很神秘，什么都没写。'}</p>
+        <div class="side-actions">
+          <a href="/" class="btn-outline">主站</a>
+          <a href="/editor" class="btn-solid">编辑主页</a>
         </div>
       </div>
     </aside>
-  </main>
+  </div>
 </Layout>
 
 <style is:global>
-  body { background: var(--paper-2); }
-  .akari-layout {
-    display: flex;
-    max-width: 1400px;
-    margin: 0 auto;
-    min-height: 100vh;
-    padding: 40px 24px;
-    gap: 40px;
-    align-items: flex-start;
+  /* 在这里定义一套有厚度感的暗色主题变量 */
+  :root {
+    --bg: #09090b;
+    --card: #18181b;
+    --ink: #fafafa;
+    --ink-2: #d4d4d8;
+    --muted: #a1a1aa;
+    --line-soft: #27272a;
+    --accent: #38bdf8;
+    --font-round: 'JetBrains Mono', system-ui, sans-serif;
   }
-  .canvas-area {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    overflow: hidden;
-  }
-  .canvas-container {
-    width: 1440px;
-    height: 900px;
-    position: relative;
-    border-radius: var(--radius-xl);
-    box-shadow: 0 12px 48px rgba(0,0,0,0.06);
-    transform-origin: top center;
-    overflow: hidden;
-    border: 1px solid var(--line-soft);
-  }
-  .sidebar {
-    width: 320px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 40px;
-  }
-  .profile-card {
-    padding: 32px 24px;
-    text-align: center;
-  }
-  .avatar-wrap {
-    width: 96px;
-    height: 96px;
-    margin: 0 auto 16px;
-    border-radius: 50%;
-    border: 3px solid var(--card);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    overflow: hidden;
-  }
-  .avatar { width: 100%; height: 100%; object-fit: cover; }
-  .profile-card h1 {
-    font-family: var(--font-round);
-    font-size: 24px;
-    font-weight: 800;
+  body {
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 15% 50%, rgba(56,189,248,0.03) 0%, transparent 50%),
+                      radial-gradient(circle at 85% 30%, rgba(167,139,250,0.03) 0%, transparent 50%);
+    background-attachment: fixed;
     color: var(--ink);
-    margin-bottom: 8px;
+    margin: 0;
+    font-family: 'Inter', system-ui, sans-serif;
   }
-  .profile-card .bio {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 24px;
+</style>
+
+<style>
+  .pub-header {
+    position: fixed; top: 0; left: 0; right: 0; height: 64px;
+    background: rgba(9, 9, 11, 0.8); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; z-index: 50;
   }
-  .profile-card .actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
+  .back-link { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .back-link:hover { color: var(--ink); }
+  .pub-brand { font-family: var(--font-round); font-weight: 700; font-size: 16px; color: var(--ink); }
+  
+  .pub-layout {
+    max-width: 1100px; margin: 0 auto; padding: 104px 24px 80px;
+    display: grid; grid-template-columns: 1fr 300px; gap: 40px; align-items: start;
   }
-  /* 移动端响应式 */
-  @media (max-width: 1100px) {
-    .akari-layout { flex-direction: column; padding: 20px; gap: 20px; }
-    .canvas-area { width: 100%; justify-content: flex-start; }
-    .sidebar { width: 100%; position: static; }
+  
+  .pub-sidebar { position: sticky; top: 104px; }
+  .sticky-card {
+    background: var(--card); border: 1px solid var(--line-soft);
+    border-radius: 16px; padding: 24px;
+  }
+  .sticky-card h3 { font-family: var(--font-round); font-size: 16px; margin: 0 0 12px; color: var(--ink); }
+  .sticky-card p { font-size: 14px; line-height: 1.6; color: var(--muted); margin: 0 0 20px; }
+  .side-actions { display: flex; flex-direction: column; gap: 10px; }
+  .btn-outline, .btn-solid {
+    display: block; text-align: center; padding: 10px; border-radius: 8px; font-size: 14px; text-decoration: none; font-weight: 500; transition: all 0.2s;
+  }
+  .btn-outline { border: 1px solid var(--line-soft); color: var(--ink-2); }
+  .btn-outline:hover { background: rgba(255,255,255,0.05); }
+  .btn-solid { background: var(--accent); color: #000; border: none; }
+  .btn-solid:hover { opacity: 0.9; }
+
+  @media (max-width: 860px) {
+    .pub-layout { grid-template-columns: 1fr; padding-top: 88px; }
+    .pub-sidebar { position: static; }
   }
 </style>
 
 <script>
   import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
   
-  // 计算等比缩放
-  const resizeCanvas = () => {
-    const container = document.querySelector('.canvas-area') as HTMLElement;
-    const canvas = document.querySelector('.canvas-container') as HTMLElement;
-    if (!container || !canvas) return;
-    const scale = Math.min(container.clientWidth / 1440, 1);
-    canvas.style.transform = `scale(${scale})`;
-    container.style.height = `${900 * scale}px`;
-  };
-  
-  window.addEventListener('resize', resizeCanvas);
+  gsap.registerPlugin(ScrollTrigger);
+
   document.addEventListener('DOMContentLoaded', () => {
-    resizeCanvas();
+    const blocks = document.querySelectorAll('.reveal');
     
-    // GSAP 入场动画
-    const els = document.querySelectorAll('.anim-el');
-    els.forEach(el => {
-      const anim = el.getAttribute('data-anim');
-      if (!anim || anim === 'none') { (el as HTMLElement).style.opacity = '1'; return; }
-      const dur = parseFloat(el.getAttribute('data-dur') || '0.5');
-      const delay = parseFloat(el.getAttribute('data-delay') || '0');
-      const x = parseFloat(el.getAttribute('data-x') || '0');
-      const y = parseFloat(el.getAttribute('data-y') || '0');
-      
-      if (anim === 'fade') gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: dur, delay, ease: 'power2.out' });
-      if (anim === 'slideUp') gsap.fromTo(el, { y: y + 40, opacity: 0 }, { y: y, opacity: 1, duration: dur, delay, ease: 'power3.out' });
-      if (anim === 'zoomIn') gsap.fromTo(el, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: dur, delay, ease: 'back.out(1.5)' });
+    // 设置初始状态
+    gsap.set(blocks, { y: 40, opacity: 0 });
+    
+    // 依次滑入动画
+    blocks.forEach((el, i) => {
+      gsap.to(el, {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 90%",
+          toggleActions: "play none none reverse"
+        },
+        delay: i * 0.1
+      });
     });
   });
 </script>
