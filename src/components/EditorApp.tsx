@@ -1,372 +1,423 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import type { Block, BlockType, PageData } from '../lib/blocks';
-import { createDefaultBlock, BLOCK_LABELS } from '../lib/blocks';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import interact from 'interactjs';
+import { gsap } from 'gsap';
+import type { CanvasElement, PageData } from '../lib/canvas';
+import { DEFAULT_TEMPLATE, createElement, TEMPLATES } from '../lib/canvas';
 import { getMyPage, saveDraft, publishPage } from '../lib/api';
-import { supabase } from '../lib/supabase';
-import { renderMarkdown } from '../lib/sanitize';
 
-const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery'];
-
-function uid() {
-  return 'b-' + Math.random().toString(36).slice(2, 10);
-}
+const CANVAS_W = 1440;
+const CANVAS_H = 900;
+const GRID = 10;
 
 export default function EditorApp() {
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [data, setData] = useState<PageData>(DEFAULT_TEMPLATE);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [publishing, setPublishing] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [showLayers, setShowLayers] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<'style' | 'anim'>('style');
+  const [openAccordion, setOpenAccordion] = useState<string | null>('basic');
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<number | null>(null);
-  const blocksRef = useRef<Block[]>([]);
+  const dataRef = useRef<PageData>(DEFAULT_TEMPLATE);
 
+  // 初始化加载数据
   useEffect(() => {
-    const init = async () => {
-      const user = localStorage.getItem('ziji_user');
-      const uid = localStorage.getItem('ziji_uid');
-      if (!user || !uid) { window.location.href = '/login'; return; }
+    const user = localStorage.getItem('ziji_user');
+    const uid = localStorage.getItem('ziji_uid');
+    if (!user || !uid) { window.location.href = '/login'; return; }
+    setUserId(uid); setUsername(user);
 
-      // 校验 Supabase 会话是否仍然存在
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = '/login';
-        return;
+    getMyPage(uid).then(res => {
+      if (res && res.elements && res.elements.length > 0) {
+        setData(res); dataRef.current = res;
+      } else {
+        setData(DEFAULT_TEMPLATE); dataRef.current = DEFAULT_TEMPLATE;
       }
-
-      setUserId(uid);
-      setUsername(user);
-
-      try {
-        const data = await getMyPage(uid);
-        const initial = data?.blocks?.length ? data.blocks : [createDefaultBlock('profile', Math.random().toString(36).slice(2, 10))];
-        setBlocks(initial);
-        blocksRef.current = initial;
-      } catch (e) {
-        console.error('获取草稿失败:', e);
-        setSaveStatus('error');
-      }
-    };
-    init();
+    }).catch(console.error);
   }, []);
 
-  // 自动保存（防抖 1.2s）
-  const scheduleSave = useCallback((next: Block[]) => {
-    blocksRef.current = next;
+  // 计算自适应缩放
+  useEffect(() => {
+    const calcScale = () => {
+      if (!containerRef.current) return;
+      const { clientWidth, clientHeight } = containerRef.current;
+      const s = Math.min(clientWidth / CANVAS_W, clientHeight / CANVAS_H) * 0.95;
+      setScale(s);
+    };
+    calcScale();
+    window.addEventListener('resize', calcScale);
+    return () => window.removeEventListener('resize', calcScale);
+  }, []);
+
+  // 自动保存
+  const scheduleSave = useCallback((newData: PageData) => {
+    dataRef.current = newData;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(async () => {
       if (!userId) return;
       setSaveStatus('saving');
       try {
-        await saveDraft(userId, { blocks: blocksRef.current });
+        await saveDraft(userId, dataRef.current);
         setSaveStatus('saved');
-        window.setTimeout(() => setSaveStatus('idle'), 1500);
-      } catch (e) {
-        console.error('自动保存失败:', e);
+        setTimeout(() => setSaveStatus('idle'), 1500);
+      } catch (err) {
+        console.error(err);
         setSaveStatus('error');
       }
     }, 1200);
   }, [userId]);
 
-  const updateBlocks = (updater: (prev: Block[]) => Block[]) => {
-    setBlocks((prev) => {
+  const updateData = (updater: (d: PageData) => PageData) => {
+    setData(prev => {
       const next = updater(prev);
       scheduleSave(next);
       return next;
     });
   };
 
-  const addBlock = (type: BlockType) => {
-    const b = createDefaultBlock(type, uid());
-    updateBlocks((prev) => [...prev, b]);
-    setSelectedId(b.id);
+  const updateEl = (id: string, patch: Partial<CanvasElement>) => {
+    updateData(d => ({ ...d, elements: d.elements.map(el => el.id === id ? { ...el, ...patch } : el) }));
   };
 
-  const removeBlock = (id: string) => {
-    updateBlocks((prev) => prev.filter((b) => b.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  };
+  // interact.js 拖拽与缩放绑定
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    interact('.resize-drag').unset();
+    interact('.resize-drag')
+      .draggable({
+        modifiers: [
+          interact.modifiers.snap({
+            targets: [interact.snappers.grid({ x: GRID, y: GRID })],
+            range: Infinity,
+            relativePoints: [{ x: 0, y: 0 }]
+          })
+        ],
+        listeners: {
+          move(event) {
+            const target = event.target as HTMLElement;
+            const id = target.getAttribute('data-id')!;
+            const x = (parseFloat(target.getAttribute('data-x') || '0')) + event.dx;
+            const y = (parseFloat(target.getAttribute('data-y') || '0')) + event.dy;
+            target.style.transform = `translate(${x}px, ${y}px)`;
+            target.setAttribute('data-x', x.toString());
+            target.setAttribute('data-y', y.toString());
+          },
+          end(event) {
+            const target = event.target as HTMLElement;
+            const id = target.getAttribute('data-id')!;
+            const x = parseFloat(target.getAttribute('data-x') || '0');
+            const y = parseFloat(target.getAttribute('data-y') || '0');
+            updateEl(id, { x, y });
+          }
+        }
+      })
+      .resizable({
+        edges: { left: true, right: true, bottom: true, top: true },
+        listeners: {
+          move(event) {
+            const target = event.target as HTMLElement;
+            const id = target.getAttribute('data-id')!;
+            let x = parseFloat(target.getAttribute('data-x') || '0');
+            let y = parseFloat(target.getAttribute('data-y') || '0');
+            
+            x += event.deltaRect.left;
+            y += event.deltaRect.top;
 
-  const moveBlock = (id: string, dir: -1 | 1) => {
-    updateBlocks((prev) => {
-      const idx = prev.findIndex((b) => b.id === id);
-      if (idx < 0) return prev;
-      const target = idx + dir;
-      if (target < 0 || target >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[target]] = [next[target], next[idx]];
-      return next;
+            target.style.width = `${event.rect.width}px`;
+            target.style.height = `${event.rect.height}px`;
+            target.style.transform = `translate(${x}px, ${y}px)`;
+
+            target.setAttribute('data-x', x.toString());
+            target.setAttribute('data-y', y.toString());
+          },
+          end(event) {
+            const target = event.target as HTMLElement;
+            const id = target.getAttribute('data-id')!;
+            updateEl(id, {
+              x: parseFloat(target.getAttribute('data-x') || '0'),
+              y: parseFloat(target.getAttribute('data-y') || '0'),
+              w: Math.round(event.rect.width),
+              h: Math.round(event.rect.height)
+            });
+          }
+        },
+        modifiers: [
+          interact.modifiers.restrictSize({ min: { width: 20, height: 20 } })
+        ]
+      });
+  }, [data.elements.length]); // 元素增减时重新绑定
+
+  
+  const moveLayer = (id: string, action: 'up' | 'down' | 'top' | 'bottom') => {
+    updateData(d => {
+      const els = [...d.elements].sort((a, b) => a.zIndex - b.zIndex);
+      const idx = els.findIndex(e => e.id === id);
+      if (idx === -1) return d;
+      
+      if (action === 'top') {
+        els[idx].zIndex = Math.max(...els.map(e => e.zIndex)) + 1;
+      } else if (action === 'bottom') {
+        els[idx].zIndex = Math.min(...els.map(e => e.zIndex)) - 1;
+      } else if (action === 'up' && idx < els.length - 1) {
+        const temp = els[idx].zIndex;
+        els[idx].zIndex = els[idx + 1].zIndex;
+        els[idx + 1].zIndex = temp;
+      } else if (action === 'down' && idx > 0) {
+        const temp = els[idx].zIndex;
+        els[idx].zIndex = els[idx - 1].zIndex;
+        els[idx - 1].zIndex = temp;
+      }
+      return { ...d, elements: els };
     });
-  };
-
-  const updateBlock = (id: string, updater: (b: Block) => Block) => {
-    updateBlocks((prev) => prev.map((b) => (b.id === id ? updater(b) : b)));
   };
 
   const handlePublish = async () => {
     if (!userId) return;
-    setPublishing(true);
     try {
-      await saveDraft(userId, { blocks: blocksRef.current });
-      await publishPage(userId, { blocks: blocksRef.current });
+      await saveDraft(userId, dataRef.current);
+      await publishPage(userId, dataRef.current);
       alert('发布成功！访问 /' + username + ' 查看');
     } catch (e: any) {
-      alert('发布失败：' + e.message);
-    } finally {
-      setPublishing(false);
+      alert('发布失败: ' + e.message);
     }
   };
 
-  const selected = blocks.find((b) => b.id === selectedId);
+  // 渲染单个画布元素
+  const renderElement = (el: CanvasElement) => {
+    const isSelected = selectedId === el.id;
+    const isEditing = editingId === el.id;
+    
+    return (
+      <div
+        key={el.id}
+        data-id={el.id}
+        className="resize-drag"
+        data-x={el.x}
+        data-y={el.y}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          width: el.w, height: el.h,
+          transform: `translate(${el.x}px, ${el.y}px)`,
+          zIndex: el.zIndex,
+          opacity: el.opacity,
+          borderRadius: el.borderRadius,
+          outline: isSelected ? '2px solid var(--accent)' : 'none',
+          cursor: isEditing ? 'text' : 'move',
+          userSelect: 'none'
+        }}
+        onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}
+        onDoubleClick={(e) => { e.stopPropagation(); if(el.type === 'text') setEditingId(el.id); }}
+      >
+        {/* 元素内容渲染 */}
+        {el.type === 'text' && (
+          isEditing ? (
+            <textarea
+              autoFocus
+              value={el.content}
+              onChange={(e) => updateEl(el.id, { content: e.target.value })}
+              onBlur={() => setEditingId(null)}
+              style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: 'inherit', fontSize: el.fontSize, color: el.color, textAlign: 'center', lineHeight: 1.2 }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: el.fontSize, color: el.color, whiteSpace: 'pre-wrap', lineHeight: 1.2 }}>
+              {el.content}
+            </div>
+          )
+        )}
+        {el.type === 'rect' && <div style={{ width: '100%', height: '100%', background: el.bgColor, borderRadius: el.borderRadius }} />}
+        {el.type === 'image' && (
+          el.src ? <img src={el.src} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: el.borderRadius }} draggable={false} /> 
+          : <div style={{ width: '100%', height: '100%', background: 'var(--paper-2)', borderRadius: el.borderRadius, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>双击选图</div>
+        )}
+        {el.type === 'article_list' && (
+          <div style={{ width: '100%', height: '100%', background: el.bgColor, borderRadius: el.borderRadius, padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
+            <h3 style={{ fontFamily: 'var(--font-round)', color: 'var(--ink)', marginBottom: '10px' }}>最新文章</h3>
+            <div style={{ color: 'var(--muted)', fontSize: '13px' }}>（连接数据库后自动拉取）</div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div style={root}>
-      <header style={topbar}>
-        <div style={brand}>编辑器 · {username || '...'}</div>
-        <div style={topRight}>
-          <span style={saveStatusStyle(saveStatus)}>
-            {saveStatus === 'saving' && '保存中…'}
-            {saveStatus === 'saved' && '已保存'}
-            {saveStatus === 'error' && '保存失败'}
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: 'var(--paper-2)' }}>
+      {/* 顶部工具栏 */}
+      <header style={{ height: '56px', background: 'var(--card)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between', zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ fontFamily: 'var(--font-round)', fontWeight: 800, color: 'var(--ink)' }}>画布编辑器 · {username}</span>
+          <button onClick={() => setShowLayers(!showLayers)} className="ak-btn ak-btn--line ak-btn--sm">图层面板</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '12px', color: saveStatus === 'error' ? 'red' : 'var(--muted)' }}>
+            {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : saveStatus === 'error' ? '保存失败' : ''}
           </span>
-          <a href={username ? '/' + username : '/'} target="_blank" rel="noopener" style={linkBtn}>
-            预览
-          </a>
-          <button onClick={handlePublish} disabled={publishing} style={primaryBtn}>
-            {publishing ? '发布中…' : '发布'}
-          </button>
+          <a href={'/' + username} target="_blank" className="ak-btn ak-btn--line">预览</a>
+          <button onClick={handlePublish} className="ak-btn ak-btn--pri">发布</button>
         </div>
       </header>
 
-      <div style={layout}>
-        {/* 左侧：区块类型 */}
-        <aside style={sidebar}>
-          <div style={asideTitle}>添加区块</div>
-          {BLOCK_TYPES.map((t) => (
-            <button key={t} onClick={() => addBlock(t)} style={typeBtn}>
-              + {BLOCK_LABELS[t]}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* 左侧模块（手风琴） */}
+        <aside style={{ width: '240px', background: 'var(--card)', borderRight: '1px solid var(--line)', overflowY: 'auto', padding: '16px' }}>
+          <h4 style={{ fontSize: '12px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '12px' }}>一键模板</h4>
+          <select 
+            onChange={(e) => {
+              const tpl = TEMPLATES[e.target.value];
+              if (tpl && confirm('应用模板将覆盖当前画布，确定吗？')) {
+                updateData(() => tpl.data);
+              }
+            }}
+            className="ak-btn ak-btn--soft" 
+            style={{ width: '100%', marginBottom: '24px' }}
+          >
+            <option value="">选择高质量模板…</option>
+            {Object.entries(TEMPLATES).map(([key, t]) => <option key={key} value={key}>{t.name}</option>)}
+          </select>
+          
+          {/* 手风琴：基础元素 */}
+          <div style={{ borderBottom: '1px solid var(--line-soft)' }}>
+            <button onClick={() => setOpenAccordion(openAccordion === 'basic' ? null : 'basic')} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>
+              基础元素 <span>{openAccordion === 'basic' ? '−' : '+'}</span>
             </button>
-          ))}
+            {openAccordion === 'basic' && (
+              <div style={{ padding: '0 0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button onClick={() => updateData(d => ({ ...d, elements: [...d.elements, createElement('text')] }))} className="ak-btn ak-btn--line" style={{ justifyContent: 'flex-start' }}>+ 文本</button>
+                <button onClick={() => updateData(d => ({ ...d, elements: [...d.elements, createElement('rect')] }))} className="ak-btn ak-btn--line" style={{ justifyContent: 'flex-start' }}>+ 形状</button>
+                <button onClick={() => updateData(d => ({ ...d, elements: [...d.elements, createElement('image')] }))} className="ak-btn ak-btn--line" style={{ justifyContent: 'flex-start' }}>+ 图片</button>
+              </div>
+            )}
+          </div>
+
+          {/* 手风琴：聚合组件 */}
+          <div style={{ borderBottom: '1px solid var(--line-soft)' }}>
+            <button onClick={() => setOpenAccordion(openAccordion === 'agg' ? null : 'agg')} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>
+              聚合组件 <span>{openAccordion === 'agg' ? '−' : '+'}</span>
+            </button>
+            {openAccordion === 'agg' && (
+              <div style={{ padding: '0 0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button onClick={() => updateData(d => ({ ...d, elements: [...d.elements, createElement('article_list')] }))} className="ak-btn ak-btn--line" style={{ justifyContent: 'flex-start' }}>+ 文章列表</button>
+              </div>
+            )}
+          </div>
         </aside>
 
-        {/* 中间：区块列表预览 */}
-        <main style={canvas}>
-          <div style={previewWrap}>
-            {blocks.length === 0 && (
-              <p style={{ color: '#555', textAlign: 'center', padding: '60px 0' }}>
-                从左侧添加第一个区块
-              </p>
+        {/* 中间画布 */}
+        <main ref={containerRef} style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-3)' }} onClick={() => { setSelectedId(null); setEditingId(null); }}>
+          <div 
+            ref={canvasRef}
+            style={{
+              width: CANVAS_W, height: CANVAS_H,
+              background: data.background,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {data.elements.map(renderElement)}
+          </div>
+        </main>
+
+        {/* 右侧属性面板 */}
+        <aside style={{ width: '300px', background: 'var(--card)', borderLeft: '1px solid var(--line)', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--line)' }}>
+            <button onClick={() => setInspectorTab('style')} style={{ flex: 1, padding: '14px', fontSize: '13px', fontWeight: inspectorTab==='style'?700:400, borderBottom: inspectorTab==='style'?'2px solid var(--accent)':'none', color: inspectorTab==='style'?'var(--ink)':'var(--muted)' }}>样式</button>
+            <button onClick={() => setInspectorTab('anim')} style={{ flex: 1, padding: '14px', fontSize: '13px', fontWeight: inspectorTab==='anim'?700:400, borderBottom: inspectorTab==='anim'?'2px solid var(--accent)':'none', color: inspectorTab==='anim'?'var(--ink)':'var(--muted)' }}>动效</button>
+          </div>
+          <div style={{ padding: '20px' }}>
+            {!selectedId ? <p style={{ color: 'var(--muted)', fontSize: '13px', textAlign: 'center', marginTop: '40px' }}>选中画布元素以编辑</p> : (
+              <InspectorPanel 
+                el={data.elements.find(e => e.id === selectedId)!} 
+                onChange={(patch) => updateEl(selectedId, patch)}
+                tab={inspectorTab}
+              />
             )}
-            {blocks.map((b) => (
-              <div
-                key={b.id}
-                onClick={() => setSelectedId(b.id)}
-                style={blockCard(b.id === selectedId)}
-              >
-                <div style={blockHeader}>
-                  <span style={typeLabel}>{BLOCK_LABELS[b.type]}</span>
-                  <div style={blockActions}>
-                    <button onClick={(e) => { e.stopPropagation(); moveBlock(b.id, -1); }} style={iconBtn}>↑</button>
-                    <button onClick={(e) => { e.stopPropagation(); moveBlock(b.id, 1); }} style={iconBtn}>↓</button>
-                    <button onClick={(e) => { e.stopPropagation(); updateBlock(b.id, (x) => ({ ...x, visible: !x.visible } as Block)); }} style={iconBtn}>
-                      {b.visible ? '👁' : '🚫'}
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); removeBlock(b.id); }} style={{ ...iconBtn, color: '#ff4d4d' }}>✕</button>
-                  </div>
+          </div>
+        </aside>
+      </div>
+      
+      {/* 图层面板（覆盖在最上层） */}
+      {showLayers && (
+        <div style={{ position: 'absolute', top: '56px', left: '20px', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '200px', padding: '10px', zIndex: 200 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: 'var(--muted)' }}>
+            <span>图层</span><button onClick={() => setShowLayers(false)}>✕</button>
+          </div>
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {[...data.elements].sort((a,b) => b.zIndex - a.zIndex).map(el => (
+              <div key={el.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: selectedId === el.id ? 'var(--accent-soft)' : 'transparent', borderRadius: '6px', marginBottom: '4px' }}>
+                <div onClick={() => setSelectedId(el.id)} style={{ flex: 1, cursor: 'pointer', fontSize: '12px' }}>
+                  {el.type} <span style={{ opacity: 0.5 }}>#{el.zIndex}</span>
                 </div>
-                <div style={{ opacity: b.visible ? 1 : 0.4 }}>
-                  <BlockPreview block={b} />
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  <button onClick={() => moveLayer(el.id, 'top')} style={{ padding: '2px 4px', fontSize: '10px' }} title="置顶">⤒</button>
+                  <button onClick={() => moveLayer(el.id, 'up')} style={{ padding: '2px 4px', fontSize: '10px' }} title="上移">↑</button>
+                  <button onClick={() => moveLayer(el.id, 'down')} style={{ padding: '2px 4px', fontSize: '10px' }} title="下移">↓</button>
+                  <button onClick={() => moveLayer(el.id, 'bottom')} style={{ padding: '2px 4px', fontSize: '10px' }} title="置底">⤓</button>
                 </div>
               </div>
             ))}
           </div>
-        </main>
-
-        {/* 右侧：属性面板 */}
-        <aside style={inspector}>
-          {selected ? (
-            <BlockInspector block={selected} onChange={(u) => updateBlock(selected.id, u)} />
-          ) : (
-            <p style={{ color: '#555', fontSize: '13px' }}>选择区块以编辑属性</p>
-          )}
-        </aside>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/** 区块预览（只读，简单渲染） */
-function BlockPreview({ block }: { block: Block }) {
-  switch (block.type) {
-    case 'profile':
-      return (
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#2a2a2a', flexShrink: 0, backgroundImage: block.props.avatar ? 'url(' + block.props.avatar + ')' : undefined, backgroundSize: 'cover' }} />
-          <div>
-            <div style={{ fontWeight: 700, color: '#fff' }}>{block.props.name || '（未填名字）'}</div>
-            {block.props.status && <div style={{ fontSize: '12px', color: '#18d1ff' }}>{block.props.status}</div>}
-            {block.props.bio && <div style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>{block.props.bio}</div>}
-          </div>
-        </div>
-      );
-    case 'markdown':
-      return <div style={{ fontSize: '14px', color: '#d2d2d2' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(block.props.content || '') }} />;
-    case 'links':
-      return (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {block.props.links.map((l, i) => (
-            <span key={i} style={{ padding: '4px 12px', border: '1px solid #333', borderRadius: '999px', fontSize: '12px' }}>{l.label || '（空）'}</span>
-          ))}
-        </div>
-      );
-    case 'articles':
-      return <div style={{ fontSize: '13px', color: '#888' }}>文章列表 · 显示 {block.props.limit} 篇 · {block.props.layout === 'card' ? '卡片' : '列表'}</div>;
-    case 'moments':
-      return <div style={{ fontSize: '13px', color: '#888' }}>碎碎念 · 显示 {block.props.limit} 条</div>;
-    case 'gallery':
-      return <div style={{ fontSize: '13px', color: '#888' }}>相册 · {block.props.images.length} 张图 · {block.props.columns} 列</div>;
+function InspectorPanel({ el, onChange, tab }: { el: CanvasElement, onChange: (p: Partial<CanvasElement>) => void, tab: 'style' | 'anim' }) {
+  if (tab === 'style') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {el.type === 'text' && (
+          <>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+              字号
+              <input type="range" min="12" max="80" value={el.fontSize} onChange={e => onChange({ fontSize: Number(e.target.value) })} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+              颜色
+              <input type="color" value={el.color?.startsWith('#') ? el.color : '#333'} onChange={e => onChange({ color: e.target.value })} style={{ height: '30px' }} />
+            </label>
+          </>
+        )}
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+          透明度
+          <input type="range" min="0" max="1" step="0.1" value={el.opacity} onChange={e => onChange({ opacity: Number(e.target.value) })} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+          层级 (Z-index)
+          <input type="number" value={el.zIndex} onChange={e => onChange({ zIndex: Number(e.target.value) })} />
+        </label>
+      </div>
+    );
   }
-}
-
-/** 属性面板 */
-function BlockInspector({ block, onChange }: { block: Block; onChange: (u: (b: Block) => Block) => void }) {
-  const setProps = (patch: Record<string, unknown>) =>
-    onChange((b) => ({ ...b, props: { ...(b as any).props, ...patch } } as Block));
-
-  switch (block.type) {
-    case 'profile':
-      return (
-        <div style={inspectorStack}>
-          <Field label="名字"><input value={block.props.name || ''} onChange={(e) => setProps({ name: e.target.value })} style={input} /></Field>
-          <Field label="状态"><input value={block.props.status || ''} onChange={(e) => setProps({ status: e.target.value })} style={input} placeholder="如：在写代码" /></Field>
-          <Field label="简介"><textarea value={block.props.bio || ''} onChange={(e) => setProps({ bio: e.target.value })} rows={3} style={textarea} /></Field>
-          <Field label="头像 URL"><input value={block.props.avatar || ''} onChange={(e) => setProps({ avatar: e.target.value })} style={input} placeholder="https://..." /></Field>
-        </div>
-      );
-    case 'markdown':
-      return (
-        <div style={inspectorStack}>
-          <Field label="Markdown 内容">
-            <textarea value={block.props.content || ''} onChange={(e) => setProps({ content: e.target.value })} rows={14} style={textarea} />
-          </Field>
-        </div>
-      );
-    case 'links':
-      return (
-        <div style={inspectorStack}>
-          <Field label="链接列表">
-            {block.props.links.map((l, i) => (
-              <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                <input value={l.label} onChange={(e) => {
-                  const next = [...block.props.links];
-                  next[i] = { ...next[i], label: e.target.value };
-                  setProps({ links: next });
-                }} style={{ ...input, flex: '0 0 40%' }} placeholder="标签" />
-                <input value={l.url} onChange={(e) => {
-                  const next = [...block.props.links];
-                  next[i] = { ...next[i], url: e.target.value };
-                  setProps({ links: next });
-                }} style={{ ...input, flex: 1 }} placeholder="https://..." />
-                <button onClick={() => setProps({ links: block.props.links.filter((_, j) => j !== i) })} style={iconBtn}>✕</button>
-              </div>
-            ))}
-            <button onClick={() => setProps({ links: [...block.props.links, { label: '', url: '' }] })} style={typeBtn}>+ 添加链接</button>
-          </Field>
-        </div>
-      );
-    case 'articles':
-      return (
-        <div style={inspectorStack}>
-          <Field label="显示条数">
-            <input type="number" min={1} max={20} value={block.props.limit} onChange={(e) => setProps({ limit: Number(e.target.value) || 5 })} style={input} />
-          </Field>
-          <Field label="布局">
-            <select value={block.props.layout} onChange={(e) => setProps({ layout: e.target.value })} style={input}>
-              <option value="list">列表</option>
-              <option value="card">卡片</option>
-            </select>
-          </Field>
-        </div>
-      );
-    case 'moments':
-      return (
-        <div style={inspectorStack}>
-          <Field label="显示条数">
-            <input type="number" min={1} max={30} value={block.props.limit} onChange={(e) => setProps({ limit: Number(e.target.value) || 10 })} style={input} />
-          </Field>
-        </div>
-      );
-    case 'gallery':
-      return (
-        <div style={inspectorStack}>
-          <Field label="列数">
-            <input type="number" min={1} max={4} value={block.props.columns} onChange={(e) => setProps({ columns: Number(e.target.value) || 3 })} style={input} />
-          </Field>
-          <Field label="图片列表">
-            {block.props.images.map((img, i) => (
-              <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                <input value={img.url} onChange={(e) => {
-                  const next = [...block.props.images];
-                  next[i] = { ...next[i], url: e.target.value };
-                  setProps({ images: next });
-                }} style={{ ...input, flex: 1 }} placeholder="https://..." />
-                <button onClick={() => setProps({ images: block.props.images.filter((_, j) => j !== i) })} style={iconBtn}>✕</button>
-              </div>
-            ))}
-            <button onClick={() => setProps({ images: [...block.props.images, { url: '' }] })} style={typeBtn}>+ 添加图片</button>
-          </Field>
-        </div>
-      );
-  }
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  
   return (
-    <label style={{ display: 'block', marginBottom: '14px' }}>
-      <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      {children}
-    </label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+        入场动画
+        <select value={el.animation || 'none'} onChange={e => onChange({ animation: e.target.value as any })} className="ak-btn ak-btn--line" style={{ height: 'auto', padding: '8px' }}>
+          <option value="none">无</option>
+          <option value="fade">淡入</option>
+          <option value="slideUp">上滑</option>
+          <option value="zoomIn">放大</option>
+        </select>
+      </label>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+        动画时长 (秒)
+        <input type="number" step="0.1" value={el.animDuration} onChange={e => onChange({ animDuration: Number(e.target.value) })} />
+      </label>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+        延迟 (秒)
+        <input type="number" step="0.1" value={el.animDelay} onChange={e => onChange({ animDelay: Number(e.target.value) })} />
+      </label>
+    </div>
   );
-}
-
-// ---- styles ----
-const root: React.CSSProperties = { width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#0d0d0d' };
-const topbar: React.CSSProperties = { height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderBottom: '1px solid #2a2a2a', background: '#141414', flexShrink: 0 };
-const brand: React.CSSProperties = { fontSize: '14px', color: '#18d1ff', fontWeight: 600 };
-const topRight: React.CSSProperties = { display: 'flex', gap: '12px', alignItems: 'center' };
-const layout: React.CSSProperties = { flex: 1, display: 'flex', overflow: 'hidden' };
-const sidebar: React.CSSProperties = { width: '180px', borderRight: '1px solid #2a2a2a', padding: '16px 12px', overflowY: 'auto', flexShrink: 0 };
-const asideTitle: React.CSSProperties = { fontSize: '11px', color: '#666', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.08em' };
-const typeBtn: React.CSSProperties = { width: '100%', padding: '10px 12px', marginBottom: '6px', background: '#1b1b1b', border: '1px solid #2a2a2a', borderRadius: '8px', color: '#d2d2d2', fontSize: '13px', cursor: 'pointer', textAlign: 'left' };
-const canvas: React.CSSProperties = { flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', justifyContent: 'center' };
-const previewWrap: React.CSSProperties = { width: '100%', maxWidth: '640px' };
-const blockHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' };
-const typeLabel: React.CSSProperties = { fontSize: '11px', color: '#18d1ff', textTransform: 'uppercase', letterSpacing: '0.08em' };
-const blockActions: React.CSSProperties = { display: 'flex', gap: '4px' };
-const iconBtn: React.CSSProperties = { padding: '3px 7px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '4px', color: '#888', fontSize: '11px', cursor: 'pointer' };
-const inspector: React.CSSProperties = { width: '300px', borderLeft: '1px solid #2a2a2a', padding: '20px 16px', overflowY: 'auto', flexShrink: 0 };
-const inspectorStack: React.CSSProperties = {};
-const input: React.CSSProperties = { width: '100%', padding: '8px 10px', background: '#111', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#d2d2d2', fontSize: '13px', outline: 'none' };
-const textarea: React.CSSProperties = { ...input, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 };
-const linkBtn: React.CSSProperties = { padding: '6px 14px', background: 'transparent', border: '1px solid #2a2a2a', borderRadius: '999px', color: '#d2d2d2', fontSize: '12px', textDecoration: 'none' };
-const primaryBtn: React.CSSProperties = { padding: '6px 16px', background: '#18d1ff', color: '#000', border: 'none', borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' };
-
-function blockCard(selected: boolean): React.CSSProperties {
-  return {
-    padding: '16px',
-    background: '#1b1b1b',
-    border: '1px solid ' + (selected ? '#18d1ff' : '#2a2a2a'),
-    borderRadius: '12px',
-    marginBottom: '12px',
-    cursor: 'pointer',
-    transition: 'border-color 0.15s',
-  };
-}
-function saveStatusStyle(s: string): React.CSSProperties {
-  return {
-    fontSize: '11px',
-    color: s === 'error' ? '#ff4d4d' : s === 'saved' ? '#4ade80' : s === 'saving' ? '#18d1ff' : '#666',
-    minWidth: '60px',
-    textAlign: 'right',
-  };
 }

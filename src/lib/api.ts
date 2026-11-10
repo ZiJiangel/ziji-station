@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { PageData } from './blocks';
+import type { PageData } from './canvas';
 
 /** 登录：注册用户名，创建初始 page 记录 */
 export async function login(username: string) {

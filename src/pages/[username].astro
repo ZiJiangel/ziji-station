@@ -1,73 +1,185 @@
 ---
 export const prerender = false;
-
 import Layout from '../layouts/Layout.astro';
-import BlockRenderer from '../components/blocks/BlockRenderer.astro';
 import { getPublicPage } from '../lib/api';
+import type { CanvasElement } from '../lib/canvas';
 
 const { username } = Astro.params;
-
-if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) {
-  return Astro.redirect('/404');
-}
+if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) return Astro.redirect('/404');
 
 const result = await getPublicPage(username);
-if (!result || !result.page || !result.page.blocks || result.page.blocks.length === 0) {
+if (!result || !result.page || !result.page.elements) {
   return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
 const { profile, page } = result;
-const displayName = profile.display_name || profile.username;
-const bio = profile.bio || '';
+const elements = page.elements as CanvasElement[];
+const bg = page.background || 'var(--paper)';
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 ---
 
-<Layout
-  title={displayName + ' 的主页'}
-  description={bio}
-  hideNav={true}
->
-  <main class="public-page">
-    <BlockRenderer blocks={page.blocks} userId={profile.id} />
+<Layout title={profile.display_name || username + ' 的主页'} hideNav={true}>
+  <main class="akari-layout">
+    <!-- 左侧画布区 -->
+    <section class="canvas-area" id="canvas-area">
+      <div class="canvas-container" style={`background: ${bg};`}>
+        {elements.map((el) => (
+          <div
+            class="anim-el"
+            data-anim={el.animation || 'none'}
+            data-dur={el.animDuration || 0.5}
+            data-delay={el.animDelay || 0}
+            data-x={el.x} data-y={el.y}
+            style={`position:absolute; left:${el.x}px; top:${el.y}px; width:${el.w}px; height:${el.h}px; z-index:${el.zIndex}; opacity:0; transform:translate(${el.x}px, ${el.y}px);`}
+          >
+            {el.type === 'text' && (
+              <div style={`width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:${el.fontSize}px; color:${el.color}; white-space:pre-wrap; line-height:1.2;`}>{el.content}</div>
+            )}
+            {el.type === 'rect' && (
+              <div style={`width:100%; height:100%; background:${el.bgColor}; border-radius:${el.borderRadius}px;`}></div>
+            )}
+            {el.type === 'image' && el.src && (
+              <img src={el.src} style={`width:100%; height:100%; object-fit:cover; border-radius:${el.borderRadius}px;`} />
+            )}
+            {el.type === 'article_list' && (
+              <div style={`width:100%; height:100%; background:${el.bgColor}; border-radius:${el.borderRadius}px; padding:20px; display:flex; flex-direction:column; gap:10px; overflow:hidden;`}>
+                <h3 style="font-family:var(--font-round); color:var(--ink); margin-bottom:10px;">最新文章</h3>
+                <div style="color:var(--muted); font-size:13px;">（等待加载真实数据）</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- 右侧粘性侧边栏 -->
+    <aside class="sidebar">
+      <div class="profile-card ak-card">
+        <div class="avatar-wrap">
+          {profile.avatar_url ? <img src={profile.avatar_url} class="avatar" /> : <div class="avatar" style="display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-deep);font-size:24px;font-weight:bold;">{(profile.display_name || profile.username).charAt(0).toUpperCase()}</div>}
+        </div>
+        <h1>{profile.display_name || profile.username}</h1>
+        <p class="bio">{profile.bio || '这个人很懒，什么都没写。'}</p>
+        <div class="actions">
+          <a href="/" class="ak-btn ak-btn--pri">回主站</a>
+          <a href="/editor" class="ak-btn ak-btn--line">编辑主页</a>
+        </div>
+      </div>
+
+      <div class="music-widget ak-card" style="margin-top:16px; padding:20px;">
+        <h3 style="font-family:var(--font-round); font-size:16px; margin-bottom:12px; color:var(--ink);">🎵 正在播放</h3>
+        <div style="background:var(--paper-3); height:48px; border-radius:8px; display:flex; align-items:center; padding:0 12px; font-size:12px; color:var(--muted);">
+          尚未添加音乐
+        </div>
+      </div>
+    </aside>
   </main>
-  <a href="/" class="back-badge" aria-label="返回主站">
-    <span>⚡</span> 主站
-  </a>
 </Layout>
 
 <style is:global>
-  body { background: #0d0d0d; }
+  body { background: var(--paper-2); }
+  .akari-layout {
+    display: flex;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 40px 24px;
+    gap: 40px;
+    align-items: flex-start;
+  }
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .canvas-container {
+    width: 1440px;
+    height: 900px;
+    position: relative;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.06);
+    transform-origin: top center;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+  }
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 40px;
+  }
+  .profile-card {
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .avatar-wrap {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    border: 3px solid var(--card);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .avatar { width: 100%; height: 100%; object-fit: cover; }
+  .profile-card h1 {
+    font-family: var(--font-round);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .profile-card .bio {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .profile-card .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  /* 移动端响应式 */
+  @media (max-width: 1100px) {
+    .akari-layout { flex-direction: column; padding: 20px; gap: 20px; }
+    .canvas-area { width: 100%; justify-content: flex-start; }
+    .sidebar { width: 100%; position: static; }
+  }
 </style>
 
-<style>
-  .public-page {
-    min-height: 100vh;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% -10%, #18d1ff10, transparent),
-      #0d0d0d;
-  }
-  .back-badge {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    padding: 8px 16px;
-    background: rgba(24, 209, 255, 0.08);
-    border: 1px solid rgba(24, 209, 255, 0.25);
-    color: #18d1ff;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    text-decoration: none;
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-    z-index: 50;
-  }
-  .back-badge:hover {
-    background: rgba(24, 209, 255, 0.16);
-    transform: translateY(-2px);
-  }
-</style>
+<script>
+  import { gsap } from 'gsap';
+  
+  // 计算等比缩放
+  const resizeCanvas = () => {
+    const container = document.querySelector('.canvas-area') as HTMLElement;
+    const canvas = document.querySelector('.canvas-container') as HTMLElement;
+    if (!container || !canvas) return;
+    const scale = Math.min(container.clientWidth / 1440, 1);
+    canvas.style.transform = `scale(${scale})`;
+    container.style.height = `${900 * scale}px`;
+  };
+  
+  window.addEventListener('resize', resizeCanvas);
+  document.addEventListener('DOMContentLoaded', () => {
+    resizeCanvas();
+    
+    // GSAP 入场动画
+    const els = document.querySelectorAll('.anim-el');
+    els.forEach(el => {
+      const anim = el.getAttribute('data-anim');
+      if (!anim || anim === 'none') { (el as HTMLElement).style.opacity = '1'; return; }
+      const dur = parseFloat(el.getAttribute('data-dur') || '0.5');
+      const delay = parseFloat(el.getAttribute('data-delay') || '0');
+      const x = parseFloat(el.getAttribute('data-x') || '0');
+      const y = parseFloat(el.getAttribute('data-y') || '0');
+      
+      if (anim === 'fade') gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: dur, delay, ease: 'power2.out' });
+      if (anim === 'slideUp') gsap.fromTo(el, { y: y + 40, opacity: 0 }, { y: y, opacity: 1, duration: dur, delay, ease: 'power3.out' });
+      if (anim === 'zoomIn') gsap.fromTo(el, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: dur, delay, ease: 'back.out(1.5)' });
+    });
+  });
+</script>
