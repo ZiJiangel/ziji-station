@@ -9,6 +9,7 @@ import LinksBlock from '../components/blocks/LinksBlock.astro';
 import ArticlesBlock from '../components/blocks/ArticlesBlock.astro';
 import MomentsBlock from '../components/blocks/MomentsBlock.astro';
 import GalleryBlock from '../components/blocks/GalleryBlock.astro';
+import MusicBlock from '../components/blocks/MusicBlock.astro';
 import type { Block } from '../lib/blocks';
 
 const { username } = Astro.params;
@@ -31,8 +32,12 @@ const { data: pageRow } = await supabase
   .eq('user_id', profile.id)
   .eq('is_public', true)
   .maybeSingle();
-const blocks: Block[] = (pageRow?.published_data as any)?.blocks || [];
+const pageData = pageRow?.published_data as any;
+const blocks: Block[] = pageData?.blocks || [];
+const sidebarBlocks: Block[] = pageData?.sidebarBlocks || [];
+const sidebarWidth: number | 'none' = pageData?.sidebarWidth ?? 'none';
 const hasBlocks = blocks.filter(b => b.visible).length > 0;
+const showSidebar = sidebarWidth !== 'none' && sidebarWidth > 0 && sidebarBlocks.filter(b => b.visible).length > 0;
 
 const displayName = profile.display_name || profile.username;
 const bio = profile.bio || '这个人很懒，什么都没写。';
@@ -47,7 +52,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
     <span class="nav-title">{displayName}</span>
   </header>
 
-  <div class="pub-layout">
+  <div class={showSidebar ? 'pub-layout pub-layout--split' : 'pub-layout'} style={showSidebar ? `grid-template-columns: minmax(0, 1fr) ${sidebarWidth}px;` : undefined}>
     <!-- 左侧主内容 -->
     <main class="pub-main">
       {hasBlocks ? (
@@ -58,7 +63,8 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
             b.type === 'links' ? <LinksBlock block={b} /> :
             b.type === 'articles' ? <ArticlesBlock block={b} userId={profile.id} /> :
             b.type === 'moments' ? <MomentsBlock block={b} userId={profile.id} /> :
-            b.type === 'gallery' ? <GalleryBlock block={b} /> : null
+            b.type === 'gallery' ? <GalleryBlock block={b} /> :
+            b.type === 'music' ? <MusicBlock block={b} /> : null
           ))}
         </div>
       ) : (
@@ -99,35 +105,21 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
       )}
     </main>
 
-    <!-- 右侧粘性侧栏 -->
-    <aside class="pub-sidebar reveal">
-      <div class="side-card">
-        <div class="avatar-wrap">
-          {avatar 
-            ? <img src={avatar} class="avatar" alt="avatar" />
-            : <div class="avatar ph">{displayName.charAt(0).toUpperCase()}</div>
-          }
+    {showSidebar && (
+      <aside class="pub-sidebar reveal">
+        <div class="blocks-stack">
+          {sidebarBlocks.filter(b => b.visible).map(b => (
+            b.type === 'profile' ? <ProfileBlock block={b} /> :
+            b.type === 'markdown' ? <MarkdownBlock block={b} /> :
+            b.type === 'links' ? <LinksBlock block={b} /> :
+            b.type === 'articles' ? <ArticlesBlock block={b} userId={profile.id} /> :
+            b.type === 'moments' ? <MomentsBlock block={b} userId={profile.id} /> :
+            b.type === 'gallery' ? <GalleryBlock block={b} /> :
+            b.type === 'music' ? <MusicBlock block={b} /> : null
+          ))}
         </div>
-        <h2 class="name">{displayName}</h2>
-        <p class="bio">{bio}</p>
-      </div>
-
-      <!-- 黑胶播放器 -->
-      <div class="side-card music-card" style="animation-delay: 0.1s;">
-        <div class="vinyl-wrap">
-          <div class="vinyl">
-            <div class="center"></div>
-          </div>
-        </div>
-        <div class="m-info">
-          <div class="m-title">Ambient Music</div>
-          <div class="m-artist">Unknown</div>
-        </div>
-        <div class="m-controls">
-          <button class="play-btn">▶</button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    )}
   </div>
 </Layout>
 
@@ -145,32 +137,11 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 
   .pub-layout { 
     max-width: 1100px; margin: 0 auto; padding: 120px 32px 80px; 
-    display: grid; grid-template-columns: 1fr 340px; gap: 48px; align-items: start; 
+    display: grid; gap: 48px; align-items: start; 
   }
-  
-  .pub-sidebar { position: sticky; top: 120px; display: flex; flex-direction: column; gap: 24px; }
-  .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 24px; text-align: center; }
-  
-  .avatar-wrap { margin-bottom: 20px; }
-  .avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light); }
-  .avatar.ph { display: grid; place-items: center; background: var(--bg-elevated); font-size: 32px; font-weight: 500; color: var(--text-muted); margin: 0 auto; }
-  
-  .name { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); margin-bottom: 12px; }
-  .bio { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .pub-layout--split { /* 列宽由内联样式决定 */ }
 
-  /* 黑胶播放器 */
-  .music-card { padding: 24px; }
-  .vinyl-wrap { width: 100%; aspect-ratio: 1; background: var(--bg); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid var(--border); overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.1); }
-  .vinyl { width: 85%; aspect-ratio: 1; border-radius: 50%; background: repeating-radial-gradient(#111, #111 2px, #222 4px, #111 5px); display: flex; align-items: center; justify-content: center; animation: spin 4s linear infinite; animation-play-state: paused; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-  .center { width: 32%; aspect-ratio: 1; border-radius: 50%; background: var(--text-primary); border: 4px solid var(--bg); }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
-  
-  .m-info { text-align: center; margin-bottom: 16px; }
-  .m-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; font-family: var(--font-serif); }
-  .m-artist { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
-  .m-controls { display: flex; justify-content: center; }
-  .play-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--text-primary); color: var(--bg); display: grid; place-items: center; font-size: 16px; transition: all 0.2s; }
-  .play-btn:hover { transform: scale(1.05); }
+  .pub-sidebar { position: sticky; top: 120px; }
 
   /* 内容区 */
   .content-section { margin-bottom: 64px; }
@@ -192,9 +163,8 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
   .empty-state { font-size: 15px; color: var(--text-muted); padding: 64px 0; text-align: center; }
 
   @media (max-width: 900px) {
-    .pub-layout { grid-template-columns: 1fr; padding-top: 100px; }
-    .pub-sidebar { position: static; flex-direction: row; flex-wrap: wrap; }
-    .side-card { flex: 1; min-width: 280px; }
+    .pub-layout, .pub-layout--split { grid-template-columns: 1fr !important; padding-top: 100px; }
+    .pub-sidebar { position: static; }
   }
 </style>
 

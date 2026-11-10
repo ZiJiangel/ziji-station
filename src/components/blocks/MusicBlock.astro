@@ -1,0 +1,138 @@
+---
+import type { MusicBlock } from '../../lib/blocks';
+import { sanitizeText, safeUrl } from '../../lib/sanitize';
+
+interface Props { block: MusicBlock }
+const { block } = Astro.props;
+const title = sanitizeText(block.props.title || 'Ambient Music');
+const artist = sanitizeText(block.props.artist || 'Unknown');
+const audioUrl = safeUrl(block.props.url || '');
+---
+
+<section class="music-block">
+  <div class="vinyl-wrap">
+    <div class="vinyl">
+      <div class="label"></div>
+      <div class="hole"></div>
+    </div>
+  </div>
+  <div class="meta">
+    <div class="title">{title}</div>
+    <div class="artist">{artist}</div>
+  </div>
+  <div class="controls">
+    <button class="play-btn" type="button" aria-label="播放">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+    </button>
+  </div>
+  {audioUrl && <audio class="audio-el" src={audioUrl} preload="none"></audio>}
+</section>
+
+<script>
+  function bindMusic() {
+    document.querySelectorAll('.music-block').forEach(block => {
+      const btn = block.querySelector('.play-btn') as HTMLButtonElement;
+      const vinyl = block.querySelector('.vinyl') as HTMLElement;
+      const audio = block.querySelector('.audio-el') as HTMLAudioElement | null;
+      if (!btn || btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+
+      btn.addEventListener('click', () => {
+        if (!audio) {
+          vinyl.classList.toggle('is-spinning');
+          btn.dataset.playing = btn.dataset.playing === '1' ? '0' : '1';
+          return;
+        }
+        if (audio.paused) {
+          audio.play().catch(() => {});
+          vinyl.classList.add('is-spinning');
+          btn.dataset.playing = '1';
+        } else {
+          audio.pause();
+          vinyl.classList.remove('is-spinning');
+          btn.dataset.playing = '0';
+        }
+      });
+      if (audio) {
+        audio.addEventListener('ended', () => {
+          vinyl.classList.remove('is-spinning');
+          btn.dataset.playing = '0';
+        });
+      }
+    });
+  }
+  bindMusic();
+  document.addEventListener('astro:page-load', bindMusic);
+</script>
+
+<style>
+  .music-block {
+    padding: 24px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .vinyl-wrap {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .vinyl {
+    width: 88%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-radial-gradient(#141414, #141414 2px, #1f1f1f 3px, #141414 4px);
+    display: grid;
+    place-items: center;
+    position: relative;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    will-change: transform;
+  }
+  .vinyl.is-spinning { animation: spin 4s linear infinite; }
+  .label {
+    width: 34%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--text-primary);
+    opacity: 0.92;
+  }
+  .hole {
+    position: absolute;
+    width: 6%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .meta { text-align: center; margin-bottom: 16px; min-width: 0; width: 100%; }
+  .title { font-family: var(--font-serif); font-size: 15px; color: var(--text-primary); margin-bottom: 4px; overflow-wrap: anywhere; }
+  .artist { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+
+  .controls { display: flex; justify-content: center; }
+  .play-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: var(--bg);
+    display: grid;
+    place-items: center;
+    transition: transform 0.15s var(--ease-out), opacity 0.15s;
+  }
+  .play-btn:hover { transform: scale(1.06); }
+  .play-btn:active { transform: scale(0.97); }
+  .play-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vinyl.is-spinning { animation: none; }
+  }
+</style>

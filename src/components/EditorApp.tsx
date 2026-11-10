@@ -1,78 +1,108 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Block, BlockType, PageData } from '../lib/blocks';
 import { createDefaultBlock, BLOCK_LABELS, getTemplates } from '../lib/blocks';
+
+type Area = 'main' | 'sidebar';
 import { getMyPage, saveDraft, publishPage } from '../lib/api';
 import { renderMarkdown } from '../lib/sanitize';
 import { toastSuccess, toastError } from '../lib/toast';
 
-const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery'];
+const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery', 'music'];
 
 function uid() { return 'b-' + Math.random().toString(36).slice(2, 9); }
 
 export default function EditorApp() {
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [mainBlocks, setMainBlocks] = useState<Block[]>([]);
+  const [sidebarBlocks, setSidebarBlocks] = useState<Block[]>([]);
+  const [sidebarWidth, setSidebarWidth] = useState<number | 'none'>('none');
+  const [activeArea, setActiveArea] = useState<Area>('main');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [publishing, setPublishing] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  
+  const [showSidebarSetting, setShowSidebarSetting] = useState(false);
+
   const saveTimer = useRef<number | null>(null);
-  const blocksRef = useRef<Block[]>([]);
+  const dataRef = useRef<PageData>({ blocks: [], sidebarBlocks: [], sidebarWidth: 'none' });
+
+  const getBlocks = (area: Area) => area === 'main' ? mainBlocks : sidebarBlocks;
+  const setBlocksOf = (area: Area, next: Block[]) => {
+    if (area === 'main') setMainBlocks(next);
+    else setSidebarBlocks(next);
+  };
 
   useEffect(() => {
     const user = localStorage.getItem('ziji_user');
     const uidStr = localStorage.getItem('ziji_uid');
     if (!user || !uidStr) { window.location.href = '/login'; return; }
     setUserId(uidStr); setUsername(user);
-    
+
     getMyPage(uidStr).then(data => {
-      let init = data?.blocks || [];
-      if (init.length === 0) {
-        init = getTemplates().blogger.data.blocks; // 默认给个文章+简介模板
-        setBlocks(init); blocksRef.current = init; saveDraft(uidStr, { blocks: init });
+      const initMain = data?.blocks || [];
+      const initSide = data?.sidebarBlocks || [];
+      const initWidth = data?.sidebarWidth ?? 'none';
+
+      if (initMain.length === 0) {
+        const tpl = getTemplates().blogger.data.blocks;
+        setMainBlocks(tpl);
+        dataRef.current = { blocks: tpl, sidebarBlocks: [], sidebarWidth: 'none' };
+        saveDraft(uidStr, dataRef.current);
       } else {
-        setBlocks(init); blocksRef.current = init;
+        setMainBlocks(initMain);
+        setSidebarBlocks(initSide);
+        setSidebarWidth(initWidth);
+        dataRef.current = { blocks: initMain, sidebarBlocks: initSide, sidebarWidth: initWidth };
       }
     });
   }, []);
 
-  const scheduleSave = useCallback((next: Block[]) => {
-    blocksRef.current = next;
+  const scheduleSave = useCallback((next: PageData) => {
+    dataRef.current = next;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(async () => {
       if (!userId) return;
       setSaveStatus('saving');
       try {
-        await saveDraft(userId, { blocks: blocksRef.current });
+        await saveDraft(userId, dataRef.current);
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 1500);
       } catch { setSaveStatus('error'); }
     }, 1000);
   }, [userId]);
 
-  const updateBlocks = (updater: (prev: Block[]) => Block[]) => {
-    setBlocks(prev => {
-      const next = updater(prev);
-      scheduleSave(next);
-      return next;
-    });
+  const commit = (main: Block[], side: Block[], width: number | 'none') => {
+    setMainBlocks(main);
+    setSidebarBlocks(side);
+    setSidebarWidth(width);
+    scheduleSave({ blocks: main, sidebarBlocks: side, sidebarWidth: width });
+  };
+
+  const updateAreaBlocks = (area: Area, updater: (prev: Block[]) => Block[]) => {
+    const nextMain = area === 'main' ? updater(mainBlocks) : mainBlocks;
+    const nextSide = area === 'sidebar' ? updater(sidebarBlocks) : sidebarBlocks;
+    commit(nextMain, nextSide, sidebarWidth);
   };
 
   const addBlock = (type: BlockType) => {
     const b = createDefaultBlock(type, uid());
-    updateBlocks(prev => [...prev, b]);
+    // 如果当前没开侧栏，且正在往侧栏加，自动开侧栏
+    if (activeArea === 'sidebar' && sidebarWidth === 'none') {
+      commit([...mainBlocks, b], sidebarBlocks, 320);
+    } else {
+      updateAreaBlocks(activeArea, prev => [...prev, b]);
+    }
     setSelectedId(b.id);
   };
 
   const removeBlock = (id: string) => {
-    updateBlocks(prev => prev.filter(b => b.id !== id));
+    updateAreaBlocks(activeArea, prev => prev.filter(b => b.id !== id));
     if (selectedId === id) setSelectedId(null);
   };
 
   const moveBlock = (id: string, dir: -1 | 1) => {
-    updateBlocks(prev => {
+    updateAreaBlocks(activeArea, prev => {
       const idx = prev.findIndex(b => b.id === id);
       if (idx < 0) return prev;
       const target = idx + dir;
@@ -84,22 +114,23 @@ export default function EditorApp() {
   };
 
   const updateBlock = (id: string, updater: (b: Block) => Block) => {
-    updateBlocks(prev => prev.map(b => b.id === id ? updater(b) : b));
+    updateAreaBlocks(activeArea, prev => prev.map(b => b.id === id ? updater(b) : b));
   };
 
   const handlePublish = async () => {
     if (!userId) return;
     setPublishing(true);
     try {
-      await saveDraft(userId, { blocks: blocksRef.current });
-      await publishPage(userId, { blocks: blocksRef.current });
+      await saveDraft(userId, dataRef.current);
+      await publishPage(userId, dataRef.current);
       toastSuccess('已发布到主页');
     } catch (e: any) {
       toastError('发布失败: ' + e.message);
     } finally { setPublishing(false); }
   };
 
-  const selected = blocks.find(b => b.id === selectedId);
+  const currentBlocks = getBlocks(activeArea);
+  const selected = currentBlocks.find(b => b.id === selectedId);
 
   return (
     <div style={s.root}>
@@ -124,6 +155,27 @@ export default function EditorApp() {
 
       <div style={s.layout}>
         <aside style={s.sidebar}>
+          <div style={s.areaTabs}>
+            <button onClick={() => { setActiveArea('main'); setSelectedId(null); }} style={s.areaTab(activeArea === 'main')}>主区域</button>
+            <button onClick={() => { setActiveArea('sidebar'); setSelectedId(null); }} style={s.areaTab(activeArea === 'sidebar')}>侧边栏</button>
+          </div>
+
+          {activeArea === 'sidebar' && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={s.sectionTitle}>侧栏宽度</div>
+              <div style={s.widthRow}>
+                {([
+                  ['无', 'none'],
+                  ['260', 260],
+                  ['320', 320],
+                  ['380', 380],
+                ] as const).map(([label, val]) => (
+                  <button key={label} onClick={() => commit(mainBlocks, sidebarBlocks, val)} style={s.widthBtn(sidebarWidth === val)}>{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={s.sectionTitle}>添加区块</div>
           <div style={s.blockList}>
             {BLOCK_TYPES.map(t => (
@@ -136,7 +188,7 @@ export default function EditorApp() {
 
         <main style={s.canvas}>
           <div style={s.previewWrap}>
-            {blocks.map(b => (
+            {currentBlocks.map(b => (
               <div 
                 key={b.id} 
                 onClick={() => setSelectedId(b.id)} 
@@ -158,7 +210,7 @@ export default function EditorApp() {
                 </div>
               </div>
             ))}
-            {blocks.length === 0 && <div style={s.empty}>你的主页还是空的，从左侧添加内容吧。</div>}
+            {currentBlocks.length === 0 && <div style={s.empty}>当前区域还是空的，从左侧添加内容吧。</div>}
           </div>
         </main>
 
@@ -179,7 +231,8 @@ export default function EditorApp() {
               {Object.entries(getTemplates()).map(([key, t]) => (
                 <div key={key} onClick={() => {
                   if (confirm('覆盖当前内容？')) {
-                    updateBlocks(() => t.data.blocks);
+                    commit(t.data.blocks, [], 'none');
+                    setSelectedId(null);
                     setShowTemplates(false);
                   }
                 }} style={s.tplCard}>
@@ -201,6 +254,15 @@ function BlockPreview({ block }: { block: Block }) {
     case 'profile': return <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}><div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }} /><div><div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)' }}>{block.props.name || '你的名字'}</div><div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>{block.props.bio}</div></div></div>;
     case 'markdown': return <div style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.8 }} dangerouslySetInnerHTML={{ __html: renderMarkdown(block.props.content || '') }} />;
     case 'links': return <div style={{ display: 'flex', gap: '12px' }}>{block.props.links.map((l, i) => <span key={i} style={{ padding: '8px 16px', border: '1px solid var(--border)', borderRadius: '99px', fontSize: '13px', color: 'var(--text-secondary)' }}>{l.label}</span>)}</div>;
+    case 'music': return (
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'repeating-radial-gradient(#141414, #141414 1px, #242424 2px, #141414 3px)', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
+        <div>
+          <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{block.props.title || 'Ambient Music'}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{block.props.artist || 'Unknown'}</div>
+        </div>
+      </div>
+    );
     default: return <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>[{BLOCK_LABELS[block.type]} 自动渲染区域]</div>;
   }
 }
@@ -221,6 +283,13 @@ function BlockInspector({ block, onChange }: { block: Block; onChange: (u: (b: B
       <Field label="Markdown 内容"><textarea value={block.props.content || ''} onChange={e => setProps({ content: e.target.value })} rows={16} style={s.textarea} /></Field>
     </div>
   );
+  if (block.type === 'music') return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <Field label="曲名"><input value={block.props.title || ''} onChange={e => setProps({ title: e.target.value })} style={s.input} /></Field>
+      <Field label="作者"><input value={block.props.artist || ''} onChange={e => setProps({ artist: e.target.value })} style={s.input} /></Field>
+      <Field label="音频链接（mp3/ogg，留空则只转唱片不放歌）"><input value={block.props.url || ''} onChange={e => setProps({ url: e.target.value })} style={s.input} /></Field>
+    </div>
+  );
   return <div style={s.empty}>此区块暂无可配置属性</div>;
 }
 
@@ -234,7 +303,11 @@ const s = {
   brand: { display: 'flex', alignItems: 'center', gap: '12px' },
   topRight: { display: 'flex', alignItems: 'center', gap: '16px' },
   layout: { display: 'flex', flex: 1, overflow: 'hidden' },
-  sidebar: { width: '240px', borderRight: '1px solid var(--border)', padding: '32px 24px', overflowY: 'auto' },
+  sidebar: { width: '240px', borderRight: '1px solid var(--border)', padding: '24px 20px', overflowY: 'auto' },
+  areaTabs: { display: 'flex', gap: '4px', marginBottom: '24px', padding: '4px', background: 'var(--bg-elevated)', borderRadius: '10px' },
+  areaTab: (active: boolean) => ({ flex: 1, padding: '7px 0', background: active ? 'var(--bg-surface)' : 'transparent', border: 'none', borderRadius: '7px', color: active ? 'var(--text-primary)' : 'var(--text-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }),
+  widthRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+  widthBtn: (active: boolean) => ({ padding: '6px 12px', background: active ? 'var(--text-primary)' : 'transparent', border: '1px solid var(--border)', borderRadius: '99px', color: active ? 'var(--bg)' : 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s' }),
   sectionTitle: { fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' },
   blockList: { display: 'flex', flexDirection: 'column', gap: '8px' },
   typeBtn: { width: '100%', padding: '12px 16px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-secondary)', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px' },

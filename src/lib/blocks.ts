@@ -1,5 +1,5 @@
 
-export type BlockType = 'profile' | 'markdown' | 'links' | 'articles' | 'moments' | 'gallery';
+export type BlockType = 'profile' | 'markdown' | 'links' | 'articles' | 'moments' | 'gallery' | 'music';
 
 export interface BaseBlock {
   id: string;
@@ -37,11 +37,19 @@ export interface GalleryBlock extends BaseBlock {
   props: { images: Array<{ url: string; caption?: string }>; columns: number; };
 }
 
-export type Block = ProfileBlock | MarkdownBlock | LinksBlock | ArticlesBlock | MomentsBlock | GalleryBlock;
+export interface MusicBlock extends BaseBlock {
+  type: 'music';
+  props: { title?: string; artist?: string; cover?: string; url?: string; };
+}
+
+export type Block = ProfileBlock | MarkdownBlock | LinksBlock | ArticlesBlock | MomentsBlock | GalleryBlock | MusicBlock;
 
 export interface PageData {
   blocks: Block[];
-  // 移除背景色，让设计统一由渲染器决定
+  /** 侧栏区块；存在且配置了宽度时才会渲染侧栏 */
+  sidebarBlocks?: Block[];
+  /** 侧栏宽度（px）；'none' 或未设置表示不显示侧栏 */
+  sidebarWidth?: number | 'none';
 }
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -51,6 +59,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   articles: '文章聚合',
   moments: '碎碎念',
   gallery: '相册画廊',
+  music: '音乐播放器',
 };
 
 /** 新建区块时的默认属性 */
@@ -62,6 +71,7 @@ export function createDefaultBlock(type: BlockType, id: string): Block {
     case 'articles': return { id, type, visible: true, props: { limit: 5, layout: 'list' } };
     case 'moments': return { id, type, visible: true, props: { limit: 5 } };
     case 'gallery': return { id, type, visible: true, props: { images: [], columns: 3 } };
+    case 'music': return { id, type, visible: true, props: { title: 'Ambient Music', artist: 'Unknown', url: '' } };
   }
 }
 
