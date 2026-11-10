@@ -59,19 +59,11 @@ export async function saveDraft(uid: string, data: PageData) {
     .from('pages')
     .upsert({ user_id: uid, draft_data: data }, { onConflict: 'user_id' });
   if (error) throw error;
-} = await supabase
-    .from('pages')
-    .upsert({ user_id: uid, draft_data: data }, { onConflict: 'user_id' });
-  if (error) throw error;
 }
 
 /** 发布（草稿 → 已发布） */
 export async function publishPage(uid: string, data: PageData) {
   const { error } = await supabase
-    .from('pages')
-    .upsert({ user_id: uid, draft_data: data, published_data: data, is_public: true }, { onConflict: 'user_id' });
-  if (error) throw error;
-} = await supabase
     .from('pages')
     .upsert({ user_id: uid, draft_data: data, published_data: data, is_public: true }, { onConflict: 'user_id' });
   if (error) throw error;
