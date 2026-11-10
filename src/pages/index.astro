@@ -99,7 +99,7 @@ import Layout from '../layouts/Layout.astro';
               </div>
               <div class="feed-body">
                 ${item._type === 'article' 
-                  ? `<a href="/post/${item.id}" class="article-link"><h3>${sanitizeText(item.title)}</h3><p>${sanitizeText(item.summary || '')}</p></a>`
+                  ? `<a href="/post/${item.id}" class="article-link">${item.cover_url ? `<img class="feed-cover" src="${item.cover_url}" alt="" loading="lazy" />` : ''}<h3>${sanitizeText(item.title)}</h3><p>${sanitizeText(item.summary || '')}</p></a>`
                   : `<p class="moment-text">${sanitizeText(item.content)}</p>`
                 }
               </div>
@@ -163,6 +163,7 @@ import Layout from '../layouts/Layout.astro';
     
     .feed-body .moment-text { font-size: 15px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; }
     .feed-body .article-link { display: block; }
+    .feed-cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border); }
     .feed-body h3 { font-family: var(--font-serif); font-size: 22px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; }
     .feed-body p { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
     .empty-state { font-size: 14px; color: var(--text-muted); padding: 40px 0; text-align: center; }

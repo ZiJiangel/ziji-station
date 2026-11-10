@@ -14,6 +14,7 @@ import Layout from '../layouts/Layout.astro';
       <section class="editor-box">
         <input id="title" type="text" placeholder="文章标题" class="title-input" />
         <input id="summary" type="text" placeholder="一句话摘要（可选）" class="summary-input" />
+        <input id="cover" type="url" placeholder="封面图链接（可选，https://…）" class="summary-input" />
         <textarea id="content" placeholder="正文内容，支持 Markdown…" class="content-input"></textarea>
         
         <div class="editor-footer">
@@ -36,7 +37,7 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
-    import { getFeed, createArticle } from '../lib/api';
+    import { getMyArticles, createArticle, deleteArticle } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
     import { toast, toastSuccess, toastError } from '../lib/toast';
 
@@ -49,8 +50,7 @@ import Layout from '../layouts/Layout.astro';
       }
 
       try {
-        const { articles } = await getFeed(50);
-        const mine = articles.filter((a: any) => a.user_id === uid);
+        const mine = await getMyArticles(uid);
 
         if (mine.length === 0) {
           list.innerHTML = '<div class="empty">还没有发布文章。</div>';
@@ -58,14 +58,30 @@ import Layout from '../layouts/Layout.astro';
         }
 
         list.innerHTML = mine.map((a: any) => `
-          <a href="/post/${a.id}" target="_blank" class="timeline-item">
+          <div class="timeline-item">
             <div class="time">${new Date(a.published_at).toLocaleDateString('zh-CN')}</div>
             <div class="content">
-              <h4>${sanitizeText(a.title)}</h4>
+              <a href="/post/${a.id}" target="_blank" class="t-title">${sanitizeText(a.title)}</a>
+              ${a.cover_url ? `<img class="t-cover" src="${a.cover_url}" alt="" loading="lazy" />` : ''}
               <p>${sanitizeText(a.summary || '')}</p>
+              <button type="button" class="t-del" data-id="${a.id}" aria-label="删除文章">删除</button>
             </div>
-          </a>
+          </div>
         `).join('');
+
+        list.querySelectorAll('.t-del').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = (e.currentTarget as HTMLElement).dataset.id!;
+            if (!confirm('删除后不可恢复，确定删除？')) return;
+            try {
+              await deleteArticle(id);
+              toastSuccess('已删除');
+              await renderArticles();
+            } catch (err: any) {
+              toastError('删除失败: ' + err.message);
+            }
+          });
+        });
       } catch (e: any) {
         list.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
       }
@@ -75,6 +91,7 @@ import Layout from '../layouts/Layout.astro';
       const titleEl = document.getElementById('title') as HTMLInputElement;
       const summaryEl = document.getElementById('summary') as HTMLInputElement;
       const contentEl = document.getElementById('content') as HTMLTextAreaElement;
+      const coverEl = document.getElementById('cover') as HTMLInputElement;
       const uid = localStorage.getItem('ziji_uid');
 
       if (!uid) return toast('请先登录', 'info');
@@ -85,8 +102,8 @@ import Layout from '../layouts/Layout.astro';
       btn.innerText = '发布中…';
 
       try {
-        await createArticle(uid, titleEl.value.trim(), contentEl.value.trim(), summaryEl.value.trim());
-        titleEl.value = ''; summaryEl.value = ''; contentEl.value = '';
+        await createArticle(uid, titleEl.value.trim(), contentEl.value.trim(), summaryEl.value.trim(), coverEl.value.trim());
+        titleEl.value = ''; summaryEl.value = ''; coverEl.value = ''; contentEl.value = '';
         await renderArticles();
         toastSuccess('文章已发布');
       } catch (e: any) {
@@ -134,14 +151,18 @@ import Layout from '../layouts/Layout.astro';
     .article-timeline { display: flex; flex-direction: column; gap: 20px; position: relative; }
     .article-timeline::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 0; width: 1px; background: var(--border); }
     
-    .timeline-item { display: flex; gap: 16px; text-decoration: none; position: relative; padding-left: 16px; }
+    .timeline-item { display: flex; gap: 16px; position: relative; padding-left: 16px; }
     .timeline-item::before { content: ""; position: absolute; left: -3px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
     .timeline-item:hover::before { background: var(--accent); }
     
     .timeline-item .time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-top: 2px; }
-    .timeline-item .content h4 { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; transition: color 0.2s; }
-    .timeline-item:hover .content h4 { color: var(--accent); }
+    .timeline-item .t-title { display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; text-decoration: none; transition: color 0.2s; }
+    .timeline-item .t-title:hover { color: var(--text-secondary); }
     .timeline-item .content p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .t-cover { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-sm); margin-bottom: 8px; }
+    .t-del { margin-top: 8px; padding: 0; background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
+    .t-del:hover { color: var(--danger); }
+    .t-del:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; border-radius: 3px; }
 
     .loading, .empty { font-size: 13px; color: var(--text-muted); }
 

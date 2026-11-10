@@ -100,8 +100,14 @@ export async function createMoment(uid: string, content: string) {
 }
 
 /** 发文章 */
-export async function createArticle(uid: string, title: string, content: string, summary?: string) {
-  const { error } = await supabase.from('articles').insert({ user_id: uid, title, content, summary });
+export async function createArticle(uid: string, title: string, content: string, summary?: string, coverUrl?: string) {
+  const { error } = await supabase.from('articles').insert({
+    user_id: uid,
+    title,
+    content,
+    summary,
+    cover_url: coverUrl || null,
+  });
   if (error) throw error;
 }
 
@@ -116,7 +122,7 @@ export async function getFeed(limit = 20) {
       .limit(limit),
     supabase
       .from('articles')
-      .select('id, user_id, title, summary, published_at, profiles(username, display_name, avatar_url)')
+      .select('id, user_id, title, summary, cover_url, published_at, profiles(username, display_name, avatar_url)')
       .eq('is_public', true)
       .order('published_at', { ascending: false })
       .limit(10),
@@ -127,6 +133,23 @@ export async function getFeed(limit = 20) {
     moments: m.data ?? [],
     articles: a.data ?? [],
   };
+}
+
+/** 读当前用户的全部文章（含草稿态，用于写作页归档） */
+export async function getMyArticles(uid: string) {
+  const { data, error } = await supabase
+    .from('articles')
+    .select('id, title, summary, published_at, is_public, cover_url')
+    .eq('user_id', uid)
+    .order('published_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** 删除自己的文章 */
+export async function deleteArticle(id: string) {
+  const { error } = await supabase.from('articles').delete().eq('id', id);
+  if (error) throw error;
 }
 
 /** 读某用户文章列表（区块用） */

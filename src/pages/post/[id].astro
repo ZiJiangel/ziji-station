@@ -11,7 +11,7 @@ if (!id) return Astro.redirect('/404');
 
 const { data: article } = await supabase
   .from('articles')
-  .select('id, title, content, summary, published_at, user_id, profiles(username, display_name, avatar_url)')
+  .select('id, title, content, summary, cover_url, published_at, user_id, profiles(username, display_name, avatar_url)')
   .eq('id', id)
   .eq('is_public', true)
   .maybeSingle();
@@ -43,6 +43,9 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
         <time>{dateStr}</time>
       </div>
     </header>
+    {(article as any).cover_url && (
+      <img class="cover" src={(article as any).cover_url} alt="" loading="lazy" />
+    )}
     <div class="content" set:html={html} />
     <section class="comments">
       <h2 style="font-family: var(--font-sans); font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 24px;">留言板</h2>
@@ -127,6 +130,7 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
     font-weight: 400;
     word-break: break-word;
   }
+  .cover { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 32px; border: 1px solid var(--border); }
   .meta {
     display: flex;
     align-items: center;
