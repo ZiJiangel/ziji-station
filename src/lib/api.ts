@@ -51,19 +51,16 @@ export async function saveDraft(uid: string, data: PageData) {
 }
 
 /** 发布（草稿 → 已发布） */
-export async function publishPage(uid: string) {
-  const { data, error } = await supabase
+export async function publishPage(uid: string, data: PageData) {
+  const { error } = await supabase
     .from('pages')
-    .select('draft_data')
-    .eq('user_id', uid)
-    .single();
+    .upsert({
+      user_id: uid,
+      draft_data: data,
+      published_data: data,
+      is_public: true
+    }, { onConflict: 'user_id' });
   if (error) throw error;
-
-  const { error: e2 } = await supabase
-    .from('pages')
-    .update({ published_data: data.draft_data, is_public: true })
-    .eq('user_id', uid);
-  if (e2) throw e2;
 }
 
 /** 按用户名读公开主页 */

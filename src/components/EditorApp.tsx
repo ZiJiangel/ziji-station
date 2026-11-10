@@ -108,7 +108,7 @@ export default function EditorApp() {
     setPublishing(true);
     try {
       await saveDraft(userId, { blocks: blocksRef.current });
-      await publishPage(userId);
+      await publishPage(userId, { blocks: blocksRef.current });
       alert('发布成功！访问 /' + username + ' 查看');
     } catch (e: any) {
       alert('发布失败：' + e.message);
