@@ -7,7 +7,7 @@ interface Props {
   description?: string;
   hideNav?: boolean;
 }
-const { title, description = '子骥的小站 · 记录生活的角落', hideNav = false } = Astro.props;
+const { title, description = '子骥的小站 · 构建你的数字自留地', hideNav = false } = Astro.props;
 ---
 <html lang="zh-CN">
   <head>
@@ -19,30 +19,98 @@ const { title, description = '子骥的小站 · 记录生活的角落', hideNav
   </head>
   <body>
     {!hideNav && (
-      <header style="position: sticky; top: 0; z-index: 50; height: 64px; background: oklch(0.96 0.018 75 / 0.82); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; padding: 0 28px; gap: 28px;">
-        <a href="/" style="display: flex; align-items: center; gap: 10px; font-family: var(--font-round); font-size: 18px; font-weight: 800; color: var(--ink);">
-          <span style="width: 32px; height: 32px; border-radius: 10px; background: var(--accent); color: white; display: grid; place-items: center; font-family: var(--font-hand); font-size: 20px; transform: rotate(-4deg); box-shadow: 0 2px 0 var(--accent-deep);">z</span>
-          子骥的小站
+      <header class="nav-header">
+        <a href="/" class="nav-brand">
+          <div class="brand-icon">z</div>
+          <span>子骥的小站</span>
         </a>
-        <nav style="display: flex; gap: 4px; height: 100%;">
-          <a href="/" style="height: 100%; padding: 0 16px; display: flex; align-items: center; font-family: var(--font-round); font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none;">大厅</a>
-          <a href="/dashboard" style="height: 100%; padding: 0 16px; display: flex; align-items: center; font-family: var(--font-round); font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none;">内容库</a>
-          <a href="/arcade" style="height: 100%; padding: 0 16px; display: flex; align-items: center; font-family: var(--font-round); font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none;">游戏厅</a>
+        
+        <nav class="nav-links">
+          <a href="/">大厅</a>
+          <a href="/dashboard">内容库</a>
+          <a href="/arcade">游戏厅</a>
         </nav>
-        <div style="margin-left: auto; display: flex; gap: 10px;">
-          <a href="/login" id="nav-login" class="ak-btn ak-btn--pri">登录 / 入驻</a>
-          <a href="/editor" id="nav-editor" class="ak-btn ak-btn--soft" style="display:none">进入编辑器</a>
+        
+        <div class="nav-actions">
+          <a href="/login" id="nav-login" class="btn btn-primary">登录 / 入驻</a>
+          <a href="/editor" id="nav-editor" class="btn btn-ghost" style="display:none">编辑器</a>
+          <div id="nav-avatar" class="nav-avatar" style="display:none"></div>
         </div>
       </header>
     )}
-    <div style={hideNav ? "" : "padding-top: 20px;"}>
+
+    <div class={hideNav ? "" : "page-wrapper"}>
       <slot />
     </div>
+
     <script>
-      if (localStorage.getItem('ziji_user')) {
-        document.getElementById('nav-login')!.style.display = 'none';
-        document.getElementById('nav-editor')!.style.display = 'inline-flex';
+      const user = localStorage.getItem('ziji_user');
+      if (user) {
+        const loginBtn = document.getElementById('nav-login');
+        const editorBtn = document.getElementById('nav-editor');
+        const avatar = document.getElementById('nav-avatar');
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (editorBtn) editorBtn.style.display = 'inline-flex';
+        if (avatar) {
+          avatar.style.display = 'grid';
+          avatar.innerText = user.charAt(0).toUpperCase();
+          avatar.onclick = () => window.location.href = '/' + user;
+        }
       }
     </script>
   </body>
 </html>
+
+<style>
+  .nav-header {
+    position: fixed; top: 0; left: 0; right: 0; height: 64px;
+    background: rgba(9, 9, 11, 0.7);
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; z-index: 100;
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 16px; color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+  .brand-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    color: #000; display: grid; place-items: center;
+    font-family: var(--font-hand); font-size: 18px;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .nav-links {
+    display: flex; gap: 8px;
+  }
+  .nav-links a {
+    padding: 8px 16px; border-radius: 99px;
+    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .nav-links a:hover {
+    color: var(--text-primary); background: var(--bg-surface);
+  }
+  .nav-actions {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .nav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-elevated); color: var(--accent);
+    font-weight: 600; font-size: 14px; cursor: pointer;
+    border: 1px solid var(--border); transition: all 0.2s;
+  }
+  .nav-avatar:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  
+  .page-wrapper {
+    padding-top: 64px;
+    min-height: 100vh;
+  }
+  
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+  }
+</style>

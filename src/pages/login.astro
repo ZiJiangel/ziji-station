@@ -1,31 +1,38 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="登录 · 子骥的小站·1885">
-  <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    <div class="ak-card" style="width: 100%; max-width: 400px; padding: 40px 32px;">
-      <h1 style="font-family: var(--font-round); font-size: 24px; color: var(--ink); margin-bottom: 8px; text-align: center;">进入终端</h1>
-      <p style="font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 32px;">邀请制 · 你的专属自留地</p>
+<Layout title="登录 · 子骥的小站" hideNav={true}>
+  <div class="login-bg">
+    <div class="login-wrap animate-fade-up">
+      <a href="/" class="back-home">← 返回大厅</a>
       
-      <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">
-        <div>
-          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">邀请码</label>
-          <input type="text" id="invite" placeholder="输入邀请码" required style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
+      <div class="card login-card">
+        <div class="header">
+          <div class="logo-box">z</div>
+          <h1>欢迎回来</h1>
+          <p>邀请制社区 · 你的数字自留地</p>
         </div>
-        <div>
-          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">用户名</label>
-          <input type="text" id="username" placeholder="英文小写，3-20位" pattern="[a-z0-9_]{3,20}" required style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
-        </div>
-        <div>
-          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">密码</label>
-          <input type="password" id="password" placeholder="输入密码（自动注册）" required minlength="6" style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
-        </div>
-        <button type="submit" id="submit-btn" class="ak-btn ak-btn--pri" style="height: 44px; margin-top: 8px;">验证并进入</button>
-      </form>
-      
-      <div id="status" style="margin-top: 20px; font-size: 13px; text-align: center; color: var(--muted); min-height: 20px;"></div>
+        
+        <form id="login-form" class="form">
+          <div class="input-group">
+            <label>邀请码</label>
+            <input type="text" id="invite" placeholder="请输入邀请码" required autocomplete="off" />
+          </div>
+          <div class="input-group">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="英文字母，3-20位" pattern="[a-z0-9_]{3,20}" required autocomplete="username" />
+          </div>
+          <div class="input-group">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="输入密码（无账号将自动注册）" required minlength="6" autocomplete="current-password" />
+          </div>
+          <button type="submit" id="submit-btn" class="btn btn-primary submit-btn">验证并进入</button>
+        </form>
+        
+        <div id="status" class="status"></div>
+      </div>
     </div>
-  </main>
+  </div>
 
   <script>
     import { login } from '../lib/api';
@@ -36,12 +43,6 @@ import Layout from '../layouts/Layout.astro';
     const statusEl = document.getElementById('status') as HTMLDivElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 
-    // 动态校验输入框
-    document.querySelectorAll('input').forEach(el => {
-      el.addEventListener('focus', () => (el as HTMLElement).style.borderColor = 'var(--accent)');
-      el.addEventListener('blur', () => (el as HTMLElement).style.borderColor = 'var(--line-soft)');
-    });
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const invite = (document.getElementById('invite') as HTMLInputElement).value.trim();
@@ -49,13 +50,13 @@ import Layout from '../layouts/Layout.astro';
       const password = (document.getElementById('password') as HTMLInputElement).value;
 
       if (invite !== INVITE_CODE) {
-        statusEl.textContent = '邀请码错误，请联系管理员获取。';
+        statusEl.textContent = '邀请码错误，请联系管理员。';
         statusEl.style.color = '#ef4444';
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = '正在连接…';
+      submitBtn.textContent = '正在验证…';
       statusEl.textContent = '';
 
       try {
@@ -63,14 +64,13 @@ import Layout from '../layouts/Layout.astro';
         statusEl.textContent = '验证成功，正在进入…';
         statusEl.style.color = 'var(--accent)';
         
-        // 查询是否已有主页，进行分流
         const { data: page } = await supabase.from('pages').select('is_public').eq('user_id', localStorage.getItem('ziji_uid')).maybeSingle();
         
         setTimeout(() => {
           if (page && page.is_public) {
             window.location.href = '/' + username;
           } else {
-            window.location.href = '/'; // 没主页去主站大厅
+            window.location.href = '/'; 
           }
         }, 500);
       } catch (err: any) {
@@ -81,4 +81,61 @@ import Layout from '../layouts/Layout.astro';
       }
     });
   </script>
+
+  <style>
+    .login-bg {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      background-image: radial-gradient(circle at 50% 0%, var(--accent-glow) 0%, transparent 60%);
+    }
+    .login-wrap {
+      width: 100%; max-width: 400px;
+      position: relative;
+    }
+    .back-home {
+      position: absolute; top: -40px; left: 0;
+      font-size: 13px; color: var(--text-muted); transition: color 0.2s;
+    }
+    .back-home:hover { color: var(--text-primary); }
+    
+    .login-card {
+      padding: 40px 32px;
+      box-shadow: var(--shadow-lg);
+    }
+    .header {
+      text-align: center; margin-bottom: 32px;
+    }
+    .logo-box {
+      width: 48px; height: 48px; margin: 0 auto 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      color: #000; display: grid; place-items: center;
+      font-family: var(--font-hand); font-size: 28px;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .header h1 { font-size: 22px; margin-bottom: 8px; color: var(--text-primary); }
+    .header p { font-size: 13px; color: var(--text-secondary); }
+    
+    .form { display: flex; flex-direction: column; gap: 20px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label {
+      font-size: 12px; font-weight: 500; color: var(--text-secondary); padding-left: 4px;
+    }
+    .input-group input {
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-base); border: 1px solid var(--border);
+      border-radius: var(--radius-md); color: var(--text-primary);
+      font-size: 14px; outline: none; transition: all 0.2s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    
+    .submit-btn {
+      margin-top: 8px; padding: 14px; font-size: 15px;
+    }
+    .status { margin-top: 20px; text-align: center; font-size: 13px; min-height: 20px; }
+  </style>
 </Layout>
