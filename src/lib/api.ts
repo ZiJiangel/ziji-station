@@ -5,7 +5,6 @@ import type { PageData } from './canvas';
 export async function login(username: string) {
   let { data: { user } } = await supabase.auth.getUser();
 
-  // 强制确保有 Supabase 匿名会话
   if (!user) {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) throw new Error('匿名登录失败：' + error.message);
@@ -15,16 +14,17 @@ export async function login(username: string) {
   const uid = user!.id;
   localStorage.setItem('ziji_uid', uid);
 
-  // 尝试插入/更新 profiles
   const { error: pErr } = await supabase.from('profiles').upsert({ id: uid, username }, { onConflict: 'id' });
-  if (pErr) console.error('Profile upsert error:', pErr);
+  if (pErr) {
+    if (pErr.code === '23505') throw new Error('该用户名已被占用，请换一个');
+    throw new Error('创建用户档案失败：' + pErr.message);
+  }
 
-  // 尝试插入/更新 pages
   const { error: pageErr } = await supabase.from('pages').upsert(
-    { user_id: uid, draft_data: { blocks: [] }, is_public: false },
+    { user_id: uid, draft_data: { elements: [] }, is_public: false },
     { onConflict: 'user_id' }
   );
-  if (pageErr) console.error('Page upsert error:', pageErr);
+  if (pageErr) throw new Error('初始化主页失败：' + pageErr.message);
 
   localStorage.setItem('ziji_user', username);
   return { id: uid, username };
@@ -41,25 +41,38 @@ export async function getMyPage(uid: string): Promise<PageData | null> {
   return (data?.draft_data as PageData) ?? null;
 }
 
+/** 确保 profiles 记录存在（自愈机制） */
+async function ensureProfile(uid: string) {
+  let username = localStorage.getItem('ziji_user') || ('user_' + Math.random().toString(36).slice(2, 8));
+  localStorage.setItem('ziji_user', username);
+  
+  const { error } = await supabase.from('profiles').upsert({ id: uid, username }, { onConflict: 'id' });
+  if (error) {
+    if (error.code === '23505') { // 名字冲突就加后缀
+      const newName = username + '_' + Math.random().toString(36).slice(2, 4);
+      localStorage.setItem('ziji_user', newName);
+      await supabase.from('profiles').upsert({ id: uid, username: newName }, { onConflict: 'id' });
+    } else {
+      throw new Error('同步用户资料失败: ' + error.message);
+    }
+  }
+}
+
 /** 保存草稿 */
 export async function saveDraft(uid: string, data: PageData) {
+  await ensureProfile(uid);
   const { error } = await supabase
     .from('pages')
-    .update({ draft_data: data })
-    .eq('user_id', uid);
+    .upsert({ user_id: uid, draft_data: data }, { onConflict: 'user_id' });
   if (error) throw error;
 }
 
 /** 发布（草稿 → 已发布） */
 export async function publishPage(uid: string, data: PageData) {
+  await ensureProfile(uid);
   const { error } = await supabase
     .from('pages')
-    .upsert({
-      user_id: uid,
-      draft_data: data,
-      published_data: data,
-      is_public: true
-    }, { onConflict: 'user_id' });
+    .upsert({ user_id: uid, draft_data: data, published_data: data, is_public: true }, { onConflict: 'user_id' });
   if (error) throw error;
 }
 
