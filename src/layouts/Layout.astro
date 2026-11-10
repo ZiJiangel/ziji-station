@@ -38,7 +38,14 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
           </button>
           <a href="/login" id="nav-login" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px;">登录</a>
           <a href="/editor" id="nav-editor" class="btn btn-ghost" style="display:none; padding: 6px 16px; font-size: 13px;">工作室</a>
-          <div id="nav-avatar" class="avatar" style="display:none"></div>
+          <div class="user-menu" id="user-menu" style="display:none">
+            <div id="nav-avatar" class="avatar" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true" aria-expanded="false"></div>
+            <div class="menu-panel" id="menu-panel" role="menu" hidden>
+              <a href="#" id="menu-profile" role="menuitem">我的主页</a>
+              <a href="/settings" role="menuitem">设置</a>
+              <button type="button" id="menu-logout" role="menuitem">退出登录</button>
+            </div>
+          </div>
         </div>
       </header>
     )}
@@ -57,23 +64,56 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
       function applySession(session) {
         const lb = document.getElementById('nav-login');
         const eb = document.getElementById('nav-editor');
+        const menu = document.getElementById('user-menu');
         const av = document.getElementById('nav-avatar');
-        if (!lb || !eb || !av) return;
+        const panel = document.getElementById('menu-panel');
+        const profileLink = document.getElementById('menu-profile');
+        const logoutBtn = document.getElementById('menu-logout');
+        if (!lb || !eb || !menu || !av || !panel) return;
+
         if (session) {
           const u = localStorage.getItem('ziji_user') || 'U';
           lb.style.display = 'none';
           eb.style.display = 'inline-flex';
-          av.style.display = 'grid';
+          menu.style.display = 'block';
           av.textContent = u.charAt(0).toUpperCase();
           av.title = u;
+          if (profileLink) profileLink.setAttribute('href', '/' + u);
+
           if (av.dataset.bound !== '1') {
             av.dataset.bound = '1';
-            av.addEventListener('click', () => { window.location.href = '/' + u; });
+            const toggle = (e) => {
+              e.stopPropagation();
+              const open = panel.hidden;
+              panel.hidden = !open;
+              av.setAttribute('aria-expanded', String(open));
+            };
+            av.addEventListener('click', toggle);
+            av.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
+              if (e.key === 'Escape') { panel.hidden = true; av.setAttribute('aria-expanded', 'false'); }
+            });
+            document.addEventListener('click', (e) => {
+              if (!panel.hidden && !menu.contains(e.target)) {
+                panel.hidden = true;
+                av.setAttribute('aria-expanded', 'false');
+              }
+            });
+          }
+          if (logoutBtn && logoutBtn.dataset.bound !== '1') {
+            logoutBtn.dataset.bound = '1';
+            logoutBtn.addEventListener('click', async () => {
+              await supabase.auth.signOut();
+              localStorage.removeItem('ziji_uid');
+              localStorage.removeItem('ziji_user');
+              window.location.href = '/';
+            });
           }
         } else {
           lb.style.display = 'inline-flex';
           eb.style.display = 'none';
-          av.style.display = 'none';
+          menu.style.display = 'none';
+          panel.hidden = true;
         }
       }
 
@@ -135,5 +175,13 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
   }
   .theme-btn:hover { color: var(--text-primary); border-color: var(--border-light); background: var(--bg-surface); }
   
-  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s; }
+  .avatar:hover { border-color: var(--border-light); }
+  .avatar:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+  .user-menu { position: relative; }
+  .menu-panel { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; padding: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; z-index: 200; }
+  .menu-panel[hidden] { display: none; }
+  .menu-panel a, .menu-panel button { display: block; width: 100%; text-align: left; padding: 9px 12px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background 0.15s, color 0.15s; }
+  .menu-panel a:hover, .menu-panel button:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .menu-panel a:focus-visible, .menu-panel button:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
 </style>

@@ -3,6 +3,7 @@ import type { Block, BlockType, PageData } from '../lib/blocks';
 import { createDefaultBlock, BLOCK_LABELS, getTemplates } from '../lib/blocks';
 import { getMyPage, saveDraft, publishPage } from '../lib/api';
 import { renderMarkdown } from '../lib/sanitize';
+import { toastSuccess, toastError } from '../lib/toast';
 
 const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery'];
 
@@ -92,9 +93,9 @@ export default function EditorApp() {
     try {
       await saveDraft(userId, { blocks: blocksRef.current });
       await publishPage(userId, { blocks: blocksRef.current });
-      alert('发布成功！');
+      toastSuccess('已发布到主页');
     } catch (e: any) {
-      alert('发布失败: ' + e.message);
+      toastError('发布失败: ' + e.message);
     } finally { setPublishing(false); }
   };
 

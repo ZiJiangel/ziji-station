@@ -38,6 +38,7 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import { getFeed, createArticle } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
+    import { toast, toastSuccess, toastError } from '../lib/toast';
 
     async function renderArticles() {
       const uid = localStorage.getItem('ziji_uid');
@@ -76,8 +77,8 @@ import Layout from '../layouts/Layout.astro';
       const contentEl = document.getElementById('content') as HTMLTextAreaElement;
       const uid = localStorage.getItem('ziji_uid');
 
-      if (!uid) return alert('请先登录');
-      if (!titleEl.value.trim() || !contentEl.value.trim()) return alert('标题和正文不能为空');
+      if (!uid) return toast('请先登录', 'info');
+      if (!titleEl.value.trim() || !contentEl.value.trim()) return toast('标题和正文不能为空', 'info');
 
       const btn = document.getElementById('save-btn') as HTMLButtonElement;
       btn.disabled = true;
@@ -87,8 +88,9 @@ import Layout from '../layouts/Layout.astro';
         await createArticle(uid, titleEl.value.trim(), contentEl.value.trim(), summaryEl.value.trim());
         titleEl.value = ''; summaryEl.value = ''; contentEl.value = '';
         await renderArticles();
+        toastSuccess('文章已发布');
       } catch (e: any) {
-        alert('发布失败: ' + e.message);
+        toastError('发布失败: ' + e.message);
       } finally {
         btn.disabled = false;
         btn.innerText = '发布文章';

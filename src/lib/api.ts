@@ -110,7 +110,7 @@ export async function getFeed(limit = 20) {
   const [m, a] = await Promise.all([
     supabase
       .from('moments')
-      .select('id, user_id, content, published_at, profiles(username, display_name, avatar_url)')
+      .select('id, user_id, content, created_at, profiles(username, display_name, avatar_url)')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(limit),
@@ -118,9 +118,11 @@ export async function getFeed(limit = 20) {
       .from('articles')
       .select('id, user_id, title, summary, published_at, profiles(username, display_name, avatar_url)')
       .eq('is_public', true)
-      .order('created_at', { ascending: false })
+      .order('published_at', { ascending: false })
       .limit(10),
   ]);
+  if (m.error) throw m.error;
+  if (a.error) throw a.error;
   return {
     moments: m.data ?? [],
     articles: a.data ?? [],

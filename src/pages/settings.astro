@@ -34,6 +34,7 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { supabase } from '../lib/supabase';
+    import { toastSuccess, toastError } from '../lib/toast';
 
     async function loadProfile() {
       const uid = localStorage.getItem('ziji_uid');
@@ -67,9 +68,9 @@ import Layout from '../layouts/Layout.astro';
         if (display_name) {
            // 注意这里只是展示名，真正的 username 是唯一且不可改的
         }
-        alert('保存成功！');
+        toastSuccess('保存成功');
       } catch (e: any) {
-        alert('保存失败: ' + e.message);
+        toastError('保存失败: ' + e.message);
       } finally {
         btn.disabled = false;
         btn.innerText = '保存修改';
