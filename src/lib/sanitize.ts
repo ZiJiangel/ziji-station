@@ -1,26 +1,30 @@
 import { marked } from 'marked';
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 marked.setOptions({ gfm: true, breaks: true });
 
-/** Markdown → 安全 HTML（服务端/客户端都能跑） */
+/** Markdown → 安全 HTML（兼容 Cloudflare Workers） */
 export function renderMarkdown(input: string): string {
   const raw = marked.parse(input, { async: false }) as string;
-  return DOMPurify.sanitize(raw, {
-    ALLOWED_TAGS: [
+  return sanitizeHtml(raw, {
+    allowedTags: [
       'p', 'br', 'strong', 'em', 'del', 'code', 'pre', 'blockquote',
       'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img',
     ],
-    ALLOWED_ATTR: ['href', 'title', 'alt', 'src', 'class'],
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|\/)/i,
+    allowedAttributes: {
+      a: ['href', 'target', 'rel'],
+      img: ['src', 'alt', 'title'],
+      code: ['class']
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
   });
 }
 
 /** 纯文本安全化（昵称、简介、状态） */
 export function sanitizeText(input: string): string {
   if (!input) return '';
-  return DOMPurify.sanitize(String(input), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  return sanitizeHtml(String(input), { allowedTags: [], allowedAttributes: {} });
 }
 
 /** 校验外链，只允许 http/https/mailto */

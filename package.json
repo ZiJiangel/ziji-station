@@ -18,15 +18,16 @@
     "dompurify": "^3.0.0",
     "gsap": "^3.12.0",
     "interactjs": "^1.10.0",
-    "isomorphic-dompurify": "^4.7.0",
     "marked": "^18.2.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "sanitize-html": "^2.18.1"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/sanitize-html": "^2.16.2",
     "typescript": "^5.0.0"
   },
   "pnpm": {
