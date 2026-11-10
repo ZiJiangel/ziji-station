@@ -27,10 +27,14 @@ export default function EditorApp() {
     setUserId(uid); setUsername(user);
     
     getMyPage(uid).then(data => {
-      const init = data?.blocks || [];
+      let init = data?.blocks || [];
+      // 如果还没内容，自动套用默认模板，保证一进来就有厚度
+      if (init.length === 0) {
+        init = getTemplates().blogger.data.blocks;
+        scheduleSave(init); // 顺手保存一下
+      }
       setBlocks(init);
       blocksRef.current = init;
-      if (init.length === 0) setShowTemplates(true);
     });
   }, []);
 
@@ -220,7 +224,16 @@ const layout: React.CSSProperties = { display: 'flex', flex: 1, overflow: 'hidde
 const sidebar: React.CSSProperties = { width: '220px', borderRight: '1px solid #27272a', padding: '20px', overflowY: 'auto' };
 const sectionTitle: React.CSSProperties = { fontSize: '12px', color: '#888', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' };
 const typeBtn: React.CSSProperties = { width: '100%', padding: '10px', marginBottom: '8px', background: '#27272a', border: '1px solid transparent', borderRadius: '8px', color: '#e4e4e7', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' };
-const canvas: React.CSSProperties = { flex: 1, padding: '40px', overflowY: 'auto', display: 'flex', justifyContent: 'center' };
+const canvas: React.CSSProperties = { 
+    flex: 1, 
+    padding: '40px', 
+    overflowY: 'auto', 
+    display: 'flex', 
+    justifyContent: 'center',
+    backgroundImage: 'radial-gradient(var(--line-soft) 1px, transparent 1px)',
+    backgroundSize: '20px 20px',
+    backgroundColor: '#0a0a0a'
+  };
 const previewWrap: React.CSSProperties = { width: '100%', maxWidth: '640px' };
 const blockCard = (sel: boolean): React.CSSProperties => ({ background: '#18181b', border: (sel ? '1px solid #38bdf8' : '1px solid #27272a'), borderRadius: '12px', padding: '20px', marginBottom: '16px', cursor: 'pointer', transition: 'border 0.2s' });
 const blockHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', marginBottom: '16px' };

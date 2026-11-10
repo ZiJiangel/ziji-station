@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="登录 · 子骥的小站">
+<Layout title="登录 · 子骥的小站·1885">
   <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
     <div class="ak-card" style="width: 100%; max-width: 400px; padding: 40px 32px;">
       <h1 style="font-family: var(--font-round); font-size: 24px; color: var(--ink); margin-bottom: 8px; text-align: center;">进入终端</h1>
@@ -70,7 +70,7 @@ import Layout from '../layouts/Layout.astro';
           if (page && page.is_public) {
             window.location.href = '/' + username;
           } else {
-            window.location.href = '/editor';
+            window.location.href = '/'; // 没主页去主站大厅
           }
         }, 500);
       } catch (err: any) {
