@@ -2,22 +2,28 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="登录 · 子骥的小站">
-  <main class="auth">
-    <div class="card">
-      <h1>进入终端</h1>
-      <p class="sub">使用邀请码登录，创建你的个人主页</p>
-      <form id="login-form">
-        <label>
-          <span>邀请码</span>
-          <input type="text" id="invite" placeholder="请输入邀请码" required />
-        </label>
-        <label>
-          <span>用户名（英文小写，3-20 位）</span>
-          <input type="text" id="username" placeholder="如 zijii" pattern="[a-z0-9_]{3,20}" required />
-        </label>
-        <button type="submit" id="submit-btn">验证并进入</button>
+  <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="ak-card" style="width: 100%; max-width: 400px; padding: 40px 32px;">
+      <h1 style="font-family: var(--font-round); font-size: 24px; color: var(--ink); margin-bottom: 8px; text-align: center;">进入终端</h1>
+      <p style="font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 32px;">邀请制 · 你的专属自留地</p>
+      
+      <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">邀请码</label>
+          <input type="text" id="invite" placeholder="输入邀请码" required style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">用户名</label>
+          <input type="text" id="username" placeholder="英文小写，3-20位" pattern="[a-z0-9_]{3,20}" required style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px;">密码</label>
+          <input type="password" id="password" placeholder="输入密码（自动注册）" required minlength="6" style="width: 100%; padding: 12px; background: var(--paper-2); border: 1px solid var(--line-soft); border-radius: 8px; color: var(--ink); outline: none; font-family: inherit; transition: border 0.2s;" />
+        </div>
+        <button type="submit" id="submit-btn" class="ak-btn ak-btn--pri" style="height: 44px; margin-top: 8px;">验证并进入</button>
       </form>
-      <div id="status" class="status"></div>
+      
+      <div id="status" style="margin-top: 20px; font-size: 13px; text-align: center; color: var(--muted); min-height: 20px;"></div>
     </div>
   </main>
 
@@ -26,101 +32,53 @@ import Layout from '../layouts/Layout.astro';
     import { supabase } from '../lib/supabase';
 
     const INVITE_CODE = 'ZIJI2026';
-
     const form = document.getElementById('login-form') as HTMLFormElement;
     const statusEl = document.getElementById('status') as HTMLDivElement;
     const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+    // 动态校验输入框
+    document.querySelectorAll('input').forEach(el => {
+      el.addEventListener('focus', () => (el as HTMLElement).style.borderColor = 'var(--accent)');
+      el.addEventListener('blur', () => (el as HTMLElement).style.borderColor = 'var(--line-soft)');
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const invite = (document.getElementById('invite') as HTMLInputElement).value.trim();
       const username = (document.getElementById('username') as HTMLInputElement).value.trim().toLowerCase();
+      const password = (document.getElementById('password') as HTMLInputElement).value;
 
-      if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-        statusEl.textContent = '用户名格式不正确';
-        statusEl.className = 'status error';
-        return;
-      }
       if (invite !== INVITE_CODE) {
-        statusEl.textContent = '邀请码错误';
-        statusEl.className = 'status error';
+        statusEl.textContent = '邀请码错误，请联系管理员获取。';
+        statusEl.style.color = '#ef4444';
         return;
       }
 
       submitBtn.disabled = true;
-      statusEl.textContent = '正在连接…';
-      statusEl.className = 'status';
+      submitBtn.textContent = '正在连接…';
+      statusEl.textContent = '';
 
       try {
-        await login(username);
-        statusEl.textContent = '登录成功，正在检测主页…';
-        statusEl.className = 'status ok';
+        await login(username, password);
+        statusEl.textContent = '验证成功，正在进入…';
+        statusEl.style.color = 'var(--accent)';
         
-        // 检查是否已经发布过主页
+        // 查询是否已有主页，进行分流
         const { data: page } = await supabase.from('pages').select('is_public').eq('user_id', localStorage.getItem('ziji_uid')).maybeSingle();
         
         setTimeout(() => {
           if (page && page.is_public) {
-            window.location.href = '/' + username; // 已有主页，进主页
+            window.location.href = '/' + username;
           } else {
-            window.location.href = '/'; // 没主页，进主站大厅
+            window.location.href = '/editor';
           }
         }, 500);
       } catch (err: any) {
-        statusEl.textContent = '登录失败：' + (err?.message || '未知错误');
-        statusEl.className = 'status error';
+        statusEl.textContent = err.message;
+        statusEl.style.color = '#ef4444';
         submitBtn.disabled = false;
+        submitBtn.textContent = '验证并进入';
       }
     });
   </script>
-
-  <style>
-    .auth {
-      min-height: calc(100vh - 60px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-    }
-    .card {
-      width: 100%;
-      max-width: 400px;
-      padding: 36px 28px;
-      background: #1b1b1b;
-      border: 1px solid #2a2a2a;
-      border-radius: 16px;
-    }
-    h1 { margin: 0 0 8px; font-size: 22px; color: #18d1ff; }
-    .sub { margin: 0 0 28px; font-size: 13px; color: #666; }
-    form { display: flex; flex-direction: column; gap: 16px; }
-    label { display: flex; flex-direction: column; gap: 6px; }
-    label span { font-size: 12px; color: #888; }
-    input {
-      padding: 10px 12px;
-      background: #111;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      color: #d2d2d2;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    input:focus { border-color: #18d1ff; }
-    button {
-      margin-top: 8px;
-      padding: 12px;
-      background: #18d1ff;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .status { margin-top: 16px; font-size: 13px; text-align: center; color: #666; min-height: 20px; }
-    .status.error { color: #ff4d4d; }
-    .status.ok { color: #4ade80; }
-  </style>
 </Layout>
