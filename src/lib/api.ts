@@ -3,25 +3,28 @@ import type { PageData } from './blocks';
 
 /** 登录：注册用户名，创建初始 page 记录 */
 export async function login(username: string) {
-  // 用 anonymous auth 拿到一个稳定的 uid（Supabase 提供的匿名会话）
-  const { data: { user } } = await supabase.auth.getUser();
-  let uid = user?.id ?? localStorage.getItem('ziji_uid');
+  let { data: { user } } = await supabase.auth.getUser();
 
-  if (!uid) {
+  // 强制确保有 Supabase 匿名会话
+  if (!user) {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) throw new Error('匿名登录失败：' + error.message);
-    uid = data.user!.id;
-    localStorage.setItem('ziji_uid', uid);
+    user = data.user;
   }
 
-  // 插入 profiles（忽略重复）
-  await supabase.from('profiles').upsert({ id: uid, username }, { onConflict: 'id' });
+  const uid = user!.id;
+  localStorage.setItem('ziji_uid', uid);
 
-  // 插入 pages 初始记录（忽略重复）
-  await supabase.from('pages').upsert(
+  // 尝试插入/更新 profiles
+  const { error: pErr } = await supabase.from('profiles').upsert({ id: uid, username }, { onConflict: 'id' });
+  if (pErr) console.error('Profile upsert error:', pErr);
+
+  // 尝试插入/更新 pages
+  const { error: pageErr } = await supabase.from('pages').upsert(
     { user_id: uid, draft_data: { blocks: [] }, is_public: false },
     { onConflict: 'user_id' }
   );
+  if (pageErr) console.error('Page upsert error:', pageErr);
 
   localStorage.setItem('ziji_user', username);
   return { id: uid, username };

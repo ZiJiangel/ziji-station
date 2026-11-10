@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Block, BlockType, PageData } from '../lib/blocks';
 import { createDefaultBlock, BLOCK_LABELS } from '../lib/blocks';
 import { getMyPage, saveDraft, publishPage } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { renderMarkdown } from '../lib/sanitize';
 
 const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery'];
@@ -21,18 +22,32 @@ export default function EditorApp() {
   const blocksRef = useRef<Block[]>([]);
 
   useEffect(() => {
-    const user = localStorage.getItem('ziji_user');
-    const uid = localStorage.getItem('ziji_uid');
-    if (!user || !uid) { window.location.href = '/login'; return; }
-    setUserId(uid);
-    setUsername(user);
-    getMyPage(uid)
-      .then((data) => {
-        const initial = data?.blocks?.length ? data.blocks : [createDefaultBlock('profile', uid())];
+    const init = async () => {
+      const user = localStorage.getItem('ziji_user');
+      const uid = localStorage.getItem('ziji_uid');
+      if (!user || !uid) { window.location.href = '/login'; return; }
+
+      // 校验 Supabase 会话是否仍然存在
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+
+      setUserId(uid);
+      setUsername(user);
+
+      try {
+        const data = await getMyPage(uid);
+        const initial = data?.blocks?.length ? data.blocks : [createDefaultBlock('profile', Math.random().toString(36).slice(2, 10))];
         setBlocks(initial);
         blocksRef.current = initial;
-      })
-      .catch(() => setSaveStatus('error'));
+      } catch (e) {
+        console.error('获取草稿失败:', e);
+        setSaveStatus('error');
+      }
+    };
+    init();
   }, []);
 
   // 自动保存（防抖 1.2s）
@@ -46,7 +61,8 @@ export default function EditorApp() {
         await saveDraft(userId, { blocks: blocksRef.current });
         setSaveStatus('saved');
         window.setTimeout(() => setSaveStatus('idle'), 1500);
-      } catch {
+      } catch (e) {
+        console.error('自动保存失败:', e);
         setSaveStatus('error');
       }
     }, 1200);
