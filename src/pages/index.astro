@@ -179,6 +179,8 @@ import Layout from '../layouts/Layout.astro';
       overflow-wrap: anywhere;
     }
     :global(.feed-body) :global(.article-link) { display: block; }
+    :global(.moment-images) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    :global(.moment-images img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
     :global(.feed-cover) {
       width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
       border-radius: var(--radius-md); margin-bottom: 16px;

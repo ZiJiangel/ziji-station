@@ -4,14 +4,17 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="写作 · 子骥的小站">
   <div class="dash-layout">
     
-    <!-- 左侧：沉浸式写文章 -->
+    <!-- 左侧：创作台 -->
     <main class="main-col reveal">
       <header class="header">
-        <h1 class="title">写新文章</h1>
-        <p class="sub">记录你的思考、总结或故事。支持 Markdown 语法。</p>
+        <div class="dash-tabs">
+          <button class="dash-tab active" data-tab="article">写文章</button>
+          <button class="dash-tab" data-tab="moment">发动态</button>
+        </div>
       </header>
 
-      <section class="editor-box">
+      <!-- 文章编辑器 -->
+      <section id="tab-article" class="editor-box">
         <input id="title" type="text" placeholder="文章标题" class="title-input" />
         <input id="summary" type="text" placeholder="一句话摘要（可选）" class="summary-input" />
         <input id="cover" type="url" placeholder="封面图链接（可选，https://…）" class="summary-input" />
@@ -20,6 +23,23 @@ import Layout from '../layouts/Layout.astro';
         <div class="editor-footer">
           <span>Markdown enabled</span>
           <button id="save-btn" class="btn btn-accent">发布文章</button>
+        </div>
+      </section>
+
+      <!-- 动态编辑器 -->
+      <section id="tab-moment" class="editor-box" style="display: none;">
+        <textarea id="moment-input" class="moment-textarea" placeholder="分享你的新鲜事..." maxlength="300"></textarea>
+        <div id="moment-preview" class="image-grid"></div>
+        
+        <div class="editor-footer">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <label for="moment-image-upload" class="icon-btn" title="添加图片">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </label>
+            <input type="file" id="moment-image-upload" accept="image/*" multiple style="display: none;" />
+            <span id="moment-char-count" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">0 / 300</span>
+          </div>
+          <button id="moment-save-btn" class="btn btn-accent">发布动态</button>
         </div>
       </section>
     </main>
@@ -37,9 +57,10 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
-    import { getMyArticles, createArticle, deleteArticle } from '../lib/api';
+    import { getMyArticles, createArticle, deleteArticle, createMoment } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
     import { toast, toastSuccess, toastError } from '../lib/toast';
+    import { uploadImage } from '../lib/upload';
 
     async function renderArticles() {
       const uid = localStorage.getItem('ziji_uid');
@@ -116,6 +137,127 @@ import Layout from '../layouts/Layout.astro';
 
     renderArticles();
     document.addEventListener('astro:page-load', renderArticles);
+
+    // --- Tab 切换逻辑 ---
+    function initTabs() {
+      const tabs = document.querySelectorAll('.dash-tab');
+      const tabArticle = document.getElementById('tab-article');
+      const tabMoment = document.getElementById('tab-moment');
+      if (!tabs.length || !tabArticle || !tabMoment) return;
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const target = (tab as HTMLElement).dataset.tab;
+          if (target === 'article') {
+            tabArticle.style.display = 'flex';
+            tabMoment.style.display = 'none';
+          } else {
+            tabArticle.style.display = 'none';
+            tabMoment.style.display = 'flex';
+          }
+        });
+      });
+    }
+    initTabs();
+    document.addEventListener('astro:page-load', initTabs);
+
+    // --- 动态发布逻辑 ---
+    let selectedFiles: File[] = [];
+    const momentUploadInput = document.getElementById('moment-image-upload') as HTMLInputElement;
+    const momentPreviewArea = document.getElementById('moment-preview') as HTMLElement;
+    const momentInput = document.getElementById('moment-input') as HTMLTextAreaElement;
+    const momentCharCount = document.getElementById('moment-char-count');
+
+    function updateMomentBtn() {
+      const btn = document.getElementById('moment-save-btn') as HTMLButtonElement;
+      if (!btn) return;
+      const hasContent = momentInput.value.trim().length > 0 || selectedFiles.length > 0;
+      btn.disabled = !hasContent;
+    }
+    setTimeout(updateMomentBtn, 0);
+
+    momentInput?.addEventListener('input', () => {
+      if (momentCharCount) momentCharCount.textContent = `${momentInput.value.length} / 300`;
+      updateMomentBtn();
+    });
+
+    momentUploadInput?.addEventListener('change', (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      if (!files.length) return;
+      if (files.length > 9) {
+        toastError('最多只能发 9 张图');
+        selectedFiles = files.slice(0, 9);
+      } else {
+        selectedFiles = files;
+      }
+      momentPreviewArea.innerHTML = '';
+      
+      selectedFiles.forEach((file, i) => {
+        const url = URL.createObjectURL(file);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<img src="${url}" />
+          <button class="remove-img" data-i="${i}">✕</button>`;
+        momentPreviewArea.appendChild(wrap);
+      });
+
+      momentPreviewArea.querySelectorAll('.remove-img').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          const idx = parseInt((ev.currentTarget as HTMLElement).dataset.i!);
+          selectedFiles.splice(idx, 1);
+          if (selectedFiles.length === 0) momentPreviewArea.innerHTML = '';
+          else {
+             const dt = new DataTransfer();
+             selectedFiles.forEach(f => dt.items.add(f));
+             momentUploadInput.files = dt.files;
+             momentUploadInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          updateMomentBtn();
+        });
+      });
+      updateMomentBtn();
+    });
+
+    document.getElementById('moment-save-btn')?.addEventListener('click', async () => {
+      const uid = localStorage.getItem('ziji_uid');
+      if (!uid) return toast('请先登录', 'info');
+      if (!momentInput.value.trim() && selectedFiles.length === 0) return;
+      
+      const btn = document.getElementById('moment-save-btn') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = selectedFiles.length > 0 ? '上传中…' : '发布中…';
+      
+      try {
+        const uploadedUrls: string[] = [];
+        for (const file of selectedFiles) {
+          try {
+            const url = await uploadImage(file);
+            uploadedUrls.push(url);
+          } catch (uploadErr: any) {
+            uploadedUrls.push(URL.createObjectURL(file));
+            if (uploadErr.message.includes('Bucket not found')) {
+               throw new Error('请先在 Supabase 后台创建名为 images 的公开存储桶');
+            }
+          }
+        }
+        await createMoment(uid, momentInput.value.trim(), uploadedUrls);
+        
+        momentInput.value = '';
+        if (momentCharCount) momentCharCount.textContent = '0 / 300';
+        selectedFiles = [];
+        momentUploadInput.value = '';
+        momentPreviewArea.innerHTML = '';
+        updateMomentBtn();
+        toastSuccess('动态发布成功');
+      } catch (e: any) {
+        toastError(e.message);
+      } finally { 
+        btn.disabled = false; 
+        btn.textContent = '发布动态';
+        updateMomentBtn();
+      }
+    });
   </script>
 
   <style>
@@ -124,9 +266,14 @@ import Layout from '../layouts/Layout.astro';
       display: grid; grid-template-columns: 1fr 320px; gap: 64px; align-items: start;
     }
 
-    .header { margin-bottom: 48px; }
-    .title { font-family: var(--font-serif); font-size: 48px; font-weight: 400; color: var(--text-primary); margin-bottom: 12px; }
-    .sub { font-size: 15px; color: var(--text-secondary); }
+    .header { margin-bottom: 32px; }
+    
+    .dash-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    .dash-tab { background: transparent; border: none; font-size: 18px; font-family: var(--font-serif); color: var(--text-muted); cursor: pointer; padding: 0; transition: color 0.2s; }
+    .dash-tab:hover { color: var(--text-secondary); }
+    .dash-tab.active { color: var(--text-primary); font-weight: 500; }
+
+    .moment-textarea { width: 100%; height: 200px; background: transparent; border: none; color: var(--text-primary); font-size: 16px; resize: none; outline: none; line-height: 1.6; }
 
     .editor-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; display: flex; flex-direction: column; gap: 16px; }
     
@@ -167,6 +314,18 @@ import Layout from '../layouts/Layout.astro';
     :global(.t-del):focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; border-radius: 3px; }
 
     .loading, .empty { font-size: 13px; color: var(--text-muted); }
+
+    /* 动态图片上传组件 (静态部分) */
+    .icon-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+    .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    :global(.image-grid > div) { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    :global(.image-grid img) { width: 100%; height: 100%; object-fit: cover; }
+    :global(.image-grid .remove-img) { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none; display: grid; place-items: center; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+    :global(.image-grid .remove-img):hover { background: #ef4444; }
+    :global(.image-grid > div:only-child) { grid-column: span 3; aspect-ratio: auto; max-height: 300px; }
+    :global(.image-grid > div:nth-child(2):nth-last-child(1)) { grid-column: span 2; aspect-ratio: auto; max-height: 300px; }
+    :global(.image-grid > div:nth-child(3):nth-last-child(1)) { grid-column: span 1; aspect-ratio: 1; }
 
     @media (max-width: 900px) {
       .dash-layout { grid-template-columns: 1fr; padding-top: 100px; gap: 40px; }
