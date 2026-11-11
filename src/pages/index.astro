@@ -1,46 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="大厅 · 子骥的小站">
-  <div class="page-wrap">
-    <header class="hero-section reveal">
-      <div class="hero-kicker">ZIJI.STATION</div>
-      <h1 class="hero-title">日常的<br/>回声。</h1>
-      <p class="hero-sub">在算法的缝隙里，留存一点真实的文字与碎碎念。欢迎来到子骥的小站，这里只有朋友们的日常切片。</p>
-    </header>
-
-    <div class="layout-split">
-      <main class="content-main">
-        <div class="section-header">
-          <h2>最近动态</h2>
-          <div class="line"></div>
-        </div>
-        <div id="feed-container" class="feed-list"></div>
-      </main>
-
-      <aside class="content-side reveal">
-        <div class="side-card">
-          <h3>Manifesto</h3>
-          <p class="about-text">
-            这是一个不对外公开的私有空间。<br/>
-            我们拒绝信息流算法，拒绝喧哗。<br/>
-            只在这里记录文字、生活，与老友重逢。
-          </p>
-          <div class="side-divider"></div>
-          <h3>Quick Links</h3>
-          <div class="status-list">
-            <a href="/dashboard" class="status-item link-item">
-              <span>去创作</span>
-              <strong>→</strong>
-            </a>
-            <a href="/arcade" class="status-item link-item">
-              <span>游戏厅</span>
-              <strong>→</strong>
-            </a>
-          </div>
-        </div>
-      </aside>
+<Layout title="首页 · 子骥的小站">
+  <div class="row between" style="margin-bottom: 20px;">
+    <div class="wrap">
+      <button class="chip on">全部</button>
+      <button class="chip">文章</button>
+      <button class="chip">动态</button>
     </div>
+    <span class="tiny muted" id="feed-count">加载中…</span>
+  </div>
+
+  <div id="feed-container" class="list"></div>
+  <div class="row" style="justify-content: center; gap: 8px; margin-top: 20px;">
+    <a href="/articles" class="chip">全部文章</a>
+    <a href="/gallery" class="chip">全部照片</a>
   </div>
 
   <script>
@@ -62,6 +36,7 @@ import Layout from '../layouts/Layout.astro';
 
     async function loadFeed() {
       const el = document.getElementById('feed-container');
+      const countEl = document.getElementById('feed-count');
       if (!el) return;
       try {
         const { moments, articles } = await getFeed(30);
@@ -70,8 +45,10 @@ import Layout from '../layouts/Layout.astro';
           ...articles.map((a: any) => ({ ...a, _type: 'article' })),
         ].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
 
+        if (countEl) countEl.textContent = `${all.length} 条更新`;
+
         if (all.length === 0) {
-          el.innerHTML = '<div class="empty-state">还没有人说话，去写作台发一条吧。</div>';
+          el.innerHTML = '<div class="empty"><span class="big">这里还没有内容</span>去写作台发布第一条吧。</div>';
           return;
         }
 
@@ -80,85 +57,44 @@ import Layout from '../layouts/Layout.astro';
           const name = sanitizeText(p.display_name || p.username || '匿名');
           const initial = name.charAt(0).toUpperCase();
           const isArticle = item._type === 'article';
-          return `
-            <article class="feed-item">
-              <header class="feed-meta">
-                <div class="avatar-sm">${initial}</div>
-                <div class="meta-text">
-                  <a href="/${p.username || '#'}" class="author">${name}</a>
-                  <span class="time">${fmtTime(item.published_at || item.created_at)}</span>
+          
+          if (isArticle) {
+            return `
+              <div class="li">
+                <div class="li-body">
+                  <a href="/post/${item.id}" class="li-title">${sanitizeText(item.title)}</a>
+                  <p class="li-excerpt">${sanitizeText(item.summary || '')}</p>
+                  <div class="li-meta">
+                    <span>${name}</span><span>·</span><span>${fmtTime(item.published_at)}</span>
+                    <span class="feed-kind" style="margin-left:6px">文章</span>
+                  </div>
                 </div>
-                ${isArticle ? '<span class="kind">文章</span>' : ''}
-              </header>
-              <div class="feed-body">
-                ${isArticle
-                  ? `<a href="/post/${item.id}" class="article-link">${item.cover_url ? `<img class="feed-cover" src="${item.cover_url}" alt="" loading="lazy" />` : ''}<h3>${sanitizeText(item.title)}</h3><p>${sanitizeText(item.summary || '')}</p></a>`
-                  : `<p class="moment-text">${sanitizeText(item.content)}</p>${
-                      item.images && item.images.length > 0 
-                        ? `<div class="moment-images">${item.images.map((img: string) => `<img src="${img}" loading="lazy" />`).join('')}</div>` 
-                        : ''
-                    }`
+                ${item.cover_url ? `<div class="li-side"><img src="${item.cover_url}" style="width:100%;height:100%;object-fit:cover;"/></div>` : ''}
+              </div>
+            `;
+          } else {
+            return `
+              <div class="moment">
+                <div class="moment-head">
+                  <div class="avatar-sm">${initial}</div>
+                  <a href="/${p.username || '#'}" class="moment-name">${name}</a>
+                  <span class="feed-kind">动态</span>
+                  <span class="moment-time">${fmtTime(item.created_at)}</span>
+                </div>
+                <p class="moment-text">${sanitizeText(item.content)}</p>
+                ${item.images && item.images.length > 0 
+                  ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${item.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
+                  : ''
                 }
               </div>
-            </article>
-          `;
+            `;
+          }
         }).join('');
       } catch (e: any) {
-        el.innerHTML = `<div class="empty-state" style="color: var(--danger);">加载失败: ${e.message}</div>`;
+        el.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
       }
     }
     loadFeed();
     document.addEventListener('astro:page-load', loadFeed);
   </script>
-
-  <style>
-    /* 容器由 Layout 提供，这里仅作内部布局 */
-    
-    .hero-section { margin-bottom: 56px; }
-    .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; }
-    .hero-title { font-family: var(--font-serif); font-size: clamp(44px, 5vw, 64px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.02em; }
-    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 500px; }
-
-    .layout-split { display: grid; grid-template-columns: 1fr 300px; gap: 48px; align-items: start; }
-    .section-header { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; }
-    .section-header h2 { font-family: var(--font-serif); font-size: 26px; font-weight: 400; color: var(--text-primary); white-space: nowrap; }
-    .line { flex: 1; height: 1px; background: var(--border); }
-
-    .feed-list { display: flex; flex-direction: column; gap: 24px; }
-    :global(.feed-item) { padding: 28px 32px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color 0.2s; }
-    :global(.feed-item:hover) { border-color: var(--border-light); }
-    :global(.feed-meta) { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    :global(.avatar-sm) { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: grid; place-items: center; font-size: 14px; font-weight: 600; color: var(--text-primary); }
-    :global(.meta-text) { display: flex; flex-direction: column; }
-    :global(.author) { font-size: 14px; font-weight: 500; color: var(--text-primary); text-decoration: none; }
-    :global(.time) { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
-    :global(.kind) { margin-left: auto; padding: 2px 8px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 99px; }
-    
-    :global(.feed-body) :global(.moment-text) { font-size: 15px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; }
-    :global(.moment-images) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-    :global(.moment-images img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-    :global(.feed-body) :global(.article-link) { display: block; text-decoration: none; }
-    :global(.feed-cover) { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border); }
-    :global(.feed-body h3) { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; line-height: 1.35; }
-    :global(.feed-body p) { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
-    :global(.empty-state) { padding: 40px; text-align: center; color: var(--text-muted); background: var(--bg-surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-
-    .content-side { position: sticky; top: 40px; }
-    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 24px; }
-    .side-card h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 20px; }
-    .about-text { font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
-    .side-divider { height: 1px; background: var(--border); margin: 24px 0; }
-    .status-list { display: flex; flex-direction: column; gap: 0; }
-    .status-item { display: flex; justify-content: space-between; font-size: 14px; text-decoration: none; color: var(--text-primary); }
-    .link-item { padding: 14px 0; border-bottom: 1px solid var(--border); transition: padding 0.2s; }
-    .link-item:last-child { border-bottom: none; }
-    .link-item:hover { padding-left: 4px; }
-    .link-item span { color: var(--text-secondary); }
-    
-    @media (max-width: 900px) {
-      .layout-split { grid-template-columns: 1fr; }
-      .content-side { display: none; }
-      .page-wrap { padding: 32px 20px 60px; }
-    }
-  </style>
 </Layout>

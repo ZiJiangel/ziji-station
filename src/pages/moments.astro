@@ -1,25 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="碎碎念 · 子骥的小站">
-  <div class="page-wrap">
-    <header class="page-header">
-      <h1 class="page-title">碎碎念</h1>
-      <p class="page-sub">短小、随性、即时的日常切片。</p>
-    </header>
-    
-    <div class="layout-split">
-      <main class="content-main">
-        <div id="moment-feed" class="feed-list"></div>
-      </main>
-      <aside class="content-side">
-        <div class="side-card">
-          <h3>发动态</h3>
-          <p>分享不超过 300 字的日常，支持发 9 张图。</p>
-          <a href="/dashboard" class="btn btn-primary" style="width: 100%; text-align: center; display: block; margin-top: 16px;">去发动态</a>
-        </div>
-      </aside>
+<Layout title="动态 · 子骥的小站">
+  <header class="pagehead">
+    <div>
+      <h1 class="page-title">动态</h1>
+      <p class="page-sub">一句话也算数，想到什么就丢上来。</p>
     </div>
+  </header>
+
+  <div class="sect-head">
+    <h2 class="sect-title">最近动态</h2>
+    <span class="tiny muted" id="moment-count">加载中…</span>
+  </div>
+
+  <div id="moment-list" class="list">
+    <div class="empty">加载中…</div>
   </div>
 
   <script>
@@ -28,19 +24,27 @@ import Layout from '../layouts/Layout.astro';
 
     function fmtTime(s: string) {
       const d = new Date(s); const diff = Date.now() - d.getTime();
+      if (diff < 0) return '刚刚';
       const min = Math.floor(diff / 60000);
+      if (min < 1) return '刚刚';
       if (min < 60) return min + ' 分钟前';
-      if (min < 1440) return Math.floor(min / 60) + ' 小时前';
-      return d.toLocaleDateString('zh-CN');
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return hr + ' 小时前';
+      const day = Math.floor(hr / 24);
+      if (day < 7) return day + ' 天前';
+      return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
     }
 
     async function loadMoments() {
-      const el = document.getElementById('moment-feed');
+      const el = document.getElementById('moment-list');
+      const countEl = document.getElementById('moment-count');
       if (!el) return;
       try {
         const { moments } = await getFeed(50);
+        if (countEl) countEl.textContent = `${moments.length} 条`;
+
         if (moments.length === 0) {
-          el.innerHTML = '<div class="empty-state">这里还很安静，来发第一条碎碎念吧。</div>';
+          el.innerHTML = '<div class="empty"><span class="big">一句都还没有</span>去写作台发第一条吧。</div>';
           return;
         }
         el.innerHTML = moments.map(m => {
@@ -48,26 +52,22 @@ import Layout from '../layouts/Layout.astro';
           const name = sanitizeText(p.display_name || p.username || '匿名');
           const initial = name.charAt(0).toUpperCase();
           return `
-            <article class="feed-item">
-              <header class="feed-meta">
+            <div class="moment">
+              <div class="moment-head">
                 <div class="avatar-sm">${initial}</div>
-                <div class="meta-text">
-                  <a href="/${p.username || '#'}" class="author">${name}</a>
-                  <span class="time">${fmtTime(m.created_at)}</span>
-                </div>
-              </header>
-              <div class="feed-body">
-                <p class="moment-text">${sanitizeText(m.content)}</p>
-                ${m.images && m.images.length > 0 
-                  ? `<div class="moment-images">${m.images.map((img: string) => `<img src="${img}" loading="lazy" />`).join('')}</div>` 
-                  : ''
-                }
+                <a href="/${p.username || '#'}" class="moment-name">${name}</a>
+                <span class="moment-time">${fmtTime(m.created_at)}</span>
               </div>
-            </article>
+              <p class="moment-text">${sanitizeText(m.content)}</p>
+              ${m.images && m.images.length > 0 
+                ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${m.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
+                : ''
+              }
+            </div>
           `;
         }).join('');
       } catch (e: any) {
-        el.innerHTML = `<div class="empty-state" style="color:var(--danger)">加载失败: ${e.message}</div>`;
+        el.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
       }
     }
     loadMoments();
@@ -75,33 +75,8 @@ import Layout from '../layouts/Layout.astro';
   </script>
 
   <style>
-    /* 容器由 Layout 提供 */
-    .page-header { margin-bottom: 40px; }
-    .page-title { font-family: var(--font-serif); font-size: 36px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; }
-    .page-sub { font-size: 15px; color: var(--text-secondary); }
-    
-    .layout-split { display: grid; grid-template-columns: 1fr 300px; gap: 48px; align-items: start; }
-    .feed-list { display: flex; flex-direction: column; gap: 24px; }
-    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
-    .side-card h3 { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
-    .side-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
-    
-    :global(.feed-item) { padding: 28px 32px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color 0.2s; }
-    :global(.feed-item:hover) { border-color: var(--border-light); }
-    :global(.feed-meta) { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    :global(.avatar-sm) { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: grid; place-items: center; font-size: 14px; font-weight: 600; color: var(--text-primary); }
-    :global(.meta-text) { display: flex; flex-direction: column; }
-    :global(.author) { font-size: 14px; font-weight: 500; color: var(--text-primary); text-decoration: none; }
-    :global(.time) { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
-    :global(.feed-body) :global(.moment-text) { font-size: 15px; color: var(--text-secondary); line-height: 1.8; white-space: pre-wrap; }
-    :global(.moment-images) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-    :global(.moment-images img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-    :global(.empty-state) { padding: 40px; text-align: center; color: var(--text-muted); background: var(--bg-surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-    
-    @media (max-width: 900px) {
-      .layout-split { grid-template-columns: 1fr; }
-      .content-side { display: none; }
-      .page-wrap { padding: 32px 20px 60px; }
-    }
+    .pagehead { margin-bottom: 22px; }
+    .page-title { font-size: 23px; font-weight: 700; margin: 0 0 5px; color: var(--text-primary); }
+    .page-sub { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
   </style>
 </Layout>
