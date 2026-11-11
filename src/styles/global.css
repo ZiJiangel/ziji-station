@@ -1,5 +1,75 @@
+/* Hallmark · macrostructure: Long Document · tone: editorial · anchor hue: 240 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap');
-@import '../../tokens.css';
+
+:root {
+  --font-serif: 'Newsreader', Georgia, 'Songti SC', 'SimSun', serif;
+  --font-sans: 'Inter', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 主题 1：暖白纸张 (默认) */
+:root, [data-theme="paper"] {
+  --bg: #fcfcfb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f4f4f5;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  --border: #e4e4e7;
+  --border-light: #d4d4d8;
+  --nav-bg: rgba(252, 252, 251, 0.85);
+  --bg-glow: radial-gradient(circle at 50% 0%, rgba(0,0,0,0.02) 0%, transparent 60%);
+  --danger: #dc2626;
+}
+
+/* 主题 2：极深空黑 */
+[data-theme="night"] {
+  --bg: #09090b;
+  --bg-surface: #121214;
+  --bg-elevated: #18181b;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+  --border: #27272a;
+  --border-light: #3f3f46;
+  --nav-bg: rgba(9, 9, 11, 0.85);
+  --bg-glow: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%);
+  --danger: #f87171;
+}
+
+/* 主题 3：玻璃拟态 */
+[data-theme="glass"] {
+  --bg: #e4e7eb;
+  --bg-surface: rgba(255, 255, 255, 0.6);
+  --bg-elevated: rgba(255, 255, 255, 0.4);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.5);
+  --border-light: rgba(255, 255, 255, 0.8);
+  --nav-bg: rgba(228, 231, 235, 0.7);
+  --bg-glow: radial-gradient(circle at 0% 0%, #cbd5e1 0%, transparent 50%), radial-gradient(circle at 100% 100%, #bae6fd 0%, transparent 50%);
+  --danger: #ef4444;
+}
+
+/* 主题 4：赤陶暖沙 */
+[data-theme="warm"] {
+  --bg: #fdfaf6;
+  --bg-surface: #fcf5ec;
+  --bg-elevated: #f6e8d8;
+  --text-primary: #3b2c25;
+  --text-secondary: #78645a;
+  --text-muted: #a18c80;
+  --border: #eaddd1;
+  --border-light: #dec9b8;
+  --nav-bg: rgba(253, 250, 246, 0.85);
+  --bg-glow: radial-gradient(circle at 50% 0%, rgba(220, 180, 130, 0.08) 0%, transparent 60%);
+  --danger: #dc2626;
+}
 
 html, body { overflow-x: clip; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -7,14 +77,12 @@ html, body { overflow-x: clip; }
 body {
   font-family: var(--font-sans);
   background-color: var(--bg);
+  background-image: var(--bg-glow);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  
-  /* 极简的顶部微光，不再是花屏噪点 */
-  background-image: var(--bg-glow);
-  background-attachment: fixed;
+  transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
   min-height: 100vh;
 }
 
@@ -24,92 +92,26 @@ input, textarea { font-family: inherit; }
 
 ::selection { background: var(--text-primary); color: var(--bg); }
 
-/* 滚动条 */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
-/* 按钮体系 */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 10px 24px; border-radius: 99px; font-size: 14px; font-weight: 500;
-  transition: all 0.2s ease;
-}
-.btn-primary { background: var(--text-primary); color: var(--bg); }
-.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-ghost { background: transparent; color: var(--text-primary); border: 1px solid var(--border-light); }
-.btn-ghost:hover { background: var(--bg-surface); }
-
-/* 键盘焦点环 —— 必须在所有交互元素上可见，且不做动画 */
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-[tabindex]:focus-visible {
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--text-primary);
   outline-offset: 3px;
   border-radius: 4px;
 }
-/* 已经自带边框反馈的输入框，用更贴合的样式 */
-input:focus-visible,
-textarea:focus-visible {
+input:focus-visible, textarea:focus-visible {
   outline: none;
-  border-bottom-color: var(--text-primary);
+  border-color: var(--text-primary) !important;
 }
 
-/* Toast 通知 */
-.toast-stack {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 9999;
-  pointer-events: none;
-}
-.toast {
-  padding: 10px 20px;
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-size: 13px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
-  max-width: 80vw;
-  text-align: center;
-}
-.toast--in { opacity: 1; transform: translateY(0); }
-.toast--success { border-color: var(--border-light); }
-.toast--error { color: var(--danger); border-color: var(--danger); }
-@media (prefers-reduced-motion: reduce) {
-  .toast { transition: opacity 0.01ms; transform: none; }
-}
-
-/* 统一动效 */
-.reveal {
-  opacity: 0; transform: translateY(16px);
-  animation: revealUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
-
-/* 减少动效偏好：空间动效降级为 ≤150ms 透明度过渡 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-  .reveal {
-    opacity: 1;
-    transform: none;
-    animation: none;
   }
 }

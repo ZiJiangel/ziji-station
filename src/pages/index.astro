@@ -2,14 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="首页 · 子骥的小站">
-  <div class="pagehead">
+  <div class="pagehead reveal">
     <div>
       <h1>首页</h1>
       <p>最近大家写了什么、发了什么，都在这里。</p>
     </div>
   </div>
 
-  <div class="row between" style="margin:20px 0 11px">
+  <div class="row between reveal reveal-delay-1" style="margin:20px 0 11px">
     <div class="wrap" id="feed-tabs">
       <button class="chip on" data-filter="all">全部</button>
       <button class="chip" data-filter="article">文章</button>
@@ -18,9 +18,9 @@ import Layout from '../layouts/Layout.astro';
     <span class="tiny muted" id="feed-count">加载中…</span>
   </div>
 
-  <div id="feed-container" class="list reveal reveal-delay-1"></div>
+  <div id="feed-container" class="list reveal reveal-delay-2"></div>
   
-  <div class="row" style="justify-content:center;gap:8px;margin-top:18px">
+  <div class="row reveal reveal-delay-3" style="justify-content:center;gap:8px;margin-top:24px">
     <a href="/articles" class="btn">全部文章</a>
     <a href="/gallery" class="btn">全部照片</a>
   </div>
@@ -44,6 +44,7 @@ import Layout from '../layouts/Layout.astro';
 
     let currentFilter = 'all';
     
+    // 绑定 Tab 切换
     document.querySelectorAll('#feed-tabs .chip').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget as HTMLElement;
