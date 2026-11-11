@@ -230,16 +230,19 @@ import Layout from '../layouts/Layout.astro';
       
       try {
         const uploadedUrls: string[] = [];
+        let uploadFailed = false;
         for (const file of selectedFiles) {
           try {
             const url = await uploadImage(file);
             uploadedUrls.push(url);
           } catch (uploadErr: any) {
+            console.warn('图片上传失败，使用本地预览:', uploadErr);
             uploadedUrls.push(URL.createObjectURL(file));
-            if (uploadErr.message.includes('Bucket not found')) {
-               throw new Error('请先在 Supabase 后台创建名为 images 的公开存储桶');
-            }
+            uploadFailed = true;
           }
+        }
+        if (uploadFailed) {
+          toast('图床未配置，图片仅在当前会话可见', 'info');
         }
         await createMoment(uid, momentInput.value.trim(), uploadedUrls);
         
