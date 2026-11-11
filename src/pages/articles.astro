@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="文章 · 子骥的小站">
+  <div class="page-wrap">
+    <header class="page-header">
+      <h1 class="page-title">全部文章</h1>
+      <p class="page-sub">朋友们留下的长篇思考、总结与故事。</p>
+    </header>
+    
+    <div class="layout-split">
+      <main class="content-main">
+        <div id="article-feed" class="feed-list"></div>
+      </main>
+      <aside class="content-side">
+        <div class="side-card">
+          <h3>写作提示</h3>
+          <p>支持 Markdown 语法。发布后所有人都能在这里看到你的文章。</p>
+          <a href="/dashboard" class="btn btn-primary" style="width: 100%; text-align: center; display: block; margin-top: 16px;">去写文章</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    import { getFeed } from '../lib/api';
+    import { sanitizeText } from '../lib/sanitize';
+
+    function fmtTime(s: string) {
+      const d = new Date(s); const diff = Date.now() - d.getTime();
+      const min = Math.floor(diff / 60000);
+      if (min < 60) return min + ' 分钟前';
+      if (min < 1440) return Math.floor(min / 60) + ' 小时前';
+      return d.toLocaleDateString('zh-CN');
+    }
+
+    async function loadArticles() {
+      const el = document.getElementById('article-feed');
+      if (!el) return;
+      try {
+        const { articles } = await getFeed(50);
+        if (articles.length === 0) {
+          el.innerHTML = '<div class="empty-state">还没有人发布文章。</div>';
+          return;
+        }
+        el.innerHTML = articles.map(a => {
+          const p = a.profiles || {};
+          const name = sanitizeText(p.display_name || p.username || '匿名');
+          const initial = name.charAt(0).toUpperCase();
+          return `
+            <article class="feed-item">
+              <header class="feed-meta">
+                <div class="avatar-sm">${initial}</div>
+                <div class="meta-text">
+                  <a href="/${p.username || '#'}" class="author">${name}</a>
+                  <span class="time">${fmtTime(a.published_at)}</span>
+                </div>
+              </header>
+              <div class="feed-body">
+                <a href="/post/${a.id}" class="article-link">
+                  ${a.cover_url ? `<img class="feed-cover" src="${a.cover_url}" alt="" loading="lazy" />` : ''}
+                  <h3>${sanitizeText(a.title)}</h3>
+                  <p>${sanitizeText(a.summary || '')}</p>
+                </a>
+              </div>
+            </article>
+          `;
+        }).join('');
+      } catch (e: any) {
+        el.innerHTML = `<div class="empty-state" style="color:var(--danger)">加载失败: ${e.message}</div>`;
+      }
+    }
+    loadArticles();
+    document.addEventListener('astro:page-load', loadArticles);
+  </script>
+
+  <style>
+    .page-wrap { max-width: 1080px; margin: 0 auto; padding: 40px 32px 80px; }
+    .page-header { margin-bottom: 40px; }
+    .page-title { font-family: var(--font-serif); font-size: 36px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; }
+    .page-sub { font-size: 15px; color: var(--text-secondary); }
+    
+    .layout-split { display: grid; grid-template-columns: 1fr 300px; gap: 48px; align-items: start; }
+    .feed-list { display: flex; flex-direction: column; gap: 24px; }
+    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; }
+    .side-card h3 { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+    .side-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    
+    :global(.feed-item) { padding: 28px 32px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color 0.2s; }
+    :global(.feed-item:hover) { border-color: var(--border-light); }
+    :global(.feed-meta) { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    :global(.avatar-sm) { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: grid; place-items: center; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    :global(.meta-text) { display: flex; flex-direction: column; }
+    :global(.author) { font-size: 14px; font-weight: 500; color: var(--text-primary); text-decoration: none; }
+    :global(.time) { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+    :global(.feed-body) :global(.article-link) { display: block; text-decoration: none; }
+    :global(.feed-cover) { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border); }
+    :global(.feed-body h3) { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); margin-bottom: 8px; line-height: 1.35; }
+    :global(.feed-body p) { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+    :global(.empty-state) { padding: 40px; text-align: center; color: var(--text-muted); background: var(--bg-surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
+    
+    @media (max-width: 900px) {
+      .layout-split { grid-template-columns: 1fr; }
+      .content-side { display: none; }
+      .page-wrap { padding: 32px 20px 60px; }
+    }
+  </style>
+</Layout>

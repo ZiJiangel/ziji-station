@@ -4,7 +4,14 @@ import { ViewTransitions } from 'astro:transitions';
 
 interface Props { title: string; description?: string; hideNav?: boolean; }
 const { title, description = '朋友们的数字客厅', hideNav = false } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const isActive = (path: string) => {
+  if (path === '/' && pathname !== '/') return false;
+  return pathname.startsWith(path);
+};
 ---
+
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -23,33 +30,72 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
     </script>
   </head>
   <body>
-    {!hideNav && (
-      <header class="top-nav">
-        <a href="/" class="logo">ZIJI.STATION</a>
-        <nav class="nav-links">
-          <a href="/">大厅</a>
-          <a href="/dashboard">写作</a>
-          <a href="/arcade">游戏厅</a>
-        </nav>
-        <div class="nav-actions">
-          <button id="theme-toggle" class="theme-btn" title="切换主题">
-            <svg id="icon-sun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            <svg id="icon-moon" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          </button>
-          <a href="/login" id="nav-login" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px;">登录</a>
-          <a href="/editor" id="nav-editor" class="btn btn-ghost" style="display:none; padding: 6px 16px; font-size: 13px;">工作室</a>
-          <div class="user-menu" id="user-menu" style="display:none">
-            <div id="nav-avatar" class="avatar" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true" aria-expanded="false"></div>
-            <div class="menu-panel" id="menu-panel" role="menu" hidden>
-              <a href="#" id="menu-profile" role="menuitem">我的主页</a>
-              <a href="/settings" role="menuitem">设置</a>
-              <button type="button" id="menu-logout" role="menuitem">退出登录</button>
-            </div>
+    {!hideNav ? (
+      <div class="app-shell">
+        <!-- 左侧导航 -->
+        <aside class="app-sidebar">
+          <a href="/" class="side-brand">
+            <div class="brand-mark">Z</div>
+            <span class="brand-name">子骥的小站</span>
+          </a>
+
+          <nav class="side-nav">
+            <div class="nav-group">浏览</div>
+            <a href="/" class={`nav-item ${isActive('/') ? 'active' : ''}`}>大厅</a>
+            <a href="/moments" class={`nav-item ${isActive('/moments') ? 'active' : ''}`}>碎碎念</a>
+            <a href="/articles" class={`nav-item ${isActive('/articles') ? 'active' : ''}`}>文章</a>
+            
+            <div class="nav-group">创作与娱乐</div>
+            <a href="/dashboard" class={`nav-item ${isActive('/dashboard') ? 'active' : ''}`}>写作台</a>
+            <a href="/arcade" class={`nav-item ${isActive('/arcade') ? 'active' : ''}`}>游戏厅</a>
+            
+            <div class="nav-group">我的</div>
+            <a href="#" id="nav-profile" class="nav-item" style="display:none">我的主页</a>
+            <a href="/settings" class={`nav-item ${isActive('/settings') ? 'active' : ''}`} id="nav-settings" style="display:none">设置</a>
+            <a href="/editor" class={`nav-item ${isActive('/editor') ? 'active' : ''}`} id="nav-editor" style="display:none">工作室</a>
+          </nav>
+          
+          <div class="side-foot">
+            ZIJI.STATION © 2026<br/>邀请制 · 私有空间
           </div>
+        </aside>
+
+        <!-- 右侧主内容区 -->
+        <div class="app-main">
+          <!-- 顶部工具栏 -->
+          <header class="app-topbar">
+            <div class="topbar-search">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="搜索小站..." />
+            </div>
+            
+            <div class="topbar-actions">
+              <button id="theme-toggle" class="icon-btn" title="切换主题">
+                <svg id="icon-sun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <svg id="icon-moon" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </button>
+              
+              <a href="/login" id="nav-login" class="btn btn-primary">登录</a>
+              <div class="user-menu" id="user-menu" style="display:none">
+                <div id="nav-avatar" class="avatar" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true" aria-expanded="false"></div>
+                <div class="menu-panel" id="menu-panel" role="menu" hidden>
+                  <a href="#" id="menu-profile" role="menuitem">我的主页</a>
+                  <a href="/settings" role="menuitem">个人设置</a>
+                  <button type="button" id="menu-logout" role="menuitem">退出登录</button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main class="app-content">
+            <slot />
+          </main>
         </div>
-      </header>
+      </div>
+    ) : (
+      <slot />
     )}
-    <slot />
+
     <script>
       import { supabase } from '../lib/supabase';
 
@@ -63,19 +109,24 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
 
       function applySession(session) {
         const lb = document.getElementById('nav-login');
-        const eb = document.getElementById('nav-editor');
+        const sb = document.getElementById('nav-settings');
+        const ed = document.getElementById('nav-editor');
+        const pr = document.getElementById('nav-profile');
         const menu = document.getElementById('user-menu');
         const av = document.getElementById('nav-avatar');
         const panel = document.getElementById('menu-panel');
         const profileLink = document.getElementById('menu-profile');
         const logoutBtn = document.getElementById('menu-logout');
-        if (!lb || !eb || !menu || !av || !panel) return;
+        if (!lb || !menu || !av || !panel) return;
 
         if (session) {
           const u = localStorage.getItem('ziji_user') || 'U';
           lb.style.display = 'none';
-          eb.style.display = 'inline-flex';
           menu.style.display = 'block';
+          if (sb) sb.style.display = 'flex';
+          if (ed) ed.style.display = 'flex';
+          if (pr) { pr.style.display = 'flex'; pr.setAttribute('href', '/' + u); }
+          
           av.textContent = u.charAt(0).toUpperCase();
           av.title = u;
           if (profileLink) profileLink.setAttribute('href', '/' + u);
@@ -110,15 +161,16 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
             });
           }
         } else {
-          lb.style.display = 'inline-flex';
-          eb.style.display = 'none';
+          lb.style.display = 'flex';
           menu.style.display = 'none';
+          if (sb) sb.style.display = 'none';
+          if (ed) ed.style.display = 'none';
+          if (pr) pr.style.display = 'none';
           panel.hidden = true;
         }
       }
 
       function bindNav() {
-        // ViewTransitions 切页后 html 属性会被重置，需重新应用主题
         const saved = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const theme = saved || (prefersDark ? 'dark' : 'light');
@@ -139,7 +191,6 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
         }
       }
 
-      // 每次页面就绪都重绑主题 + 重新读一次 session（ViewTransitions 会替换导航栏 DOM）
       function refresh() {
         bindNav();
         supabase.auth.getSession().then(({ data }) => applySession(data.session));
@@ -153,48 +204,174 @@ const { title, description = '朋友们的数字客厅', hideNav = false } = Ast
 </html>
 
 <style>
-  .top-nav {
-    position: fixed; top: 0; left: 0; right: 0; height: 64px;
-    background: var(--nav-bg); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; z-index: 100; max-width: 1400px; margin: 0 auto;
-    transition: background-color 0.3s;
-  }
-  .logo { font-family: var(--font-mono); font-weight: 600; font-size: 14px; letter-spacing: 0.05em; }
-  .nav-links { display: flex; gap: 24px; }
-  .nav-links a { font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: color 0.2s; }
-  .nav-links a:hover { color: var(--text-primary); }
-  .nav-actions { display: flex; gap: 12px; align-items: center; }
-  
-  .theme-btn {
-    display: grid; place-items: center;
-    width: 32px; height: 32px; border-radius: 50%;
-    color: var(--text-secondary); border: 1px solid var(--border);
-    transition: all 0.2s;
-  }
-  .theme-btn:hover { color: var(--text-primary); border-color: var(--border-light); background: var(--bg-surface); }
-  
-  @media (max-width: 640px) {
-    .top-nav { padding: 0 16px; gap: 8px; }
-    .logo { font-size: 12px; letter-spacing: 0; }
-    .nav-links { gap: 16px; }
-    .nav-links a { font-size: 12px; }
-    .nav-actions { gap: 8px; }
-  }
-  @media (max-width: 420px) {
-    .logo { display: none; }
-    .nav-links { gap: 14px; }
-    #nav-editor { display: none !important; }
+  /* App Shell Layout */
+  .app-shell {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg);
   }
 
-  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 12px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s; }
+  /* 侧边栏 */
+  .app-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+
+  .side-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+    margin-bottom: 32px;
+    text-decoration: none;
+  }
+  .brand-mark {
+    width: 32px; height: 32px;
+    background: var(--text-primary);
+    color: var(--bg);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 16px;
+    font-family: var(--font-serif);
+  }
+  .brand-name {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .side-nav { display: flex; flex-direction: column; gap: 4px; }
+  
+  .nav-group {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin: 20px 8px 8px;
+    text-transform: uppercase;
+  }
+  
+  .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .nav-item:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+  .nav-item.active {
+    background: var(--text-primary);
+    color: var(--bg);
+  }
+
+  .side-foot {
+    margin-top: auto;
+    padding: 24px 8px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* 主区域 */
+  .app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* 顶部栏 */
+  .app-topbar {
+    height: 64px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px);
+    z-index: 5;
+  }
+
+  .topbar-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid transparent;
+    border-radius: 99px;
+    padding: 0 16px;
+    height: 36px;
+    width: 300px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .topbar-search:focus-within {
+    border-color: var(--border-light);
+    background: var(--bg-surface);
+  }
+  .topbar-search input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .topbar-actions { display: flex; align-items: center; gap: 16px; }
+
+  .icon-btn {
+    display: grid; place-items: center;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-secondary); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 13px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s; }
   .avatar:hover { border-color: var(--border-light); }
-  .avatar:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+  
   .user-menu { position: relative; }
   .menu-panel { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; padding: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; z-index: 200; }
   .menu-panel[hidden] { display: none; }
   .menu-panel a, .menu-panel button { display: block; width: 100%; text-align: left; padding: 9px 12px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background 0.15s, color 0.15s; }
   .menu-panel a:hover, .menu-panel button:hover { background: var(--bg-elevated); color: var(--text-primary); }
-  .menu-panel a:focus-visible, .menu-panel button:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -2px; }
+
+  /* 主内容滚动区 */
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg);
+    position: relative;
+  }
+
+  /* 移动端响应式：侧栏收起 */
+  @media (max-width: 900px) {
+    .app-sidebar { display: none; }
+    .app-topbar { padding: 0 16px; }
+    .topbar-search { width: 200px; }
+  }
 </style>
