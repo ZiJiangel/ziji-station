@@ -50,7 +50,7 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
-    import { getFeed, createMoment } from '../lib/api';
+    import { getFeed } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
 
 
@@ -114,15 +114,7 @@ import Layout from '../layouts/Layout.astro';
       } catch (e: any) {
         el.innerHTML = `<div class="empty-state" style="color: var(--danger);">加载失败: ${e.message}</div>`;
       }
-    }loadFeed();
-        toastModule.toastSuccess('发布成功');
-      } catch (e: any) {
-        toastModule.toastError(e.message);
-      } finally { 
-        btn.disabled = false; 
-        btn.textContent = '发布';
-      }
-    });
+    }
 
     loadFeed();
     document.addEventListener('astro:page-load', loadFeed);
@@ -137,7 +129,9 @@ import Layout from '../layouts/Layout.astro';
     .hero-section { margin-bottom: 64px; }
     .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; }
     .hero-title { font-family: var(--font-serif); font-size: clamp(44px, 5vw, 64px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.02em; }
-    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }.section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }
+
+    .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
     .section-header h2 { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); }
     .line { flex: 1; height: 1px; background: var(--border); }
 
