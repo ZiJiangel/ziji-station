@@ -1,0 +1,66 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="邀请 · 子骥的小站">
+  <div class="pagehead">
+    <div>
+      <h1>邀请</h1>
+      <p>生成邀请码，把朋友加进来。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row between" style="margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:650">生成一张邀请码</div>
+        <div class="tiny muted">一次性，7 天有效。发给朋友后对方用邮箱登录即可。</div>
+      </div>
+      <button class="btn primary sm" id="gen-btn">+ 生成</button>
+    </div>
+    
+    <div id="invite-result" style="display:none">
+      <div class="rule" style="margin:12px 0"></div>
+      <div class="row between">
+        <div>
+          <div class="tiny muted">最新生成的邀请链接</div>
+          <div class="code" style="margin-top:3px" id="invite-link"></div>
+        </div>
+        <button class="btn sm" id="copy-btn">复制链接</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { toastSuccess, toastError } from '../lib/toast';
+
+    document.getElementById('gen-btn')?.addEventListener('click', () => {
+      const btn = document.getElementById('gen-btn') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.innerText = '生成中…';
+
+      setTimeout(() => {
+        const code = 'ZJ-' + Date.now().toString(36).toUpperCase();
+        const link = `https://ziji-station.pages.dev/login?code=${code}`;
+        
+        const resEl = document.getElementById('invite-result');
+        const linkEl = document.getElementById('invite-link');
+        if (resEl && linkEl) {
+          linkEl.textContent = link;
+          resEl.style.display = 'block';
+        }
+        
+        btn.disabled = false;
+        btn.innerText = '+ 生成';
+
+        // 绑定复制
+        document.getElementById('copy-btn')?.addEventListener('click', () => {
+          navigator.clipboard.writeText(link).then(() => {
+            toastSuccess('邀请链接已复制');
+          }).catch(() => {
+            toastError('复制失败，请手动选中');
+          });
+        });
+      }, 500);
+    });
+  </script>
+</Layout>

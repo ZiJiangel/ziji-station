@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="成员 · 子骥的小站">
+  <div class="pagehead">
+    <div>
+      <h1>成员</h1>
+      <p>能进这个站的就这几位。</p>
+    </div>
+  </div>
+
+  <div id="members-content">
+    <div class="empty">加载中…</div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    async function loadMembers() {
+      const el = document.getElementById('members-content');
+      if (!el) return;
+
+      try {
+        const { data: users, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!users || users.length === 0) {
+          el.innerHTML = '<div class="empty">还没有成员记录。</div>';
+          return;
+        }
+
+        const colors = ['#0F6E63', '#3A67A8', '#B07B2C', '#B4523F', '#54677A', '#7A6390', '#223E4A'];
+
+        el.innerHTML = `
+          <div class="stat-row">
+            <div class="stat"><div class="v">${users.length}</div><div class="k">当前成员</div></div>
+            <div class="stat"><div class="v">${users.length}</div><div class="k">累计入驻</div></div>
+            <div class="stat"><div class="v">—</div><div class="k">一起写过的文章</div></div>
+            <div class="stat"><div class="v">—</div><div class="k">一起存的照片</div></div>
+          </div>
+          <div class="card" style="padding:2px 18px">
+            <div class="people">
+              ${users.map((u, i) => `
+                <div class="person">
+                  <div class="avatar-sm" style="width:46px;height:46px;font-size:18px;background:${colors[i % colors.length]}">${u.username.charAt(0).toUpperCase()}</div>
+                  <div style="flex:1;min-width:0">
+                    <div class="pn">${u.display_name || u.username}</div>
+                    <div class="pm">@${u.username} · 成员</div>
+                    <div class="pm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.bio || '这个人很懒，什么都没写。'}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } catch (e: any) {
+        el.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
+      }
+    }
+    loadMembers();
+    document.addEventListener('astro:page-load', loadMembers);
+  </script>
+</Layout>
