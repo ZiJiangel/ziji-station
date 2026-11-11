@@ -17,6 +17,17 @@ highlightNav();
 document.addEventListener('astro:page-load', highlightNav);
 
 // 3. 外观：色相 + 明暗，两属性独立
+// ViewTransitions SPA 导航会替换 <html> 属性，需在每次 swap 后恢复
+function reapplyTheme() {
+  var root = document.documentElement;
+  var t = localStorage.getItem('zj-theme') || 'ink';
+  var m = localStorage.getItem('zj-mode') || 'light';
+  root.setAttribute('data-theme', t);
+  root.setAttribute('data-mode', m);
+  root.classList.remove('theme-transitioning');
+}
+document.addEventListener('astro:after-swap', reapplyTheme);
+
 function syncThemeUI() {
   var root = document.documentElement;
   var t = root.getAttribute('data-theme') || 'ink';
