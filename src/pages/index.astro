@@ -122,17 +122,18 @@ import Layout from '../layouts/Layout.astro';
 
   <style>
     .home-layout {
-      max-width: 1100px; margin: 0 auto; padding: 120px 32px 80px;
-      display: grid; grid-template-columns: 1fr 340px; gap: 64px; align-items: start;
+      max-width: 1080px; margin: 0 auto; padding: 140px 32px 120px;
+      display: grid; grid-template-columns: 1fr 300px; gap: 80px; align-items: start;
     }
     
-    .hero-section { margin-bottom: 64px; }
-    .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; }
-    .hero-title { font-family: var(--font-serif); font-size: clamp(44px, 5vw, 64px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.02em; }
-    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }
+    /* Hero 区域增加厚度与排版感 */
+    .hero-section { margin-bottom: 80px; }
+    .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 28px; text-transform: uppercase; }
+    .hero-title { font-family: var(--font-serif); font-size: clamp(52px, 6vw, 72px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 32px; letter-spacing: -0.03em; }
+    .hero-sub { font-size: 17px; color: var(--text-secondary); line-height: 1.8; max-width: 520px; }
 
-    .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
-    .section-header h2 { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); }
+    .section-header { display: flex; align-items: center; gap: 24px; margin-bottom: 40px; }
+    .section-header h2 { font-family: var(--font-serif); font-size: 28px; font-weight: 400; color: var(--text-primary); white-space: nowrap; }
     .line { flex: 1; height: 1px; background: var(--border); }
 
     /* Feed 由 JS 动态生成，需 :global 才能被 scoped 样式命中 */
@@ -191,22 +192,31 @@ import Layout from '../layouts/Layout.astro';
     :global(.empty-state) { font-size: 14px; color: var(--text-muted); padding: 40px 0; text-align: center; }
 
     /* 右侧侧栏 */
-    .sidebar-col { position: sticky; top: 120px; }
-    .side-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; }
+    .sidebar-col { position: sticky; top: 140px; }
+    .side-card { 
+      background: var(--bg-surface); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      padding: 32px 28px; 
+      box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+    }
     .side-card h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 20px; }
     
-    .status-list { display: flex; flex-direction: column; gap: 12px; }
+    .status-list { display: flex; flex-direction: column; gap: 0; }
     .status-item { display: flex; justify-content: space-between; font-size: 14px; text-decoration: none; color: var(--text-primary); }
-    .link-item { padding: 8px 0; border-bottom: 1px solid var(--border); transition: opacity 0.2s; }
-    .link-item:hover { opacity: 0.7; }
-    .link-item span { color: var(--text-secondary); }
+    .link-item { padding: 14px 0; border-bottom: 1px solid var(--border); transition: padding 0.2s, color 0.2s; }
+    .link-item:last-child { border-bottom: none; }
+    .link-item:hover { padding-left: 4px; color: var(--text-primary); }
+    .link-item span { color: var(--text-secondary); transition: color 0.2s; }
+    .link-item:hover span { color: var(--text-primary); }
     
-    .side-divider { height: 1px; background: var(--border); margin: 28px 0; }
+    .side-divider { height: 1px; background: var(--border); margin: 24px 0; }
     .about-text { font-size: 14px; color: var(--text-secondary); line-height: 1.8; }
 
     @media (max-width: 900px) {
-      .home-layout { grid-template-columns: 1fr; padding-top: 100px; gap: 48px; }
+      .home-layout { grid-template-columns: 1fr; padding-top: 120px; gap: 48px; }
       .sidebar-col { position: static; order: -1; }
+      .hero-section { margin-bottom: 56px; }
     }
     @media (max-width: 480px) {
       :global(.feed-item) { padding: 20px; }
