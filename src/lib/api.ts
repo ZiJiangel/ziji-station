@@ -188,6 +188,39 @@ export async function getComments(targetId: string) {
   return data || [];
 }
 
+/** 创建游戏房间 */
+export async function createGameRoom(hostId: string, gameType: string) {
+  const { data, error } = await supabase
+    .from('game_rooms')
+    .insert({ host_id: hostId, game_type: gameType, status: 'waiting' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** 获取大厅中正在进行的房间列表 */
+export async function getActiveGameRooms() {
+  const { data, error } = await supabase
+    .from('game_rooms')
+    .select('*, profiles(username, display_name, avatar_url)')
+    .in('status', ['waiting', 'playing'])
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+/** 获取单个房间详情 */
+export async function getGameRoom(id: string) {
+  const { data, error } = await supabase
+    .from('game_rooms')
+    .select('*, profiles(username, display_name, avatar_url)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 /** 发表留言 */
 export async function createComment(uid: string, targetId: string, content: string) {
   const { error } = await supabase.from('comments').insert({

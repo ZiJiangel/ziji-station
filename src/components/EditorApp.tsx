@@ -6,6 +6,7 @@ type Area = 'main' | 'sidebar';
 import { getMyPage, saveDraft, publishPage } from '../lib/api';
 import { renderMarkdown } from '../lib/sanitize';
 import { toastSuccess, toastError } from '../lib/toast';
+import { uploadImage } from '../lib/upload';
 
 const BLOCK_TYPES: BlockType[] = ['profile', 'markdown', 'links', 'articles', 'moments', 'gallery', 'music'];
 
@@ -317,17 +318,53 @@ function BlockInspector({ block, onChange }: { block: Block; onChange: (u: (b: B
   );
   if (block.type === 'gallery') return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <Field label="图片列表（逗号分隔 URL）">
-        <textarea 
-          value={block.props.images.map(i => i.url).join(', ')} 
-          onChange={e => {
-            const urls = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-            setProps({ images: urls.map(url => ({ url })) });
-          }} 
-          rows={6} 
-          style={s.textarea} 
-          placeholder="https://a.jpg, https://b.jpg"
-        />
+      <Field label="相册图片">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {block.props.images.map((img, i) => (
+            <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '6px', background: 'var(--bg-elevated)', overflow: 'hidden', flexShrink: 0 }}>
+                {img.url && <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </div>
+              <input 
+                value={img.url} 
+                onChange={e => {
+                  const next = [...block.props.images];
+                  next[i] = { ...next[i], url: e.target.value };
+                  setProps({ images: next });
+                }} 
+                style={s.input} 
+                placeholder="https://..." 
+              />
+              <button 
+                onClick={() => {
+                  const next = block.props.images.filter((_, idx) => idx !== i);
+                  setProps({ images: next });
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+              >✕</button>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <input type="file" id={`upload-gal-${block.id}`} accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              toastSuccess('正在上传…');
+              try {
+                const url = await uploadImage(file);
+                setProps({ images: [...block.props.images, { url }] });
+                toastSuccess('图片已添加');
+              } catch (err: any) {
+                toastError('上传失败：' + err.message);
+              }
+            }} />
+            <label htmlFor={`upload-gal-${block.id}`} style={{ ...s.btnGhost, flex: 1, textAlign: 'center', cursor: 'pointer' }}>
+              + 上传图片
+            </label>
+            <button onClick={() => setProps({ images: [...block.props.images, { url: '' }] })} style={{ ...s.btnGhost, flex: 1 }}>
+              + 添加 URL
+            </button>
+          </div>
+        </div>
       </Field>
     </div>
   );

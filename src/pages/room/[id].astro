@@ -1,0 +1,140 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect('/arcade');
+
+const { data: room } = await supabase
+  .from('game_rooms')
+  .select('*, profiles(username, display_name, avatar_url)')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!room) return Astro.redirect('/arcade');
+
+const host = (room as any).profiles || {};
+const hostName = host.display_name || host.username || '匿名';
+const GAME_NAMES: Record<string, string> = { ludo: '飞行棋', doudizhu: '斗地主', monopoly: '大富翁' };
+const gameName = GAME_NAMES[room.game_type] || room.game_type;
+---
+
+<Layout title={gameName + ' · 房间'} hideNav={true}>
+  <header class="room-header">
+    <a href="/arcade" class="back-link">← 返回游戏厅</a>
+    <span class="nav-title">{gameName}房间</span>
+  </header>
+
+  <div class="room-layout reveal">
+    <main class="room-main">
+      <div class="room-card">
+        <h1 class="game-title">{gameName}</h1>
+        <div class="room-info">
+          <p>房主：{hostName}</p>
+          <p>房间号：<code>{room.id}</code></p>
+        </div>
+        
+        <div class="invite-box">
+          <input type="text" readonly value={Astro.url.href} id="invite-link" />
+          <button id="copy-btn" class="btn btn-primary">复制邀请链接</button>
+        </div>
+
+        <div class="status-box" data-host-name={hostName}>
+          <h3>玩家列表</h3>
+          <div id="player-list" class="player-list">
+            <div class="player">
+              <div class="avatar ph">{hostName.charAt(0).toUpperCase()}</div>
+              <span>{hostName} (房主)</span>
+            </div>
+            <!-- 其他玩家通过 Realtime 加入 -->
+          </div>
+        </div>
+
+        <div class="room-actions">
+          <button class="btn btn-primary" disabled>开始游戏（暂未实装）</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+    import { toastSuccess } from '../../lib/toast';
+
+    // 复制邀请链接
+    document.getElementById('copy-btn')?.addEventListener('click', () => {
+      const input = document.getElementById('invite-link') as HTMLInputElement;
+      input.select();
+      document.execCommand('copy');
+      toastSuccess('已复制邀请链接，发给朋友吧');
+    });
+
+    // Realtime Presence 在线同步
+    const roomId = window.location.pathname.split('/').pop();
+    const uid = localStorage.getItem('ziji_uid');
+    const userName = localStorage.getItem('ziji_user') || 'U';
+
+    if (roomId && uid) {
+      const room = supabase.channel('room:' + roomId, {
+        config: { presence: { key: uid } }
+      });
+
+      room.on('presence', { event: 'sync' }, () => {
+        const state = room.presenceState();
+        const players = Object.values(state).flat() as any[];
+        const list = document.getElementById('player-list');
+        if (!list) return;
+        
+        let html = players.map(p => `
+          <div class="player">
+            <div class="avatar ph">${p.user.charAt(0).toUpperCase()}</div>
+            <span>${p.user} ${p.user === p.host ? '(房主)' : ''}</span>
+          </div>
+        `).join('');
+        list.innerHTML = html;
+      });
+
+      const hostNameEl = document.querySelector('.status-box') as HTMLElement;
+      const hostName = hostNameEl?.dataset.hostName || '房主';
+
+      room.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await room.track({ user: userName, host: hostName });
+        }
+      });
+
+      // 离开页面时自动取消 presence，若全是断线则房间被遗弃
+      window.addEventListener('beforeunload', () => {
+        room.untrack();
+      });
+    }
+  </script>
+
+  <style>
+    .room-header { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 100; }
+    .back-link { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .back-link:hover { color: var(--text-primary); }
+    .nav-title { font-family: var(--font-serif); font-size: 16px; }
+
+    .room-layout { max-width: 800px; margin: 0 auto; padding: 120px 32px 80px; }
+    
+    .room-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 48px; }
+    .game-title { font-family: var(--font-serif); font-size: 36px; font-weight: 400; color: var(--text-primary); margin-bottom: 24px; }
+    
+    .room-info p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+    .room-info code { font-family: var(--font-mono); background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px; }
+    
+    .invite-box { display: flex; gap: 12px; margin: 32px 0; }
+    .invite-box input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; color: var(--text-primary); font-family: var(--font-mono); font-size: 13px; outline: none; }
+    
+    .status-box { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .status-box h3 { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 20px; }
+    
+    .player-list { display: flex; flex-direction: column; gap: 12px; }
+    .player { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--text-primary); }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: grid; place-items: center; font-size: 14px; font-weight: 500; color: var(--text-muted); flex-shrink: 0; }
+    
+    .room-actions { margin-top: 48px; text-align: center; }
+  </style>
+</Layout>
