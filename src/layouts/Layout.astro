@@ -4,12 +4,8 @@ import { ViewTransitions } from 'astro:transitions';
 
 interface Props { title: string; description?: string; hideNav?: boolean; }
 const { title, description = '朋友们的数字客厅', hideNav = false } = Astro.props;
-
 const pathname = Astro.url.pathname;
-const isActive = (path: string) => {
-  if (path === '/' && pathname !== '/') return false;
-  return pathname.startsWith(path);
-};
+const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.startsWith(path);
 ---
 
 <html lang="zh-CN">
@@ -32,65 +28,90 @@ const isActive = (path: string) => {
   <body>
     {!hideNav ? (
       <div class="app-shell">
-        <!-- 左侧导航 -->
-        <aside class="app-sidebar">
-          <a href="/" class="side-brand">
+        <!-- 顶部栏 -->
+        <header class="app-topbar">
+          <a href="/" class="brand">
             <div class="brand-mark">Z</div>
-            <span class="brand-name">子骥的小站</span>
+            <div class="brand-text">
+              <span class="brand-name">子骥的小站</span>
+              <span class="brand-sub">friends only</span>
+            </div>
           </a>
 
+          <div class="topbar-search">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            <input type="text" placeholder="搜索文章、动态、成员…" />
+          </div>
+
+          <div class="topbar-actions">
+            <button id="theme-toggle" class="icon-btn" title="切换主题">
+              <svg id="icon-sun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2 12h2M20 12h2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/></svg>
+              <svg id="icon-moon" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+            </button>
+            
+            <a href="/dashboard" class="draft-btn" id="nav-draft" style="display:none">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              <span>写点什么</span>
+            </a>
+
+            <a href="/login" id="nav-login" class="btn btn-primary" style="display:flex;">登录</a>
+            <div class="user-menu" id="user-menu" style="display:none">
+              <div id="nav-avatar" class="avatar" role="button" tabindex="0"></div>
+              <div class="menu-panel" id="menu-panel" role="menu" hidden>
+                <a href="#" id="menu-profile" role="menuitem">我的主页</a>
+                <a href="/settings" role="menuitem">设置</a>
+                <button type="button" id="menu-logout" role="menuitem" style="color:var(--danger)">退出登录</button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- 左侧导航 -->
+        <aside class="app-sidebar">
           <nav class="side-nav">
-            <div class="nav-group">浏览</div>
-            <a href="/" class={`nav-item ${isActive('/') ? 'active' : ''}`}>大厅</a>
-            <a href="/moments" class={`nav-item ${isActive('/moments') ? 'active' : ''}`}>碎碎念</a>
-            <a href="/articles" class={`nav-item ${isActive('/articles') ? 'active' : ''}`}>文章</a>
-            
-            <div class="nav-group">创作与娱乐</div>
-            <a href="/dashboard" class={`nav-item ${isActive('/dashboard') ? 'active' : ''}`}>写作台</a>
-            <a href="/arcade" class={`nav-item ${isActive('/arcade') ? 'active' : ''}`}>游戏厅</a>
-            
-            <div class="nav-group">我的</div>
-            <a href="#" id="nav-profile" class="nav-item" style="display:none">我的主页</a>
-            <a href="/settings" class={`nav-item ${isActive('/settings') ? 'active' : ''}`} id="nav-settings" style="display:none">设置</a>
-            <a href="/editor" class={`nav-item ${isActive('/editor') ? 'active' : ''}`} id="nav-editor" style="display:none">工作室</a>
+            <div class="nav-group">主菜单</div>
+            <a href="/" class={`nav-item ${isActive('/') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.6V21h13V9.6"/><path d="M10 21v-6h4v6"/></svg>
+              首页
+            </a>
+            <a href="/articles" class={`nav-item ${isActive('/articles') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+              文章
+            </a>
+            <a href="/moments" class={`nav-item ${isActive('/moments') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>
+              动态
+            </a>
+            <a href="/gallery" class={`nav-item ${isActive('/gallery') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>
+              相册
+            </a>
+            <a href="/arcade" class={`nav-item ${isActive('/arcade') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7.5 11v4M5.5 13h4M16 12.5h.01M18.5 15h.01"/></svg>
+              游戏
+            </a>
+
+            <div class="nav-group">站点</div>
+            <a href="/about" class={`nav-item ${isActive('/about') ? 'active' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              关于
+            </a>
+            <a href="/settings" class={`nav-item ${isActive('/settings') ? 'active' : ''}`} id="nav-settings" style="display:none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="var(--bg)"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><circle cx="8" cy="17" r="2" fill="var(--bg)"/></svg>
+              设置
+            </a>
           </nav>
-          
           <div class="side-foot">
-            ZIJI.STATION © 2026<br/>邀请制 · 私有空间
+            基于 Astro · Supabase<br/>邀请制 · 私有空间
           </div>
         </aside>
 
-        <!-- 右侧主内容区 -->
-        <div class="app-main">
-          <!-- 顶部工具栏 -->
-          <header class="app-topbar">
-            <div class="topbar-search">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" placeholder="搜索小站..." />
-            </div>
-            
-            <div class="topbar-actions">
-              <button id="theme-toggle" class="icon-btn" title="切换主题">
-                <svg id="icon-sun" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                <svg id="icon-moon" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-              </button>
-              
-              <a href="/login" id="nav-login" class="btn btn-primary">登录</a>
-              <div class="user-menu" id="user-menu" style="display:none">
-                <div id="nav-avatar" class="avatar" role="button" tabindex="0" aria-label="用户菜单" aria-haspopup="true" aria-expanded="false"></div>
-                <div class="menu-panel" id="menu-panel" role="menu" hidden>
-                  <a href="#" id="menu-profile" role="menuitem">我的主页</a>
-                  <a href="/settings" role="menuitem">个人设置</a>
-                  <button type="button" id="menu-logout" role="menuitem">退出登录</button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main class="app-content">
+        <!-- 右侧内容区（带可选右栏） -->
+        <main class="app-content">
+          <div class="stage-inner">
             <slot />
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     ) : (
       <slot />
@@ -109,9 +130,8 @@ const isActive = (path: string) => {
 
       function applySession(session) {
         const lb = document.getElementById('nav-login');
+        const db = document.getElementById('nav-draft');
         const sb = document.getElementById('nav-settings');
-        const ed = document.getElementById('nav-editor');
-        const pr = document.getElementById('nav-profile');
         const menu = document.getElementById('user-menu');
         const av = document.getElementById('nav-avatar');
         const panel = document.getElementById('menu-panel');
@@ -123,9 +143,8 @@ const isActive = (path: string) => {
           const u = localStorage.getItem('ziji_user') || 'U';
           lb.style.display = 'none';
           menu.style.display = 'block';
+          if (db) db.style.display = 'inline-flex';
           if (sb) sb.style.display = 'flex';
-          if (ed) ed.style.display = 'flex';
-          if (pr) { pr.style.display = 'flex'; pr.setAttribute('href', '/' + u); }
           
           av.textContent = u.charAt(0).toUpperCase();
           av.title = u;
@@ -137,18 +156,10 @@ const isActive = (path: string) => {
               e.stopPropagation();
               const open = panel.hidden;
               panel.hidden = !open;
-              av.setAttribute('aria-expanded', String(open));
             };
             av.addEventListener('click', toggle);
-            av.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
-              if (e.key === 'Escape') { panel.hidden = true; av.setAttribute('aria-expanded', 'false'); }
-            });
             document.addEventListener('click', (e) => {
-              if (!panel.hidden && !menu.contains(e.target)) {
-                panel.hidden = true;
-                av.setAttribute('aria-expanded', 'false');
-              }
+              if (!panel.hidden && !menu.contains(e.target)) panel.hidden = true;
             });
           }
           if (logoutBtn && logoutBtn.dataset.bound !== '1') {
@@ -163,9 +174,8 @@ const isActive = (path: string) => {
         } else {
           lb.style.display = 'flex';
           menu.style.display = 'none';
+          if (db) db.style.display = 'none';
           if (sb) sb.style.display = 'none';
-          if (ed) ed.style.display = 'none';
-          if (pr) pr.style.display = 'none';
           panel.hidden = true;
         }
       }
@@ -197,7 +207,6 @@ const isActive = (path: string) => {
       }
       refresh();
       supabase.auth.onAuthStateChange((_e, session) => applySession(session));
-      document.addEventListener('astro:after-swap', () => { bindNav(); });
       document.addEventListener('astro:page-load', refresh);
     </script>
   </body>
@@ -206,172 +215,168 @@ const isActive = (path: string) => {
 <style>
   /* App Shell Layout */
   .app-shell {
-    display: flex;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: 58px 1fr;
     height: 100vh;
     overflow: hidden;
     background: var(--bg);
   }
 
-  /* 侧边栏 */
-  .app-sidebar {
-    width: 240px;
-    flex-shrink: 0;
-    background: var(--bg-surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 24px 16px;
-    overflow-y: auto;
-    z-index: 10;
-  }
-
-  .side-brand {
+  /* 顶部栏 */
+  .app-topbar {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 0 8px;
-    margin-bottom: 32px;
+    gap: 16px;
+    padding: 0 20px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 20;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 200px;
     text-decoration: none;
   }
   .brand-mark {
-    width: 32px; height: 32px;
+    width: 30px; height: 30px;
     background: var(--text-primary);
     color: var(--bg);
-    border-radius: 10px;
+    border-radius: 9px;
     display: grid; place-items: center;
     font-weight: 700; font-size: 16px;
     font-family: var(--font-serif);
   }
-  .brand-name {
-    font-family: var(--font-serif);
-    font-size: 18px;
-    font-weight: 600;
+  .brand-text { display: flex; align-items: baseline; gap: 6px; }
+  .brand-name { font-family: var(--font-serif); font-size: 18px; font-weight: 600; color: var(--text-primary); }
+  .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+  .topbar-search {
+    position: relative;
+    flex: 1;
+    max-width: 380px;
+  }
+  .topbar-search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  .topbar-search input {
+    width: 100%; height: 34px;
+    background: var(--bg-elevated);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0 12px 0 34px;
+    font-size: 13px; outline: none;
     color: var(--text-primary);
-    letter-spacing: -0.02em;
+    transition: all 0.15s;
+  }
+  .topbar-search input:focus {
+    border-color: var(--border-light);
+    background: var(--bg-surface);
   }
 
-  .side-nav { display: flex; flex-direction: column; gap: 4px; }
-  
-  .nav-group {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    margin: 20px 8px 8px;
-    text-transform: uppercase;
-  }
-  
-  .nav-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
+  .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
     border-radius: var(--radius-sm);
-    font-size: 14px;
     color: var(--text-secondary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.15s ease;
+    background: transparent; border: none; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+  .draft-btn {
+    height: 34px;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px; color: var(--text-secondary);
+    text-decoration: none; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .draft-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--text-primary); color: var(--bg); font-size: 13px; font-weight: 600; display: grid; place-items: center; cursor: pointer; margin-left: 4px; }
+  
+  .user-menu { position: relative; }
+  .menu-panel { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; padding: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; z-index: 200; }
+  .menu-panel[hidden] { display: none; }
+  .menu-panel a, .menu-panel button { display: block; width: 100%; text-align: left; padding: 9px 12px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background 0.15s; }
+  .menu-panel a:hover, .menu-panel button:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+  /* 左侧导航 */
+  .app-sidebar {
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 10px 20px;
+    overflow-y: auto;
+  }
+
+  .nav-group {
+    font-size: 10.5px; color: var(--text-muted);
+    letter-spacing: 0.06em; padding: 0 10px;
+    margin: 0 0 8px; font-weight: 600;
+  }
+  .nav-group:not(:first-child) { margin-top: 22px; }
+
+  .nav-item {
+    width: 100%; height: 38px;
+    display: flex; align-items: center; gap: 11px;
+    padding: 0 11px; margin-bottom: 2px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13.5px; text-decoration: none;
+    transition: background 0.15s, color 0.15s;
   }
   .nav-item:hover {
     background: var(--bg-elevated);
     color: var(--text-primary);
   }
   .nav-item.active {
-    background: var(--text-primary);
-    color: var(--bg);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-weight: 600;
   }
-
+  
   .side-foot {
     margin-top: auto;
-    padding: 24px 8px 0;
+    padding: 24px 10px 0;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--text-muted);
-    line-height: 1.6;
+    line-height: 1.8;
   }
 
-  /* 主区域 */
-  .app-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  /* 顶部栏 */
-  .app-topbar {
-    height: 64px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    border-bottom: 1px solid var(--border);
-    background: var(--nav-bg);
-    backdrop-filter: blur(12px);
-    z-index: 5;
-  }
-
-  .topbar-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--bg-elevated);
-    border: 1px solid transparent;
-    border-radius: 99px;
-    padding: 0 16px;
-    height: 36px;
-    width: 300px;
-    color: var(--text-muted);
-    transition: all 0.2s;
-  }
-  .topbar-search:focus-within {
-    border-color: var(--border-light);
-    background: var(--bg-surface);
-  }
-  .topbar-search input {
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text-primary);
-    font-size: 13px;
-    width: 100%;
-  }
-
-  .topbar-actions { display: flex; align-items: center; gap: 16px; }
-
-  .icon-btn {
-    display: grid; place-items: center;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: transparent; border: 1px solid var(--border);
-    color: var(--text-secondary); cursor: pointer;
-    transition: all 0.15s;
-  }
-  .icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
-
-  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-elevated); color: var(--text-primary); font-size: 13px; font-weight: 600; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s; }
-  .avatar:hover { border-color: var(--border-light); }
-  
-  .user-menu { position: relative; }
-  .menu-panel { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; padding: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; z-index: 200; }
-  .menu-panel[hidden] { display: none; }
-  .menu-panel a, .menu-panel button { display: block; width: 100%; text-align: left; padding: 9px 12px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background 0.15s, color 0.15s; }
-  .menu-panel a:hover, .menu-panel button:hover { background: var(--bg-elevated); color: var(--text-primary); }
-
-  /* 主内容滚动区 */
+  /* 中间内容 */
   .app-content {
-    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     background: var(--bg);
     position: relative;
   }
+  .stage-inner {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 28px 30px 80px;
+    animation: fadeIn 0.26s ease both;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  /* 移动端响应式：侧栏收起 */
-  @media (max-width: 900px) {
+  /* 响应式 */
+  @media (max-width: 760px) {
+    .app-shell { grid-template-columns: 1fr; }
     .app-sidebar { display: none; }
     .app-topbar { padding: 0 16px; }
-    .topbar-search { width: 200px; }
+    .topbar-search { max-width: 200px; }
+    .brand { min-width: auto; }
+    .brand-text, .draft-btn span { display: none; }
+    .stage-inner { padding: 20px 16px 80px; }
   }
 </style>

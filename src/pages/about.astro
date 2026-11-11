@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="关于 · 子骥的小站">
+  <header class="page-header">
+    <h1 class="page-title">关于</h1>
+    <p class="page-sub">这个站是什么、怎么加入、内容约定。</p>
+  </header>
+  <div class="card">
+    <p>一个只给朋友用的小站。写点东西、发点照片、有空聊两句。</p>
+    <ul>
+      <li>不开放注册，凭邀请码进入</li>
+      <li>不统计访问，也不对外索引</li>
+      <li>坚持使用免费托管与后端服务</li>
+    </ul>
+  </div>
+</Layout>
+
+<style>
+  .page-header { margin-bottom: 22px; }
+  .page-title { font-size: 23px; font-weight: 700; margin: 0 0 5px; }
+  .page-sub { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+  .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
+  .card p { margin-top: 0; color: var(--text-primary); }
+  .card ul { padding-left: 20px; margin-bottom: 0; }
+</style>
