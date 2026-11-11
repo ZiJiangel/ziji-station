@@ -1,37 +1,43 @@
-name: Deploy to Cloudflare Pages
+.github/workflows/deploy.yml 已读完，全 38 行：
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+1: name: Deploy to Cloudflare Pages
+2: 
+3: on:
+4:   push:
+5:     branches:
+6:       - main
+7:   workflow_dispatch:
+8: 
+9: jobs:
+10:   deploy:
+11:     runs-on: ubuntu-latest
+12:     steps:
+13:       - name: Checkout
+14:         uses: actions/checkout@v4
+15: 
+16:       - name: Setup Node
+17:         uses: actions/setup-node@v4
+18:         with:
+19:           node-version: 20
+20:       
+21:       - name: Setup pnpm
+22:         uses: pnpm/action-setup@v3
+23:         with:
+24:           version: 9
+25:       
+26:       - name: Install dependencies
+27:         run: pnpm install
+28:         
+29:       - name: Build
+30:         run: pnpm build
+31:         
+32:       - name: Publish to Cloudflare Pages
+33:         uses: cloudflare/wrangler-action@v3
+34:         with:
+35:           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+36:           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+37:           command: pages deploy dist --project-name=ziji-station
+38: 
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      
-      - name: Install dependencies
-        run: pnpm install
-        
-      - name: Build
-        run: pnpm build
-        
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=ziji-station
+(已经到底了，共 38 行)
+# trigger build 
