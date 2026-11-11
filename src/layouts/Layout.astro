@@ -28,6 +28,7 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
   <body>
     {!hideNav ? (
       <div class="app-shell">
+        <!-- 顶部栏 -->
         <header class="app-topbar">
           <a href="/" class="brand">
             <div class="brand-mark">Z</div>
@@ -65,6 +66,7 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
           </div>
         </header>
 
+        <!-- 桌面端左侧导航 -->
         <aside class="app-sidebar">
           <nav class="side-nav">
             <div class="nav-group">主菜单</div>
@@ -112,11 +114,36 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
           </div>
         </aside>
 
+        <!-- 中间内容区 -->
         <main class="app-content">
           <div class="stage-inner">
             <slot />
           </div>
         </main>
+
+        <!-- 移动端底部导航 -->
+        <nav class="bottom-nav">
+          <a href="/" class={`bn-item ${isActive('/') ? 'active' : ''}`}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.6V21h13V9.6"/><path d="M10 21v-6h4v6"/></svg>
+            <span>首页</span>
+          </a>
+          <a href="/articles" class={`bn-item ${isActive('/articles') ? 'active' : ''}`}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            <span>文章</span>
+          </a>
+          <a href="/moments" class={`bn-item ${isActive('/moments') ? 'active' : ''}`}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>
+            <span>动态</span>
+          </a>
+          <a href="/arcade" class={`bn-item ${isActive('/arcade') ? 'active' : ''}`}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7.5 11v4M5.5 13h4M16 12.5h.01M18.5 15h.01"/></svg>
+            <span>游戏</span>
+          </a>
+          <a href="#" id="bn-user" class="bn-item">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1.4A5.6 5.6 0 0 1 9.6 13h4.8a5.6 5.6 0 0 1 5.6 5.6V20"/></svg>
+            <span>我的</span>
+          </a>
+        </nav>
       </div>
     ) : (
       <slot />
@@ -209,6 +236,14 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
       function refresh() {
         bindNav();
         supabase.auth.getSession().then(({ data }) => applySession(data.session));
+        
+        // 绑定移动端「我的」
+        const bnUser = document.getElementById('bn-user');
+        if (bnUser) {
+          const u = localStorage.getItem('ziji_user');
+          if (u) bnUser.setAttribute('href', '/' + u);
+          else bnUser.setAttribute('href', '/login');
+        }
       }
       refresh();
       supabase.auth.onAuthStateChange((_e, session) => applySession(session));
@@ -260,7 +295,42 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
   .stage-inner { max-width: 920px; margin: 0 auto; padding: 28px 30px 80px; animation: fadeIn 0.26s ease both; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  /* ============ 动效系统 (Hallmark 规范) ============ */
+  /* ============ 移动端响应式 ============ */
+  .bottom-nav { display: none; }
+  
+  @media (max-width: 760px) {
+    .app-shell { grid-template-columns: 1fr; grid-template-rows: 58px 1fr 56px; }
+    .app-sidebar { display: none; }
+    .app-topbar { padding: 0 16px; }
+    .topbar-search { display: none; }
+    .brand { min-width: auto; }
+    .brand-text, .draft-btn span { display: none; }
+    .stage-inner { padding: 20px 16px; }
+    
+    .app-content { margin-bottom: 56px; }
+    
+    .bottom-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 56px;
+      z-index: 30;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bn-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: var(--text-muted); font-size: 10px; text-decoration: none;
+      padding: 6px 0; width: 20%; transition: color 0.15s;
+    }
+    .bn-item.active { color: var(--text-primary); font-weight: 600; }
+    .bn-item svg { width: 22px; height: 22px; }
+  }
+
+  /* ============ 动效系统 ============ */
   .reveal {
     opacity: 0;
     transform: translateY(12px);
@@ -273,22 +343,12 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
   .reveal-delay-2 { animation-delay: 0.2s; }
   .reveal-delay-3 { animation-delay: 0.3s; }
 
-  @media (max-width: 760px) {
-    .app-shell { grid-template-columns: 1fr; }
-    .app-sidebar { display: none; }
-    .app-topbar { padding: 0 16px; }
-    .topbar-search { max-width: 200px; }
-    .brand { min-width: auto; }
-    .brand-text, .draft-btn span { display: none; }
-    .stage-inner { padding: 20px 16px 80px; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .reveal { animation: none; opacity: 1; transform: none; }
     :global(.btn), :global(.game-card), :global(.li), :global(.card), :global(.list) { transition: none !important; transform: none !important; }
   }
 
-  /* 参考站基础组件 */
+  /* ============ 基础组件 ============ */
   :global(.pagehead) { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
   :global(.pagehead h1) { font-size: 23px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 5px; line-height: 1.35; color: var(--text-primary); }
   :global(.pagehead p) { margin: 0; font-size: 12.5px; color: var(--text-secondary); max-width: 52em; line-height: 1.7; }
