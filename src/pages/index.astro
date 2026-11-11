@@ -2,7 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="首页 · 子骥的小站">
-  <div class="row between" style="margin-bottom: 20px;">
+  <div class="pagehead">
+    <div>
+      <h1>首页</h1>
+      <p>最近大家写了什么、发了什么，都在这里。</p>
+    </div>
+  </div>
+
+  <div class="row between" style="margin:20px 0 11px">
     <div class="wrap">
       <button class="chip on">全部</button>
       <button class="chip">文章</button>
@@ -12,9 +19,10 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <div id="feed-container" class="list"></div>
-  <div class="row" style="justify-content: center; gap: 8px; margin-top: 20px;">
-    <a href="/articles" class="chip">全部文章</a>
-    <a href="/gallery" class="chip">全部照片</a>
+  
+  <div class="row" style="justify-content:center;gap:8px;margin-top:18px">
+    <a href="/articles" class="btn">全部文章</a>
+    <a href="/gallery" class="btn">全部照片</a>
   </div>
 
   <script>
@@ -56,9 +64,8 @@ import Layout from '../layouts/Layout.astro';
           const p = item.profiles || {};
           const name = sanitizeText(p.display_name || p.username || '匿名');
           const initial = name.charAt(0).toUpperCase();
-          const isArticle = item._type === 'article';
           
-          if (isArticle) {
+          if (item._type === 'article') {
             return `
               <div class="li">
                 <div class="li-body">
@@ -83,7 +90,7 @@ import Layout from '../layouts/Layout.astro';
                 </div>
                 <p class="moment-text">${sanitizeText(item.content)}</p>
                 ${item.images && item.images.length > 0 
-                  ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${item.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
+                  ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${item.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-light);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
                   : ''
                 }
               </div>

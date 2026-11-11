@@ -2,14 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="文章 · 子骥的小站">
-  <header class="pagehead">
+  <div class="pagehead">
     <div>
-      <h1 class="page-title">文章</h1>
-      <p class="page-sub">写得长一点的那些。慢慢写，慢慢读。</p>
+      <h1>文章</h1>
+      <p>写得长一点的那些。慢慢写，慢慢读。</p>
     </div>
-  </header>
+  </div>
 
-  <div class="wrap" style="margin-bottom: 16px;">
+  <div class="wrap" style="margin-bottom:14px">
     <button class="chip on">全部</button>
     <button class="chip">随笔</button>
     <button class="chip">技术</button>
@@ -34,7 +34,7 @@ import Layout from '../layouts/Layout.astro';
       try {
         const { articles } = await getFeed(50);
         if (articles.length === 0) {
-          el.innerHTML = '<div class="empty"><span class="big">还没有文章</span>去写作台写一篇吧。</div>';
+          el.innerHTML = '<div class="empty"><span class="big">这个分类还空着</span>去写作台写一篇吧。</div>';
           return;
         }
         el.innerHTML = articles.map(a => {
@@ -60,10 +60,4 @@ import Layout from '../layouts/Layout.astro';
     loadArticles();
     document.addEventListener('astro:page-load', loadArticles);
   </script>
-
-  <style>
-    .pagehead { margin-bottom: 22px; }
-    .page-title { font-size: 23px; font-weight: 700; margin: 0 0 5px; color: var(--text-primary); }
-    .page-sub { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
-  </style>
 </Layout>

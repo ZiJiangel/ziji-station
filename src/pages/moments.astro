@@ -2,12 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="动态 · 子骥的小站">
-  <header class="pagehead">
+  <div class="pagehead">
     <div>
-      <h1 class="page-title">动态</h1>
-      <p class="page-sub">一句话也算数，想到什么就丢上来。</p>
+      <h1>动态</h1>
+      <p>一句话也算数，想到什么就丢上来。</p>
     </div>
-  </header>
+  </div>
 
   <div class="sect-head">
     <h2 class="sect-title">最近动态</h2>
@@ -60,7 +60,7 @@ import Layout from '../layouts/Layout.astro';
               </div>
               <p class="moment-text">${sanitizeText(m.content)}</p>
               ${m.images && m.images.length > 0 
-                ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${m.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
+                ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${m.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-light);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
                 : ''
               }
             </div>
@@ -73,10 +73,4 @@ import Layout from '../layouts/Layout.astro';
     loadMoments();
     document.addEventListener('astro:page-load', loadMoments);
   </script>
-
-  <style>
-    .pagehead { margin-bottom: 22px; }
-    .page-title { font-size: 23px; font-weight: 700; margin: 0 0 5px; color: var(--text-primary); }
-    .page-sub { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
-  </style>
 </Layout>
