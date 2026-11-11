@@ -31,40 +31,55 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
+    import { supabase } from '../lib/supabase';
     import { toastSuccess, toastError } from '../lib/toast';
 
-    document.getElementById('gen-btn')?.addEventListener('click', () => {
+    let latestLink = '';
+
+    function showLink(code: string) {
+      latestLink = `${window.location.origin}/login?code=${code}`;
+      const resEl = document.getElementById('invite-result');
+      const linkEl = document.getElementById('invite-link');
+      if (resEl && linkEl) {
+        linkEl.textContent = latestLink;
+        resEl.style.display = 'block';
+      }
+    }
+
+    document.getElementById('gen-btn')?.addEventListener('click', async () => {
       const btn = document.getElementById('gen-btn') as HTMLButtonElement;
       btn.disabled = true;
       btn.innerText = '生成中…';
 
-      setTimeout(() => {
-        const code = 'ZJ-' + Date.now().toString(36).toUpperCase();
-        const link = window.location.origin + `/login?code=${code}`;
-        
-        const resEl = document.getElementById('invite-result');
-        const linkEl = document.getElementById('invite-link');
-        if (resEl && linkEl) {
-          linkEl.textContent = link;
-          resEl.style.display = 'block';
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          toastError('请先登录');
+          window.location.href = '/login';
+          return;
         }
-        
+
+        const { data, error } = await supabase.rpc('create_invite_code');
+        if (error) throw error;
+        if (typeof data !== 'string' || !data) throw new Error('未返回邀请码');
+
+        showLink(data);
+        toastSuccess('邀请码已生成，7 天内有效');
+      } catch (e: any) {
+        toastError(e.message || '生成失败');
+      } finally {
         btn.disabled = false;
         btn.innerText = '+ 生成';
+      }
+    });
 
-        const copyBtn = document.getElementById('copy-btn');
-        if (copyBtn) {
-          const newBtn = copyBtn.cloneNode(true) as HTMLButtonElement;
-          copyBtn.replaceWith(newBtn);
-          newBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(link).then(() => {
-              toastSuccess('邀请链接已复制');
-            }).catch(() => {
-              toastError('复制失败，请手动选中');
-            });
-          });
-        }
-      }, 500);
+    // 事件委托，避免重复绑定
+    document.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.id !== 'copy-btn' || !latestLink) return;
+      navigator.clipboard.writeText(latestLink)
+        .then(() => toastSuccess('邀请链接已复制'))
+        .catch(() => toastError('复制失败，请手动选中'));
     });
   </script>
   <style>

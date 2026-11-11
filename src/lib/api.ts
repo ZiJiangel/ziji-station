@@ -1,7 +1,6 @@
 import { supabase } from './supabase';
 import type { PageData } from './blocks';
 
-const INVITE_CODE = 'ZIJI2026';
 const emailOf = (username: string) => `${username}@ziji.local`;
 
 /** 登录：仅做密码登录，不需要邀请码 */
@@ -23,11 +22,18 @@ export async function login(username: string, password: string) {
   return { id: user.id, username };
 }
 
-/** 注册：需要邀请码，创建 profiles + pages 初始记录 */
+/** 注册：邀请码在数据库端原子校验并消费，前端不留明文 */
 export async function register(username: string, password: string, inviteCode: string) {
   if (!password) throw new Error('密码不能为空');
-  if (inviteCode !== INVITE_CODE) throw new Error('邀请码不正确');
+  const code = (inviteCode || '').trim().toUpperCase();
+  if (!code) throw new Error('请输入邀请码');
 
+  // 1. 只读校验：不消费，失败时邀请码仍然有效
+  const { data: valid, error: vErr } = await supabase.rpc('verify_invite_code', { p_code: code });
+  if (vErr) throw new Error('邀请码校验失败：' + vErr.message);
+  if (valid !== true) throw new Error('邀请码无效、已使用或已过期');
+
+  // 2. 创建账号（失败则邀请码原封不动）
   const { data, error } = await supabase.auth.signUp({ email: emailOf(username), password });
   if (error) {
     if (error.message.includes('already registered')) throw new Error('该用户名已被注册');
@@ -39,9 +45,27 @@ export async function register(username: string, password: string, inviteCode: s
   localStorage.setItem('ziji_uid', user.id);
   localStorage.setItem('ziji_user', username);
 
-  const { error: pErr } = await supabase.from('profiles').insert({ id: user.id, username });
-  if (pErr && pErr.code !== '23505') throw new Error('创建档案失败: ' + pErr.message);
-  await supabase.from('pages').insert({ user_id: user.id, draft_data: { blocks: [] }, is_public: false });
+  // 3. 建档案与画布；失败则回滚提示，避免"有号没资料"的半残状态
+  try {
+    const { error: pErr } = await supabase.from('profiles').insert({ id: user.id, username });
+    if (pErr && pErr.code !== '23505') throw pErr;
+    const { error: pgErr } = await supabase.from('pages').insert({
+      user_id: user.id, draft_data: { blocks: [] }, is_public: false,
+    });
+    if (pgErr && pgErr.code !== '23505') throw pgErr;
+  } catch (e: any) {
+    throw new Error('账号已创建，但资料初始化失败，请联系站长：' + (e.message || e));
+  }
+
+  // 4. 账号就绪后才消费邀请码，并记录使用者
+  const { data: consumed } = await supabase.rpc('consume_invite_code', {
+    p_code: code, p_uid: user.id,
+  });
+  if (consumed !== true) {
+    // 极端并发：别人恰好抢先用掉。账号已建成，不阻断，仅记录。
+    console.warn('[invite] 邀请码在注册完成后已不可消费:', code);
+  }
+
   return { id: user.id, username };
 }
 
