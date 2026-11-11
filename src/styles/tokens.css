@@ -1,0 +1,78 @@
+/* 子骥的小站 · 设计令牌 · 唯一来源
+ * data-theme: ink | moss | ember   ← 色相家族
+ * data-mode:  light | dark         ← 明暗
+ * 两个属性独立切换，6 种组合；改主题 = 加一行 --hue。
+ */
+
+:root {
+  /* —— 字体 —— */
+  --font-display: 'Newsreader', Georgia, 'Songti SC', 'SimSun', serif;
+  --font-body:    'Inter', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  /* —— 间距 4pt —— */
+  --space-xs: 4px;  --space-sm: 8px;   --space-md: 16px;
+  --space-lg: 24px; --space-xl: 32px;  --space-2xl: 48px; --space-3xl: 64px;
+
+  /* —— 圆角 —— */
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+
+  /* —— 动效 —— */
+  --dur-fast: .15s; --dur-base: .22s; --dur-slow: .35s; --dur-slowest: .6s;
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ═══ 色相家族 · 只定色相与彩度 ═══ */
+:root,
+[data-theme="ink"]   { --hue: 250; --chroma-accent: 0.15; --accent-L: 0.60; }
+[data-theme="moss"]  { --hue: 145; --chroma-accent: 0.13; --accent-L: 0.56; }
+[data-theme="ember"] { --hue: 40;  --chroma-accent: 0.16; --accent-L: 0.66; }
+
+/* ═══ 明度锚点 · 只定 L 通道 ═══ */
+:root,
+[data-mode="light"] {
+  --L-bg: .988; --L-surface: 1; --L-elevated: .958;
+  --L-border: .925; --L-border-hi: .855;
+  --L-muted: .62; --L-secondary: .44; --L-primary: .18;
+  --nav-alpha: .82; --glow-opacity: .025;
+}
+[data-mode="dark"] {
+  --L-bg: .155; --L-surface: .195; --L-elevated: .235;
+  --L-border: .28; --L-border-hi: .38;
+  --L-muted: .58; --L-secondary: .72; --L-primary: .97;
+  --nav-alpha: .72; --glow-opacity: .05;
+}
+
+/* ═══ 派生颜色 · 全部由上面推导 ═══ */
+:root {
+  --bg:        oklch(var(--L-bg)        .008 var(--hue));
+  --surface:   oklch(var(--L-surface)   .006 var(--hue));
+  --elevated:  oklch(var(--L-elevated)  .010 var(--hue));
+  --border:    oklch(var(--L-border)    .012 var(--hue));
+  --border-hi: oklch(var(--L-border-hi) .014 var(--hue));
+  --primary:   oklch(var(--L-primary)   .010 var(--hue));
+  --secondary: oklch(var(--L-secondary) .012 var(--hue));
+  --muted:     oklch(var(--L-muted)     .014 var(--hue));
+  --accent:    oklch(var(--accent-L) var(--chroma-accent) var(--hue));
+  --danger:    oklch(.62 .20 25);
+}
+
+/* ═══ 向后兼容别名 · 旧页面用的名字全部指向新令牌 ═══ */
+:root {
+  --bg-surface:     var(--surface);
+  --bg-elevated:    var(--elevated);
+  --text-primary:   var(--primary);
+  --text-secondary: var(--secondary);
+  --text-muted:     var(--muted);
+  --border-light:   var(--border-hi);
+  --nav-bg:  oklch(var(--L-bg) .008 var(--hue) / var(--nav-alpha));
+  --bg-glow: radial-gradient(
+    circle at 50% 0%,
+    oklch(var(--L-primary) .02 var(--hue) / var(--glow-opacity)) 0%,
+    transparent 60%
+  );
+  --font-serif: var(--font-display);
+  --font-sans:  var(--font-body);
+}

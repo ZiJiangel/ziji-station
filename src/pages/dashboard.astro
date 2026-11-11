@@ -22,7 +22,7 @@ import Layout from '../layouts/Layout.astro';
         
         <div class="editor-footer">
           <span>Markdown enabled</span>
-          <button id="save-btn" class="btn btn-accent">发布文章</button>
+          <button id="save-btn" class="btn primary">发布文章</button>
         </div>
       </section>
 
@@ -39,7 +39,7 @@ import Layout from '../layouts/Layout.astro';
             <input type="file" id="moment-image-upload" accept="image/*" multiple style="display: none;" />
             <span id="moment-char-count" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">0 / 300</span>
           </div>
-          <button id="moment-save-btn" class="btn btn-accent">发布动态</button>
+          <button id="moment-save-btn" class="btn primary">发布动态</button>
         </div>
       </section>
     </main>
@@ -323,8 +323,9 @@ import Layout from '../layouts/Layout.astro';
     .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
     :global(.image-grid > div) { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
     :global(.image-grid img) { width: 100%; height: 100%; object-fit: cover; }
-    :global(.image-grid .remove-img) { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none; display: grid; place-items: center; font-size: 12px; cursor: pointer; transition: background 0.15s; }
-    :global(.image-grid .remove-img):hover { background: #ef4444; }
+    :global(.image-grid .remove-img) { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: oklch(0 0 0 / .62); color: oklch(1 0 0); border: none; display: grid; place-items: center; font-size: 12px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); backdrop-filter: blur(4px); }
+    :global(.image-grid .remove-img):hover { background: var(--danger); transform: scale(1.08); }
+    :global(.image-grid .remove-img):active { transform: scale(0.94); }
     :global(.image-grid > div:only-child) { grid-column: span 3; aspect-ratio: auto; max-height: 300px; }
     :global(.image-grid > div:nth-child(2):nth-last-child(1)) { grid-column: span 2; aspect-ratio: auto; max-height: 300px; }
     :global(.image-grid > div:nth-child(3):nth-last-child(1)) { grid-column: span 1; aspect-ratio: 1; }

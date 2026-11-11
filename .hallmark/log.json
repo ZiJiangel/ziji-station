@@ -1,3 +1,4 @@
 [
-  { "date": "2026-11-10", "macrostructure": "Long Document", "theme": "Plain", "enrichment": "none", "brief": "子骥的小站 · 邀请制朋友小站" }
+  { "date": "2026-11-10", "macrostructure": "Long Document", "theme": "Plain", "enrichment": "none", "brief": "子骥的小站 · 邀请制朋友小站" },
+  { "date": "2026-11-11", "macrostructure": "Long Document", "theme": "ink/moss/ember × light/dark", "enrichment": "BlurText+ClickSpark+SpotlightCard+Magnet+AnimatedList+SquishSwitch+LatticeLoader", "brief": "重构：双属性多主题(色相×明暗)、单令牌源、react-bits 微动效层" }
 ]

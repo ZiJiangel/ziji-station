@@ -22,8 +22,18 @@ import Layout from '../layouts/Layout.astro';
     <div>
       <div class="sect-head" style="margin-top:0"><h2 class="sect-title">外观</h2></div>
       <div class="card reveal reveal-delay-1">
-        <div class="switch-row"><div><div class="small">深色模式</div><div class="tiny muted">保护你的眼睛</div></div>
-          <button class="switch" data-act="toggle-theme"></button></div>
+        <div class="switch-row">
+          <div><div class="small">深色模式</div><div class="tiny muted">保护你的眼睛</div></div>
+          <button class="switch" data-act="toggle-mode" role="switch" aria-checked="false" aria-label="深色模式"></button>
+        </div>
+        <div class="switch-row" style="display:block">
+          <div class="small" style="margin-bottom:10px">色相</div>
+          <div class="hue-row" role="radiogroup" aria-label="色相">
+            <button class="hue-chip" data-hue="ink"   role="radio" aria-checked="true"  style="--sw: oklch(0.60 0.15 250)"><span></span>墨蓝</button>
+            <button class="hue-chip" data-hue="moss"  role="radio" aria-checked="false" style="--sw: oklch(0.56 0.13 145)"><span></span>苔绿</button>
+            <button class="hue-chip" data-hue="ember" role="radio" aria-checked="false" style="--sw: oklch(0.66 0.16 40)"><span></span>陶橙</button>
+          </div>
+        </div>
       </div>
       <div class="sect-head"><h2 class="sect-title">高级</h2></div>
       <div class="card reveal reveal-delay-2">
@@ -39,21 +49,49 @@ import Layout from '../layouts/Layout.astro';
     import { supabase } from '../lib/supabase';
     import { toastSuccess, toastError } from '../lib/toast';
 
-    const themeSwitch = document.querySelector('.switch[data-act="toggle-theme"]');
-    function syncThemeSwitch() {
-      if (!themeSwitch) return;
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      themeSwitch.classList.toggle('on', isDark);
-    }
-    syncThemeSwitch();
-    document.addEventListener('astro:page-load', syncThemeSwitch);
+    const modeSwitch = document.querySelector('.switch[data-act="toggle-mode"]') as HTMLButtonElement | null;
 
-    themeSwitch?.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      syncThemeSwitch();
+    function syncAppearance() {
+      const root = document.documentElement;
+      const isDark = root.getAttribute('data-mode') === 'dark';
+      const curHue = root.getAttribute('data-theme') || 'ink';
+      if (modeSwitch) {
+        modeSwitch.classList.toggle('on', isDark);
+        modeSwitch.setAttribute('aria-checked', isDark ? 'true' : 'false');
+      }
+      document.querySelectorAll<HTMLButtonElement>('.hue-chip').forEach(el => {
+        const on = el.dataset.hue === curHue;
+        el.classList.toggle('on', on);
+        el.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+    }
+
+    function commitAppearance(theme: string, mode: string) {
+      const root = document.documentElement;
+      root.classList.add('theme-transitioning');
+      root.setAttribute('data-theme', theme);
+      root.setAttribute('data-mode', mode);
+      localStorage.setItem('zj-theme', theme);
+      localStorage.setItem('zj-mode', mode);
+      syncAppearance();
+      clearTimeout((window as any).__zjThemeT);
+      (window as any).__zjThemeT = setTimeout(() => root.classList.remove('theme-transitioning'), 380);
+    }
+
+    syncAppearance();
+    document.addEventListener('astro:page-load', syncAppearance);
+
+    modeSwitch?.addEventListener('click', () => {
+      const root = document.documentElement;
+      const nextMode = root.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
+      commitAppearance(root.getAttribute('data-theme') || 'ink', nextMode);
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.hue-chip').forEach(el => {
+      el.addEventListener('click', () => {
+        const root = document.documentElement;
+        commitAppearance(el.dataset.hue || 'ink', root.getAttribute('data-mode') || 'light');
+      });
     });
 
     async function loadProfile() {
@@ -90,4 +128,30 @@ import Layout from '../layouts/Layout.astro';
       }
     });
   </script>
+
+  <style>
+    .hue-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hue-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      height: 32px; padding: 0 12px;
+      font-size: 12.5px; color: var(--secondary);
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 99px; cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+    }
+    .hue-chip:hover { border-color: var(--border-hi); color: var(--primary); }
+    .hue-chip span {
+      width: 13px; height: 13px; border-radius: 50%;
+      background: var(--sw);
+      box-shadow: inset 0 0 0 1px oklch(0 0 0 / .08);
+      transition: transform var(--dur-base) var(--ease-spring);
+    }
+    .hue-chip.on {
+      border-color: var(--accent);
+      color: var(--primary);
+      background: var(--elevated);
+      font-weight: 600;
+    }
+    .hue-chip.on span { transform: scale(1.15); }
+  </style>
 </Layout>

@@ -2,10 +2,7 @@
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
 
-interface Props { title: string; description?: string; hideNav?: boolean; }
-const { title, description = '朋友们的数字客厅', hideNav = false } = Astro.props;
-const pathname = Astro.url.pathname;
-const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.startsWith(path);
+const { title = '朋友们的数字客厅', description = '朋友们的数字客厅', hideNav = false } = Astro.props;
 ---
 
 <html lang="zh-CN">
@@ -16,13 +13,18 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
     <title>{title}</title>
     <ViewTransitions />
     <script is:inline>
-      var savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') savedTheme = 'night';
-      if (savedTheme === 'light') savedTheme = 'paper';
-      if (savedTheme !== 'paper' && savedTheme !== 'night' && savedTheme !== 'glass' && savedTheme !== 'warm') {
-        savedTheme = 'paper';
-      }
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      (function () {
+        var THEMES = ['ink', 'moss', 'ember'];
+        var root = document.documentElement;
+        var t = localStorage.getItem('zj-theme');
+        var m = localStorage.getItem('zj-mode');
+        if (THEMES.indexOf(t) === -1) t = 'ink';
+        if (m !== 'light' && m !== 'dark') {
+          m = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        root.setAttribute('data-theme', t);
+        root.setAttribute('data-mode', m);
+      })();
     </script>
   </head>
   <body>
@@ -44,25 +46,20 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
 
           <div class="topbar-actions">
             <div class="theme-picker">
-              <button id="theme-btn" class="icon-btn" title="切换主题">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              <button id="theme-btn" class="icon-btn" title="外观" aria-haspopup="true" aria-expanded="false" aria-controls="theme-panel">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.8v2.2M12 20v2.2M4.22 4.22l1.56 1.56M18.22 18.22l1.56 1.56M1.8 12h2.2M20 12h2.2M4.22 19.78l1.56-1.56M18.22 5.78l1.56-1.56"/></svg>
               </button>
-              <div class="theme-panel" id="theme-panel" hidden>
-                <div class="theme-option" data-theme-val="paper">
-                  <div class="theme-dot" style="background:#fcfcfb; border: 1px solid #e4e4e7;"></div>
-                  <span>暖白纸张</span>
+              <div class="theme-panel" id="theme-panel" role="dialog" aria-label="外观设置" hidden>
+                <div class="tp-label">色相</div>
+                <div class="tp-hues" role="radiogroup" aria-label="色相">
+                  <button class="tp-hue" data-hue="ink"   role="radio" aria-checked="true"  title="墨蓝" style="--sw: oklch(0.60 0.15 250)"><span></span>墨蓝</button>
+                  <button class="tp-hue" data-hue="moss"  role="radio" aria-checked="false" title="苔绿" style="--sw: oklch(0.56 0.13 145)"><span></span>苔绿</button>
+                  <button class="tp-hue" data-hue="ember" role="radio" aria-checked="false" title="陶橙" style="--sw: oklch(0.66 0.16 40)"><span></span>陶橙</button>
                 </div>
-                <div class="theme-option" data-theme-val="night">
-                  <div class="theme-dot" style="background:#09090b; border: 1px solid #27272a;"></div>
-                  <span>极深空黑</span>
-                </div>
-                <div class="theme-option" data-theme-val="glass">
-                  <div class="theme-dot" style="background:#e4e7eb; border: 1px solid #fff;"></div>
-                  <span>玻璃拟态</span>
-                </div>
-                <div class="theme-option" data-theme-val="warm">
-                  <div class="theme-dot" style="background:#fdfaf6; border: 1px solid #eaddd1;"></div>
-                  <span>赤陶暖沙</span>
+                <div class="rule" style="margin:10px 0"></div>
+                <div class="tp-mode-row">
+                  <span class="tp-label" style="margin:0">明暗</span>
+                  <button class="switch" id="mode-switch" role="switch" aria-checked="false" aria-label="切换明暗"><span class="visually-hidden">切换明暗</span></button>
                 </div>
               </div>
             </div>
@@ -87,41 +84,41 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
         <aside class="app-sidebar">
           <nav class="side-nav">
             <div class="nav-group">主菜单</div>
-            <a href="/" class={`nav-item ${isActive('/') ? 'active' : ''}`}>
+            <a href="/" class="nav-item" data-path="/">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.6V21h13V9.6"/><path d="M10 21v-6h4v6"/></svg>
               首页
             </a>
-            <a href="/articles" class={`nav-item ${isActive('/articles') ? 'active' : ''}`}>
+            <a href="/articles" class="nav-item" data-path="/articles">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
               文章
             </a>
-            <a href="/moments" class={`nav-item ${isActive('/moments') ? 'active' : ''}`}>
+            <a href="/moments" class="nav-item" data-path="/moments">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>
               动态
             </a>
-            <a href="/gallery" class={`nav-item ${isActive('/gallery') ? 'active' : ''}`}>
+            <a href="/gallery" class="nav-item" data-path="/gallery">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>
               相册
             </a>
-            <a href="/arcade" class={`nav-item ${isActive('/arcade') ? 'active' : ''}`}>
+            <a href="/arcade" class="nav-item" data-path="/arcade">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7.5 11v4M5.5 13h4M16 12.5h.01M18.5 15h.01"/></svg>
               游戏
             </a>
 
             <div class="nav-group">站点</div>
-            <a href="/members" class={`nav-item ${isActive('/members') ? 'active' : ''}`}>
+            <a href="/members" class="nav-item" data-path="/members">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1.4A4.6 4.6 0 0 1 7.6 14h2.8A4.6 4.6 0 0 1 15 18.6V20"/><path d="M16 5.4a3 3 0 0 1 0 5.6M17.2 14a4.6 4.6 0 0 1 3.8 4.5V20"/></svg>
               成员
             </a>
-            <a href="/invites" class={`nav-item ${isActive('/invites') ? 'active' : ''}`}>
+            <a href="/invites" class="nav-item" data-path="/invites">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/><path d="M19 3v4M17 5h4"/></svg>
               邀请
             </a>
-            <a href="/about" class={`nav-item ${isActive('/about') ? 'active' : ''}`}>
+            <a href="/about" class="nav-item" data-path="/about">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
               关于
             </a>
-            <a href="/settings" class={`nav-item ${isActive('/settings') ? 'active' : ''}`} id="nav-settings" style="display:none">
+            <a href="/settings" class="nav-item" data-path="/settings" id="nav-settings" style="display:none">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="var(--bg-surface)"/><circle cx="15" cy="12" r="2" fill="var(--bg-surface)"/><circle cx="8" cy="17" r="2" fill="var(--bg-surface)"/></svg>
               设置
             </a>
@@ -138,23 +135,23 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
         </main>
 
         <nav class="bottom-nav">
-          <a href="/" class={`bn-item ${isActive('/') ? 'active' : ''}`}>
+          <a href="/" class="bn-item" data-path="/">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.6V21h13V9.6"/><path d="M10 21v-6h4v6"/></svg>
             <span>首页</span>
           </a>
-          <a href="/articles" class={`bn-item ${isActive('/articles') ? 'active' : ''}`}>
+          <a href="/articles" class="bn-item" data-path="/articles">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
             <span>文章</span>
           </a>
-          <a href="/moments" class={`bn-item ${isActive('/moments') ? 'active' : ''}`}>
+          <a href="/moments" class="bn-item" data-path="/moments">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 11h16M4 16h10"/></svg>
             <span>动态</span>
           </a>
-          <a href="/arcade" class={`bn-item ${isActive('/arcade') ? 'active' : ''}`}>
+          <a href="/arcade" class="bn-item" data-path="/arcade">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7.5 11v4M5.5 13h4M16 12.5h.01M18.5 15h.01"/></svg>
             <span>游戏</span>
           </a>
-          <a href="#" id="bn-user" class="bn-item">
+          <a href="#" id="bn-user" class="bn-item" data-path="user">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1.4A5.6 5.6 0 0 1 9.6 13h4.8a5.6 5.6 0 0 1 5.6 5.6V20"/></svg>
             <span>我的</span>
           </a>
@@ -164,105 +161,7 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
       <slot />
     )}
 
-    <script>
-      import { supabase } from '../lib/supabase';
-
-      function setupTheme() {
-        const btn = document.getElementById('theme-btn');
-        const panel = document.getElementById('theme-panel');
-        
-        if (btn && panel && btn.dataset.bound !== '1') {
-          btn.dataset.bound = '1';
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            panel.hidden = !panel.hidden;
-          });
-          document.addEventListener('click', (e) => {
-            if (!panel.hidden && !panel.contains(e.target as Node) && e.target !== btn) {
-              panel.hidden = true;
-            }
-          });
-          
-          panel.querySelectorAll('.theme-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-              const theme = (opt as HTMLElement).dataset.themeVal;
-              if (theme) {
-                document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('theme', theme);
-                panel.hidden = true;
-              }
-            });
-          });
-        }
-      }
-
-      function applySession(session) {
-        const lb = document.getElementById('nav-login');
-        const db = document.getElementById('nav-draft');
-        const sb = document.getElementById('nav-settings');
-        const menu = document.getElementById('user-menu');
-        const av = document.getElementById('nav-avatar');
-        const panel = document.getElementById('menu-panel');
-        const profileLink = document.getElementById('menu-profile');
-        const logoutBtn = document.getElementById('menu-logout');
-        if (!lb || !menu || !av || !panel) return;
-
-        if (session) {
-          const u = localStorage.getItem('ziji_user') || 'U';
-          lb.style.display = 'none';
-          menu.style.display = 'block';
-          if (db) db.style.display = 'inline-flex';
-          if (sb) sb.style.display = 'flex';
-          
-          av.textContent = u.charAt(0).toUpperCase();
-          av.title = u;
-          if (profileLink) profileLink.setAttribute('href', '/' + u);
-
-          if (av.dataset.bound !== '1') {
-            av.dataset.bound = '1';
-            const toggle = (e) => {
-              e.stopPropagation();
-              const open = panel.hidden;
-              panel.hidden = !open;
-            };
-            av.addEventListener('click', toggle);
-            document.addEventListener('click', (e) => {
-              if (!panel.hidden && !menu.contains(e.target)) panel.hidden = true;
-            });
-          }
-          if (logoutBtn && logoutBtn.dataset.bound !== '1') {
-            logoutBtn.dataset.bound = '1';
-            logoutBtn.addEventListener('click', async () => {
-              await supabase.auth.signOut();
-              localStorage.removeItem('ziji_uid');
-              localStorage.removeItem('ziji_user');
-              window.location.href = '/';
-            });
-          }
-        } else {
-          lb.style.display = 'flex';
-          menu.style.display = 'none';
-          if (db) db.style.display = 'none';
-          if (sb) sb.style.display = 'none';
-          panel.hidden = true;
-        }
-      }
-
-      function refresh() {
-        setupTheme();
-        supabase.auth.getSession().then(({ data }) => applySession(data.session));
-        
-        const bnUser = document.getElementById('bn-user');
-        if (bnUser) {
-          const u = localStorage.getItem('ziji_user');
-          if (u) bnUser.setAttribute('href', '/' + u);
-          else bnUser.setAttribute('href', '/login');
-        }
-      }
-      refresh();
-      supabase.auth.onAuthStateChange((_e, session) => applySession(session));
-      document.addEventListener('astro:page-load', refresh);
-    </script>
+    <script src="/layout.js" is:inline></script>
   </body>
 </html>
 
@@ -298,11 +197,60 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
   .menu-panel a:hover, .menu-panel button:hover { background: var(--bg-elevated); color: var(--text-primary); }
 
   .theme-picker { position: relative; }
-  .theme-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 160px; padding: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 2px; z-index: 200; }
+  .theme-panel {
+    position: absolute; top: calc(100% + 10px); right: 0; width: 208px; padding: 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+    box-shadow: 0 12px 32px oklch(0 0 0 / .14), 0 2px 6px oklch(0 0 0 / .06);
+    display: flex; flex-direction: column; z-index: 200;
+    transform-origin: top right;
+    animation: tpIn var(--dur-base) var(--ease-out) both;
+  }
+  @keyframes tpIn { from { opacity: 0; transform: scale(.96) translateY(-4px); } to { opacity: 1; transform: none; } }
   .theme-panel[hidden] { display: none; }
-  .theme-option { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; transition: background 0.15s; }
-  .theme-option:hover { background: var(--bg-elevated); color: var(--text-primary); }
-  .theme-dot { width: 14px; height: 14px; border-radius: 50%; }
+  .tp-label { font-size: 10.5px; letter-spacing: .07em; color: var(--muted); font-weight: 600; margin: 0 0 8px; text-transform: uppercase; }
+
+  .tp-hues { display: flex; flex-direction: column; gap: 2px; }
+  .tp-hue {
+    display: flex; align-items: center; gap: 10px; padding: 7px 9px;
+    font-size: 13px; color: var(--secondary); border-radius: var(--radius-sm);
+    cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast);
+    position: relative;
+  }
+  .tp-hue:hover { background: var(--elevated); color: var(--primary); }
+  .tp-hue span {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--sw);
+    box-shadow: inset 0 0 0 1px oklch(0 0 0 / .08);
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base);
+    flex: 0 0 auto;
+  }
+  .tp-hue.on { color: var(--primary); font-weight: 600; }
+  .tp-hue.on span { transform: scale(1.12); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--sw); }
+  .tp-hue.on::after {
+    content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: dotIn var(--dur-base) var(--ease-spring) both;
+  }
+  @keyframes dotIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+  .tp-mode-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+  :global(.switch) {
+    width: 38px; height: 22px; border-radius: 99px;
+    background: var(--border-hi); position: relative;
+    transition: background var(--dur-base) var(--ease-out);
+    flex: 0 0 auto; cursor: pointer; border: none; padding: 0;
+  }
+  :global(.switch)::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--surface); box-shadow: 0 1px 3px oklch(0 0 0 / .22);
+    transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
+  }
+  :global(.switch.on) { background: var(--accent); }
+  :global(.switch.on)::after { transform: translateX(16px); background: var(--bg); }
+  :global(.switch:active)::after { width: 22px; }
+  :global(.switch.on:active)::after { transform: translateX(12px); }
 
   .app-sidebar { background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 18px 10px 20px; overflow-y: auto; }
   .nav-group { font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.06em; padding: 0 10px; margin: 0 0 8px; font-weight: 600; }
@@ -388,11 +336,7 @@ const isActive = (path: string) => path === '/' ? pathname === '/' : pathname.st
   :global(label.fl) { display: block; font-size: 12px; color: var(--text-secondary); margin: 0 0 6px; font-weight: 500; }
   :global(.field) { margin-bottom: 14px; }
 
-  :global(.switch) { width: 36px; height: 20px; border-radius: 99px; background: var(--border-light); position: relative; transition: background 0.2s; flex: 0 0 auto; cursor: pointer; border: none; }
-  :global(.switch:after) { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.18); }
-  :global(.switch.on) { background: var(--text-primary); }
-  :global(.switch.on:after) { transform: translateX(16px); }
-  :global(.switch-row) { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border-light); }
+  :global(.switch-row) { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); }
   :global(.switch-row:last-child) { border-bottom: 0; }
 
   :global(.rule) { height: 1px; background: var(--border); margin: 22px 0; }

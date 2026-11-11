@@ -40,7 +40,7 @@ import Layout from '../layouts/Layout.astro';
 
       setTimeout(() => {
         const code = 'ZJ-' + Date.now().toString(36).toUpperCase();
-        const link = `https://ziji-station.pages.dev/login?code=${code}`;
+        const link = window.location.origin + `/login?code=${code}`;
         
         const resEl = document.getElementById('invite-result');
         const linkEl = document.getElementById('invite-link');
@@ -67,4 +67,16 @@ import Layout from '../layouts/Layout.astro';
       }, 500);
     });
   </script>
+  <style>
+    .code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 10px;
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--secondary);
+      word-break: break-all;
+    }
+  </style>
 </Layout>

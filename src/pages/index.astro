@@ -1,36 +1,67 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import BlurText from '../components/fx/BlurText';
+import ClickSpark from '../components/fx/ClickSpark';
+import Magnet from '../components/fx/Magnet';
+import LatticeLoader from '../components/fx/LatticeLoader';
 ---
-<Layout title="首页 · 子骥的小站">
-  <div class="pagehead reveal">
-    <div>
-      <h1>首页</h1>
-      <p>最近大家写了什么、发了什么，都在这里。</p>
-    </div>
-  </div>
 
-  <div class="row between reveal reveal-delay-1" style="margin:20px 0 11px">
-    <div class="wrap" id="feed-tabs">
-      <button class="chip on" data-filter="all">全部</button>
-      <button class="chip" data-filter="article">文章</button>
-      <button class="chip" data-filter="moment">动态</button>
-    </div>
-    <span class="tiny muted" id="feed-count">加载中…</span>
-  </div>
+<Layout title="子骥的小站">
+  <ClickSpark client:load>
+    <section class="hero">
+      <p class="hero-kicker">朋友们的数字客厅</p>
+      <h1 class="hero-title">
+        <BlurText text="这里是我们" delay={70} client:load />
+        <br />
+        <BlurText text="随手放东西的地方" delay={70} className="accent-word" client:load />
+      </h1>
+      <p class="hero-sub">
+        写点长的，丢点短的，贴张照片。不用想太多，想发就发。
+      </p>
+      <div class="hero-actions">
+        <Magnet client:visible padding={30} strength={0.22}>
+          <a href="/articles" class="btn primary">读文章</a>
+        </Magnet>
+        <Magnet client:visible padding={30} strength={0.22}>
+          <a href="/moments" class="btn">看动态</a>
+        </Magnet>
+        <Magnet client:visible padding={30} strength={0.22}>
+          <a href="/gallery" class="btn ghost">翻相册</a>
+        </Magnet>
+      </div>
+    </section>
 
-  <div id="feed-container" class="list reveal reveal-delay-2"></div>
-  
-  <div class="row reveal reveal-delay-3" style="justify-content:center;gap:8px;margin-top:24px">
-    <a href="/articles" class="btn">全部文章</a>
-    <a href="/gallery" class="btn">全部照片</a>
-  </div>
+    <section class="feed-section">
+      <div class="sect-bar">
+        <h2 class="sect-h">最近</h2>
+        <div class="wrap" id="feed-tabs" role="tablist" aria-label="筛选">
+          <button class="chip on" data-filter="all" role="tab" aria-selected="true">全部</button>
+          <button class="chip" data-filter="article" role="tab" aria-selected="false">文章</button>
+          <button class="chip" data-filter="moment" role="tab" aria-selected="false">动态</button>
+        </div>
+      </div>
+
+      <div id="feed-loading" class="feed-loading">
+        <LatticeLoader client:load />
+        <span>正在加载…</span>
+      </div>
+
+      <div id="feed-container" class="feed-grid" hidden></div>
+
+      <div class="feed-foot">
+        <a href="/articles" class="link-arrow">全部文章 →</a>
+        <a href="/moments" class="link-arrow">全部动态 →</a>
+      </div>
+    </section>
+  </ClickSpark>
 
   <script>
     import { getFeed } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
 
     function fmtTime(s: string) {
-      const d = new Date(s); const diff = Date.now() - d.getTime();
+      const d = new Date(s);
+      const diff = Date.now() - d.getTime();
       if (diff < 0) return '刚刚';
       const min = Math.floor(diff / 60000);
       if (min < 1) return '刚刚';
@@ -43,82 +74,399 @@ import Layout from '../layouts/Layout.astro';
     }
 
     let currentFilter = 'all';
-    
-    // 绑定 Tab 切换
+    let allItems: any[] = [];
+
+    function render() {
+      const el = document.getElementById('feed-container');
+      if (!el) return;
+      const list = currentFilter === 'all' ? allItems : allItems.filter(i => i._type === currentFilter);
+
+      if (list.length === 0) {
+        el.innerHTML = '<div class="empty-state"><span class="big">这里还空着</span>等有人先发一条。</div>';
+        el.hidden = false;
+        return;
+      }
+
+      el.innerHTML = list.map((item: any, idx: number) => {
+        const p = item.profiles || {};
+        const name = sanitizeText(p.display_name || p.username || '匿名');
+        const initial = name.charAt(0).toUpperCase();
+        const href = item._type === 'article' ? `/post/${item.id}` : `/${p.username || ''}`;
+        const s = `style="--i:${idx}"`;
+
+        if (item._type === 'article') {
+          return `
+            <a class="feed-card" href="${href}" ${s}>
+              <div class="fc-head">
+                <span class="fc-kind">文章</span>
+                <span class="fc-time">${fmtTime(item.published_at)}</span>
+              </div>
+              <h3 class="fc-title">${sanitizeText(item.title)}</h3>
+              <p class="fc-excerpt">${sanitizeText(item.summary || '')}</p>
+              <div class="fc-meta">
+                <span class="avatar-xs">${initial}</span>
+                <span>${name}</span>
+              </div>
+            </a>
+          `;
+        }
+        const imgs = item.images && item.images.length
+          ? `<div class="fc-imgs">${item.images.slice(0, 3).map((img: string) =>
+              `<div class="fc-img"><img src="${img}" loading="lazy" alt=""/></div>`).join('')}</div>`
+          : '';
+        return `
+          <a class="feed-card moment" href="${href}" ${s}>
+            <div class="fc-head">
+              <span class="avatar-xs">${initial}</span>
+              <span class="fc-name">${name}</span>
+              <span class="fc-kind subtle">动态</span>
+              <span class="fc-time">${fmtTime(item.created_at)}</span>
+            </div>
+            <p class="fc-text">${sanitizeText(item.content)}</p>
+            ${imgs}
+          </a>
+        `;
+      }).join('');
+      el.hidden = false;
+    }
+
     document.querySelectorAll('#feed-tabs .chip').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const target = e.currentTarget as HTMLElement;
-        document.querySelectorAll('#feed-tabs .chip').forEach(c => c.classList.remove('on'));
-        target.classList.add('on');
-        currentFilter = target.dataset.filter || 'all';
-        loadFeed();
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#feed-tabs .chip').forEach(c => {
+          c.classList.remove('on');
+          c.setAttribute('aria-selected', 'false');
+        });
+        const t = btn as HTMLElement;
+        t.classList.add('on');
+        t.setAttribute('aria-selected', 'true');
+        currentFilter = t.dataset.filter || 'all';
+        render();
       });
     });
 
     async function loadFeed() {
+      const loading = document.getElementById('feed-loading');
       const el = document.getElementById('feed-container');
-      const countEl = document.getElementById('feed-count');
       if (!el) return;
       try {
         const { moments, articles } = await getFeed(30);
-        let all = [
+        allItems = [
           ...moments.map((m: any) => ({ ...m, _type: 'moment' })),
           ...articles.map((a: any) => ({ ...a, _type: 'article' })),
-        ].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
-
-        if (currentFilter !== 'all') {
-          all = all.filter(item => item._type === currentFilter);
-        }
-
-        if (countEl) countEl.textContent = `${all.length} 条更新`;
-
-        if (all.length === 0) {
-          el.innerHTML = '<div class="empty"><span class="big">这里还没有内容</span>换个筛选，或者去发一条吧。</div>';
-          return;
-        }
-
-        el.innerHTML = all.map((item: any) => {
-          const p = item.profiles || {};
-          const name = sanitizeText(p.display_name || p.username || '匿名');
-          const initial = name.charAt(0).toUpperCase();
-          
-          if (item._type === 'article') {
-            return `
-              <div class="li">
-                <div class="li-body">
-                  <a href="/post/${item.id}" class="li-title">${sanitizeText(item.title)}</a>
-                  <p class="li-excerpt">${sanitizeText(item.summary || '')}</p>
-                  <div class="li-meta">
-                    <span>${name}</span><span>·</span><span>${fmtTime(item.published_at)}</span>
-                    <span class="feed-kind" style="margin-left:6px">文章</span>
-                  </div>
-                </div>
-                ${item.cover_url ? `<div class="li-side"><img src="${item.cover_url}" style="width:100%;height:100%;object-fit:cover;"/></div>` : ''}
-              </div>
-            `;
-          } else {
-            return `
-              <div class="moment">
-                <div class="moment-head">
-                  <div class="avatar-sm">${initial}</div>
-                  <a href="/${p.username || '#'}" class="moment-name">${name}</a>
-                  <span class="feed-kind">动态</span>
-                  <span class="moment-time">${fmtTime(item.created_at)}</span>
-                </div>
-                <p class="moment-text">${sanitizeText(item.content)}</p>
-                ${item.images && item.images.length > 0 
-                  ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;">${item.images.map((img: string) => `<div style="aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border-light);"><img src="${img}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')}</div>` 
-                  : ''
-                }
-              </div>
-            `;
-          }
-        }).join('');
+        ].sort((a, b) =>
+          new Date(b.published_at || b.created_at).getTime() -
+          new Date(a.published_at || a.created_at).getTime()
+        );
+        loading?.remove();
+        render();
       } catch (e: any) {
-        el.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败: ${e.message}</div>`;
+        if (loading) loading.innerHTML = `<span style="color:var(--danger)">加载失败：${e.message}</span>`;
       }
     }
+
+    // spotlight 跟随（事件委托，零 hydration）
+    let rafPending = false;
+    document.addEventListener('pointermove', (e) => {
+      const card = (e.target as HTMLElement).closest?.('.feed-card') as HTMLElement | null;
+      if (!card || rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    }, { passive: true });
+
     loadFeed();
     document.addEventListener('astro:page-load', loadFeed);
   </script>
+
+  <style>
+    /* ── 首屏 ── */
+    .hero {
+      padding: 56px 0 64px;
+      max-width: 720px;
+      animation: heroIn 0.6s var(--ease-out) both;
+    }
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: none; }
+    }
+    .hero-kicker {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 0 0 20px;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(34px, 5.5vw, 58px);
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--primary);
+      margin: 0 0 24px;
+      overflow-wrap: anywhere;
+    }
+    .hero-title .accent-word {
+      color: var(--accent);
+    }
+    .hero-sub {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--secondary);
+      margin: 0 0 32px;
+      max-width: 44ch;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ── 通用按钮（局部定义，避免依赖 Layout 内联样式） ── */
+    .btn {
+      height: 38px; padding: 0 18px;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--secondary);
+      font-size: 13px; font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all var(--dur-base) var(--ease-out);
+    }
+    .btn:hover { border-color: var(--border-hi); color: var(--primary); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0) scale(0.985); }
+    .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--bg); }
+    .btn.primary:hover { opacity: 0.9; }
+    .btn.ghost { background: transparent; border-color: transparent; }
+    .btn.ghost:hover { background: var(--elevated); }
+
+    /* ── Feed ── */
+    .feed-section { margin-top: 8px; }
+    .sect-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      margin: 0 0 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sect-h {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--primary);
+      margin: 0;
+    }
+    .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      height: 30px; padding: 0 13px;
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 12.5px;
+      color: var(--secondary);
+      background: transparent;
+      cursor: pointer;
+      transition: all var(--dur-fast) var(--ease-out);
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--border-hi); color: var(--primary); }
+    .chip.on { background: var(--primary); border-color: var(--primary); color: var(--bg); font-weight: 600; }
+
+    .feed-loading {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .feed-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 640px) {
+      .feed-grid { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .feed-card {
+      position: relative;
+      isolation: isolate;
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      min-width: 0;
+      overflow: hidden;
+      transition:
+        border-color var(--dur-base) var(--ease-out),
+        transform var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out);
+      animation: cardIn 0.55s var(--ease-out) both;
+      animation-delay: calc(var(--i, 0) * 55ms);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* spotlight 光斑 */
+    .feed-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity var(--dur-slow) var(--ease-out);
+      background: radial-gradient(
+        220px circle at var(--mx, 50%) var(--my, 50%),
+        oklch(var(--accent-L) var(--chroma-accent) var(--hue) / 0.10),
+        transparent 65%
+      );
+    }
+    .feed-card:hover::before { opacity: 1; }
+    .feed-card > * { position: relative; z-index: 1; }
+
+    .feed-card:hover {
+      border-color: var(--border-hi);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px oklch(0 0 0 / .06);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .feed-card { animation: none; }
+      .feed-card::before { display: none; }
+    }
+
+    .fc-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+      font-size: 11.5px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .fc-kind {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--elevated);
+      color: var(--primary);
+      letter-spacing: 0.02em;
+    }
+    .fc-kind.subtle { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .fc-time { margin-left: auto; font-family: var(--font-mono); }
+
+    .fc-title {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      color: var(--primary);
+      margin: 0 0 8px;
+      overflow-wrap: anywhere;
+    }
+    .fc-excerpt {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--secondary);
+      margin: 0 0 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .fc-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .fc-name { font-size: 12.5px; font-weight: 600; color: var(--primary); }
+    .fc-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--secondary);
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .fc-imgs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 14px;
+    }
+    .fc-img {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--elevated);
+    }
+    .fc-img img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform var(--dur-slow) var(--ease-out);
+    }
+    .feed-card:hover .fc-img img { transform: scale(1.04); }
+
+    .avatar-xs {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--bg);
+      display: inline-grid; place-items: center;
+      font-size: 11px; font-weight: 600;
+      flex: 0 0 auto;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+    }
+    .empty-state .big {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 19px;
+      color: var(--secondary);
+      margin-bottom: 6px;
+    }
+
+    .feed-foot {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .link-arrow {
+      font-size: 13px;
+      color: var(--secondary);
+      transition: color var(--dur-fast), gap var(--dur-fast);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .link-arrow:hover { color: var(--accent); }
+
+    @media (max-width: 760px) {
+      .hero { padding: 32px 0 44px; }
+      .hero-sub { font-size: 15px; }
+      .btn { height: 36px; padding: 0 14px; font-size: 12.5px; }
+      .feed-card { padding: 16px; }
+      .fc-title { font-size: 18px; }
+    }
+  </style>
 </Layout>

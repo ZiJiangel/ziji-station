@@ -33,7 +33,14 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const colors = ['#0F6E63', '#3A67A8', '#B07B2C', '#B4523F', '#54677A', '#7A6390', '#223E4A'];
+        // 围绕当前主题色相派生：固定色相偏移 + 亮度梯度，随主题自动协调
+        const baseHue = parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue('--hue')
+        ) || 250;
+        const hues = [0, 45, 90, 160, 200, 260, 315];
+        const colors = hues.map((offset, i) =>
+          `oklch(${i % 2 === 0 ? 0.55 : 0.68} 0.10 ${(baseHue + offset) % 360})`
+        );
 
         el.innerHTML = `
           <div class="stat-row">
@@ -45,8 +52,8 @@ import Layout from '../layouts/Layout.astro';
           <div class="card" style="padding:2px 18px">
             <div class="people">
               ${users.map((u, i) => `
-                <div class="person">
-                  <div class="avatar-sm" style="width:46px;height:46px;font-size:18px;background:${colors[i % colors.length]}">${u.username.charAt(0).toUpperCase()}</div>
+                <div class="person" style="--i:${i}">
+                  <div class="avatar-sm" style="width:46px;height:46px;font-size:18px;background:${colors[i % colors.length]};color:oklch(0.99 0 0)">${u.username.charAt(0).toUpperCase()}</div>
                   <div style="flex:1;min-width:0">
                     <div class="pn">${u.display_name || u.username}</div>
                     <div class="pm">@${u.username} · 成员</div>
@@ -64,4 +71,16 @@ import Layout from '../layouts/Layout.astro';
     loadMembers();
     document.addEventListener('astro:page-load', loadMembers);
   </script>
+  <style>
+    .person {
+      border-radius: var(--radius-sm);
+      padding-inline: 10px;
+      margin-inline: -10px;
+      transition: background var(--dur-fast) var(--ease-out);
+    }
+    .person:hover { background: var(--elevated); }
+    .person .avatar-sm { transition: transform var(--dur-base) var(--ease-spring); }
+    .person:hover .avatar-sm { transform: scale(1.06); }
+    .person:active .avatar-sm { transform: scale(0.97); }
+  </style>
 </Layout>
