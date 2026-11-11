@@ -12,41 +12,6 @@ import Layout from '../layouts/Layout.astro';
         <p class="hero-sub">在算法的缝隙里，留存一点真实的文字与碎碎念。欢迎来到子骥的小站，这里只有朋友们的日常切片。</p>
       </section>
 
-      <!-- 发帖触发器 (已登录可见) -->
-      <div id="post-trigger" class="post-trigger reveal" style="display: none; animation-delay: 0.1s;">
-        <div class="trigger-avatar">Q</div>
-        <div class="trigger-input">分享你的新鲜事...</div>
-        <button class="trigger-btn">发动态</button>
-      </div>
-
-      <!-- 发帖弹窗 (Modal) -->
-      <div id="post-modal" class="post-modal" hidden>
-        <div class="post-modal-overlay"></div>
-        <div class="post-modal-content">
-          <header class="modal-header">
-            <button id="close-modal" class="btn-close">取消</button>
-            <span class="modal-title">发动态</span>
-            <button id="publish-btn" class="btn-publish">发布</button>
-          </header>
-          <div class="modal-body">
-            <div class="modal-user">
-              <div class="trigger-avatar">Q</div>
-            </div>
-            <div class="modal-input-wrap">
-              <textarea id="moment-input" placeholder="分享你的新鲜事..." maxlength="300"></textarea>
-              <div id="image-preview-area" class="image-grid"></div>
-            </div>
-          </div>
-          <footer class="modal-footer">
-            <label for="image-upload" class="icon-btn" title="添加图片">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </label>
-            <input type="file" id="image-upload" accept="image/*" multiple style="display: none;" />
-            <span class="char-count" id="char-count">0 / 300</span>
-          </footer>
-        </div>
-      </div>
-
       <!-- 动态流 -->
       <section class="feed-section reveal" style="animation-delay: 0.2s;">
         <header class="section-header">
@@ -88,21 +53,6 @@ import Layout from '../layouts/Layout.astro';
     import { getFeed, createMoment } from '../lib/api';
     import { sanitizeText } from '../lib/sanitize';
 
-    // 检查是否登录，如果登录了就把“发帖入口”展示出来
-    function initAuthUI() {
-      const uid = localStorage.getItem('ziji_uid');
-      const userName = localStorage.getItem('ziji_user') || 'U';
-      const trigger = document.getElementById('post-trigger');
-      
-      if (uid && trigger) {
-        trigger.style.display = 'flex';
-        document.querySelectorAll('.trigger-avatar').forEach(el => el.textContent = userName.charAt(0).toUpperCase());
-      } else if (trigger) {
-        trigger.style.display = 'none';
-      }
-    }
-    initAuthUI();
-    document.addEventListener('astro:page-load', initAuthUI);
 
     function fmtTime(s: string) {
       const d = new Date(s);
@@ -164,126 +114,7 @@ import Layout from '../layouts/Layout.astro';
       } catch (e: any) {
         el.innerHTML = `<div class="empty-state" style="color: var(--danger);">加载失败: ${e.message}</div>`;
       }
-    }
-
-    // 弹窗控制
-    const trigger = document.getElementById('post-trigger');
-    const modal = document.getElementById('post-modal');
-    const closeBtn = document.getElementById('close-modal');
-    const overlay = document.querySelector('.post-modal-overlay');
-    const momentInput = document.getElementById('moment-input') as HTMLTextAreaElement;
-    const charCount = document.getElementById('char-count');
-
-    const toggleModal = (show: boolean) => {
-      if (!modal) return;
-      if (show) {
-        modal.hidden = false;
-        momentInput.focus();
-      } else {
-        modal.hidden = true;
-      }
-    };
-
-    trigger?.addEventListener('click', () => toggleModal(true));
-    closeBtn?.addEventListener('click', () => toggleModal(false));
-    overlay?.addEventListener('click', () => toggleModal(false));
-    
-    const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement;
-    function updatePublishBtn() {
-      if (!publishBtn) return;
-      const hasContent = momentInput.value.trim().length > 0 || selectedFiles.length > 0;
-      publishBtn.disabled = !hasContent;
-    }
-
-    momentInput?.addEventListener('input', () => {
-      if (charCount) charCount.textContent = `${momentInput.value.length} / 300`;
-      updatePublishBtn();
-    });
-
-    let selectedFiles: File[] = [];
-    const imageUploadInput = document.getElementById('image-upload') as HTMLInputElement;
-    const previewArea = document.getElementById('image-preview-area') as HTMLElement;
-    const uploadModule = await import('../lib/upload');
-    const toastModule = await import('../lib/toast');
-
-    imageUploadInput?.addEventListener('change', (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files || []);
-      if (!files.length) return;
-      
-      if (files.length > 9) {
-        if (typeof toastModule !== 'undefined') toastModule.toastError('最多只能发 9 张图');
-        else alert('最多只能发 9 张图');
-        selectedFiles = files.slice(0, 9);
-      } else {
-        selectedFiles = files;
-      }
-      previewArea.innerHTML = '';
-      
-      selectedFiles.forEach((file, i) => {
-        const url = URL.createObjectURL(file);
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);';
-        wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" />
-          <button class="remove-img" data-i="${i}" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;border:none;font-size:10px;cursor:pointer;display:grid;place-items:center;">✕</button>`;
-        previewArea.appendChild(wrap);
-      });
-
-      previewArea.querySelectorAll('.remove-img').forEach(btn => {
-        btn.addEventListener('click', (ev) => {
-          const idx = parseInt((ev.currentTarget as HTMLElement).dataset.i!);
-          selectedFiles.splice(idx, 1);
-          imageUploadInput.dispatchEvent(new Event('change', { bubbles: true }));
-          // 直接重绘
-          if (selectedFiles.length === 0) previewArea.innerHTML = '';
-          else {
-             // 重新构造假事件触发
-             const dt = new DataTransfer();
-             selectedFiles.forEach(f => dt.items.add(f));
-             imageUploadInput.files = dt.files;
-             imageUploadInput.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        });
-      });
-    });
-
-    document.getElementById('publish-btn')?.addEventListener('click', async () => {
-      const uid = localStorage.getItem('ziji_uid');
-      const input = document.getElementById('moment-input') as HTMLTextAreaElement;
-      if (!uid || (!input.value.trim() && selectedFiles.length === 0)) return;
-      
-      const btn = document.getElementById('publish-btn') as HTMLButtonElement;
-      btn.disabled = true;
-      btn.textContent = selectedFiles.length > 0 ? '上传中…' : '发布中…';
-      
-      try {
-        const uploadedUrls: string[] = [];
-        if (selectedFiles.length > 0) {
-          for (const file of selectedFiles) {
-            // 注意：如果你还没建 Supabase Storage，这里可能会报错。
-            // 用 try/catch 包裹，如果报错，先转成本地 blob url 预览（仅限测试）
-            try {
-              const url = await uploadModule.uploadImage(file);
-              uploadedUrls.push(url);
-            } catch (uploadErr: any) {
-              console.warn('上传失败，使用本地临时预览:', uploadErr);
-              // 本地开发兜底（正式环境需去掉这个兜底）
-              uploadedUrls.push(URL.createObjectURL(file));
-              if (uploadErr.message.includes('Bucket not found')) {
-                 throw new Error('请先在 Supabase 后台创建名为 images 的公开存储桶');
-              }
-            }
-          }
-        }
-        
-        await createMoment(uid, input.value.trim(), uploadedUrls);
-        
-        input.value = '';
-        if (charCount) charCount.textContent = '0 / 300';
-        selectedFiles = [];
-        imageUploadInput.value = '';
-        previewArea.innerHTML = '';
-        toggleModal(false);
-        await loadFeed();
+    }loadFeed();
         toastModule.toastSuccess('发布成功');
       } catch (e: any) {
         toastModule.toastError(e.message);
@@ -306,75 +137,7 @@ import Layout from '../layouts/Layout.astro';
     .hero-section { margin-bottom: 64px; }
     .hero-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; }
     .hero-title { font-family: var(--font-serif); font-size: clamp(44px, 5vw, 64px); font-weight: 400; line-height: 1.1; color: var(--text-primary); margin-bottom: 24px; letter-spacing: -0.02em; }
-    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }
-
-    /* 触发器 */
-    :global(.post-trigger) {
-      display: flex; align-items: center; gap: 16px;
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 16px 24px; margin-bottom: 32px;
-      cursor: text; transition: all 0.2s var(--ease-out);
-    }
-    :global(.post-trigger):hover { border-color: var(--border-light); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-    :global(.trigger-avatar) {
-      width: 40px; height: 40px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border);
-      display: grid; place-items: center; font-size: 16px; font-weight: 600; color: var(--text-primary); flex-shrink: 0;
-    }
-    :global(.trigger-input) { flex: 1; color: var(--text-muted); font-size: 15px; }
-    :global(.trigger-btn) {
-      padding: 8px 20px; background: var(--text-primary); color: var(--bg);
-      border-radius: 99px; font-size: 13px; font-weight: 500; border: none; cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    :global(.trigger-btn):hover { opacity: 0.9; }
-
-    /* 弹窗 */
-    :global(.post-modal) { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-    :global(.post-modal)[hidden] { display: none; }
-    :global(.post-modal)-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); animation: fadeIn 0.2s var(--ease-out); }
-    :global(.post-modal)-content {
-      position: relative; background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 24px; width: 100%; max-width: 600px; margin: 20px;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.15); display: flex; flex-direction: column;
-      animation: slideUp 0.3s var(--ease-out);
-    }
-    :global(.modal-header) { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
-    :global(.btn-close) { background: transparent; border: none; font-size: 14px; color: var(--text-secondary); cursor: pointer; padding: 6px 12px; border-radius: 99px; transition: background 0.15s; }
-    :global(.btn-close):hover { background: var(--bg-elevated); color: var(--text-primary); }
-    :global(.modal-title) { font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: var(--text-primary); }
-    :global(.btn-publish) { padding: 8px 20px; background: var(--text-primary); color: var(--bg); border: none; border-radius: 99px; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
-    :global(.btn-publish):disabled { opacity: 0.5; cursor: not-allowed; }
-
-    :global(.modal-body) { display: flex; gap: 16px; padding: 24px; flex: 1; overflow-y: auto; min-height: 200px; max-height: 50vh; }
-    :global(.modal-user) { flex-shrink: 0; }
-    :global(.modal-input-wrap) { flex: 1; display: flex; flex-direction: column; }
-    :global(.modal-input-wrap) textarea {
-      width: 100%; min-height: 120px; background: transparent; border: none;
-      color: var(--text-primary); font-size: 16px; resize: none; outline: none; line-height: 1.6;
-    }
-    :global(.modal-footer) { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid var(--border); }
-    :global(.icon-btn) { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
-    :global(.icon-btn):hover { background: var(--bg-elevated); color: var(--text-primary); }
-    :global(.char-count) { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
-
-    /* 图片九宫格 */
-    :global(.image-grid) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-    :global(.image-grid > div:only-child) { grid-column: span 3; aspect-ratio: auto; max-height: 300px; }
-    :global(.image-grid > div:nth-child(2):nth-last-child(1)) { grid-column: span 2; aspect-ratio: auto; max-height: 300px; }
-    :global(.image-grid > div:nth-child(3):nth-last-child(1)) { grid-column: span 1; aspect-ratio: 1; }
-    :global(.image-grid) > div { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-    :global(.image-grid) img { width: 100%; height: 100%; object-fit: cover; }
-    :global(.image-grid) .remove-img {
-      position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
-      border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none;
-      display: grid; place-items: center; font-size: 12px; cursor: pointer; transition: background 0.15s;
-    }
-    :global(.image-grid) .remove-img:hover { background: #ef4444; }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-    .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .hero-sub { font-size: 16px; color: var(--text-secondary); line-height: 1.8; max-width: 480px; }.section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
     .section-header h2 { font-family: var(--font-serif); font-size: 24px; font-weight: 400; color: var(--text-primary); }
     .line { flex: 1; height: 1px; background: var(--border); }
 
