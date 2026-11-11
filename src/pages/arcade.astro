@@ -9,21 +9,56 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
+  <div class="sect-head" style="margin-top:0">
+    <h2 class="sect-title">单人小游戏</h2>
+    <span class="tiny muted">本地游玩 · 纯娱乐</span>
+  </div>
+  
+  <div class="grid2" style="margin-bottom:30px">
+    <!-- 反应速度 -->
+    <div class="card reveal">
+      <div class="sect-head" style="margin-top:0"><h2 class="sect-title">反应速度</h2></div>
+      <div class="arena" id="reaction-arena">
+        <div>
+          <div class="big">点这里开始</div>
+          <div class="hint">屏幕变色之后再点，抢跑会被记下来</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 猜数 -->
+    <div class="card reveal reveal-delay-1">
+      <div class="sect-head" style="margin-top:0"><h2 class="sect-title">猜数</h2><span class="tiny muted" id="guess-count">1 到 100</span></div>
+      <div class="row">
+        <input class="f" id="guess-input" type="number" placeholder="输入 1-100 的整数" style="flex:1" />
+        <button class="btn primary sm" id="guess-btn">猜</button>
+        <button class="btn sm" id="guess-reset">重开</button>
+      </div>
+      <div style="margin-top:14px;min-height:76px;font-size:12px;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px;" id="guess-log">
+        <div>我心里想好了一个数。从 1 到 100，六次机会。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect-head">
+    <h2 class="sect-title">多人房间</h2>
+  </div>
+  
   <div class="game-grid" style="margin-bottom:20px">
-    <div class="game-card">
+    <div class="game-card reveal">
       <div class="row between"><span class="gname">飞行棋</span><span class="tag ready">可玩</span></div>
       <div class="gdesc">2-4 人 · 经典回合制 · 约 15 分钟</div>
       <button class="btn sm create-room-btn" data-game="ludo">去玩</button>
     </div>
-    <div class="game-card">
+    <div class="game-card reveal reveal-delay-1">
       <div class="row between"><span class="gname">斗地主</span><span class="tag ready">可玩</span></div>
       <div class="gdesc">3 人 · 扑克博弈 · 出牌校验</div>
       <button class="btn sm create-room-btn" data-game="doudizhu">去玩</button>
     </div>
-    <div class="game-card">
+    <div class="game-card reveal reveal-delay-2">
       <div class="row between"><span class="gname">大富翁</span><span class="tag">筹备中</span></div>
       <div class="gdesc">2-6 人 · 掷骰模拟 · 地产买卖</div>
-      <button class="btn sm create-room-btn" data-game="monopoly">去玩</button>
+      <button class="btn sm" disabled>敬请期待</button>
     </div>
   </div>
 
@@ -43,6 +78,105 @@ import Layout from '../layouts/Layout.astro';
     import { getActiveGameRooms, createGameRoom } from '../lib/api';
     import { toast, toastError } from '../lib/toast';
 
+    // --- 反应速度 ---
+    const arena = document.getElementById('reaction-arena');
+    let reactState = 'idle';
+    let reactTimer: any;
+    let reactStart = 0;
+
+    arena?.addEventListener('click', () => {
+      if (reactState === 'idle') {
+        reactState = 'wait';
+        arena.className = 'arena';
+        arena.innerHTML = '<div><div class="big">等信号…</div><div class="hint">别急，还没到</div></div>';
+        const delay = 1200 + Math.random() * 2300;
+        reactTimer = setTimeout(() => {
+          reactState = 'go';
+          arena.className = 'arena go';
+          arena.innerHTML = '<div><div class="big">现在！</div><div class="hint">点下去</div></div>';
+          reactStart = performance.now();
+        }, delay);
+      } else if (reactState === 'wait') {
+        clearTimeout(reactTimer);
+        reactState = 'result';
+        arena.className = 'arena result';
+        arena.innerHTML = '<div><div class="big" style="color:var(--danger)">抢跑了！</div><div class="hint">再来一次</div></div>';
+        setTimeout(() => {
+          reactState = 'idle';
+          arena.className = 'arena';
+          arena.innerHTML = '<div><div class="big">点这里开始</div><div class="hint">屏幕变色之后再点，抢跑会被记下来</div></div>';
+        }, 1500);
+      } else if (reactState === 'go') {
+        const time = Math.round(performance.now() - reactStart);
+        reactState = 'result';
+        arena.className = 'arena result';
+        arena.innerHTML = `<div><div class="hint">这次用了</div><div class="score">${time}<span style="font-size:17px"> ms</span></div><div class="hint" style="margin:6px 0 14px">点一下重新开始</div></div>`;
+        setTimeout(() => {
+          reactState = 'idle';
+          arena.className = 'arena';
+          arena.innerHTML = '<div><div class="big">点这里开始</div><div class="hint">屏幕变色之后再点，抢跑会被记下来</div></div>';
+        }, 2000);
+      }
+    });
+
+    // --- 猜数 ---
+    let secret = Math.floor(Math.random() * 100) + 1;
+    let left = 6;
+    let won = false;
+    const guessInput = document.getElementById('guess-input') as HTMLInputElement;
+    const guessBtn = document.getElementById('guess-btn') as HTMLButtonElement;
+    const guessLog = document.getElementById('guess-log');
+    const guessCount = document.getElementById('guess-count');
+    const guessReset = document.getElementById('guess-reset');
+
+    function renderGuess(msg?: string, isWin = false) {
+      if (guessCount) guessCount.textContent = `还剩 ${left} 次`;
+      if (msg && guessLog) {
+        const el = document.createElement('div');
+        el.style.color = isWin ? 'var(--text-primary)' : 'var(--text-secondary)';
+        el.style.fontWeight = isWin ? '600' : 'normal';
+        el.innerHTML = msg;
+        guessLog.prepend(el);
+      }
+      if (left <= 0 && !won && guessBtn) {
+        guessBtn.disabled = true;
+      }
+    }
+
+    function resetGuess() {
+      secret = Math.floor(Math.random() * 100) + 1;
+      left = 6; won = false;
+      if (guessInput) guessInput.value = '';
+      if (guessBtn) guessBtn.disabled = false;
+      if (guessLog) guessLog.innerHTML = '<div>我心里想好了一个数。从 1 到 100，六次机会。</div>';
+      if (guessCount) guessCount.textContent = '1 到 100';
+    }
+
+    guessBtn?.addEventListener('click', () => {
+      if (!guessInput || !guessInput.value || won || left <= 0) return;
+      const v = parseInt(guessInput.value);
+      if (isNaN(v) || v < 1 || v > 100) return;
+      left--;
+      guessInput.value = '';
+      
+      if (v === secret) {
+        won = true;
+        renderGuess(`<b>${v}</b>　猜中了！用了 ${6 - left} 次。`, true);
+        if (guessBtn) guessBtn.disabled = true;
+      } else if (v < secret) {
+        renderGuess(`<b>${v}</b>　小了`);
+      } else {
+        renderGuess(`<b>${v}</b>　大了`);
+      }
+      
+      if (left <= 0 && !won) {
+        renderGuess(`机会用完了，答案是 <b>${secret}</b>。`, true);
+      }
+    });
+
+    guessReset?.addEventListener('click', resetGuess);
+
+    // --- 房间列表与创建 ---
     const GAME_NAMES: Record<string, string> = { ludo: '飞行棋', doudizhu: '斗地主', monopoly: '大富翁' };
 
     function fmtTime(s: string) {

@@ -11,12 +11,9 @@ import Layout from '../layouts/Layout.astro';
 
   <div class="wrap" style="margin-bottom:14px">
     <button class="chip on">全部</button>
-    <button class="chip">随笔</button>
-    <button class="chip">技术</button>
-    <button class="chip">游记</button>
   </div>
 
-  <div id="article-list" class="list">
+  <div id="article-list" class="list reveal reveal-delay-1">
     <div class="empty">加载中…</div>
   </div>
 
@@ -34,7 +31,7 @@ import Layout from '../layouts/Layout.astro';
       try {
         const { articles } = await getFeed(50);
         if (articles.length === 0) {
-          el.innerHTML = '<div class="empty"><span class="big">这个分类还空着</span>去写作台写一篇吧。</div>';
+          el.innerHTML = '<div class="empty"><span class="big">这里还空着</span>去写作台写一篇吧。</div>';
           return;
         }
         el.innerHTML = articles.map(a => {

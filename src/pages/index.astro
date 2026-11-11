@@ -10,15 +10,15 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <div class="row between" style="margin:20px 0 11px">
-    <div class="wrap">
-      <button class="chip on">全部</button>
-      <button class="chip">文章</button>
-      <button class="chip">动态</button>
+    <div class="wrap" id="feed-tabs">
+      <button class="chip on" data-filter="all">全部</button>
+      <button class="chip" data-filter="article">文章</button>
+      <button class="chip" data-filter="moment">动态</button>
     </div>
     <span class="tiny muted" id="feed-count">加载中…</span>
   </div>
 
-  <div id="feed-container" class="list"></div>
+  <div id="feed-container" class="list reveal reveal-delay-1"></div>
   
   <div class="row" style="justify-content:center;gap:8px;margin-top:18px">
     <a href="/articles" class="btn">全部文章</a>
@@ -42,21 +42,37 @@ import Layout from '../layouts/Layout.astro';
       return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
     }
 
+    let currentFilter = 'all';
+    
+    document.querySelectorAll('#feed-tabs .chip').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        document.querySelectorAll('#feed-tabs .chip').forEach(c => c.classList.remove('on'));
+        target.classList.add('on');
+        currentFilter = target.dataset.filter || 'all';
+        loadFeed();
+      });
+    });
+
     async function loadFeed() {
       const el = document.getElementById('feed-container');
       const countEl = document.getElementById('feed-count');
       if (!el) return;
       try {
         const { moments, articles } = await getFeed(30);
-        const all = [
+        let all = [
           ...moments.map((m: any) => ({ ...m, _type: 'moment' })),
           ...articles.map((a: any) => ({ ...a, _type: 'article' })),
         ].sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
 
+        if (currentFilter !== 'all') {
+          all = all.filter(item => item._type === currentFilter);
+        }
+
         if (countEl) countEl.textContent = `${all.length} 条更新`;
 
         if (all.length === 0) {
-          el.innerHTML = '<div class="empty"><span class="big">这里还没有内容</span>去写作台发布第一条吧。</div>';
+          el.innerHTML = '<div class="empty"><span class="big">这里还没有内容</span>换个筛选，或者去发一条吧。</div>';
           return;
         }
 

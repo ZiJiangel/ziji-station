@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <div class="card">
+  <div class="card reveal">
     <div class="row between" style="margin-bottom:8px">
       <div>
         <div style="font-size:15px;font-weight:650">生成一张邀请码</div>
@@ -52,14 +52,18 @@ import Layout from '../layouts/Layout.astro';
         btn.disabled = false;
         btn.innerText = '+ 生成';
 
-        // 绑定复制
-        document.getElementById('copy-btn')?.addEventListener('click', () => {
-          navigator.clipboard.writeText(link).then(() => {
-            toastSuccess('邀请链接已复制');
-          }).catch(() => {
-            toastError('复制失败，请手动选中');
+        const copyBtn = document.getElementById('copy-btn');
+        if (copyBtn) {
+          const newBtn = copyBtn.cloneNode(true) as HTMLButtonElement;
+          copyBtn.replaceWith(newBtn);
+          newBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(link).then(() => {
+              toastSuccess('邀请链接已复制');
+            }).catch(() => {
+              toastError('复制失败，请手动选中');
+            });
           });
-        });
+        }
       }, 500);
     });
   </script>

@@ -12,7 +12,7 @@ import Layout from '../layouts/Layout.astro';
   <div class="grid2">
     <div>
       <div class="sect-head" style="margin-top:0"><h2 class="sect-title">个人资料</h2></div>
-      <div class="card">
+      <div class="card reveal">
         <div class="field"><label class="fl">昵称</label><input class="f" id="display_name" type="text" placeholder="你的名字"></div>
         <div class="field"><label class="fl">头像链接</label><input class="f" id="avatar_url" type="text" placeholder="https://..."></div>
         <div class="field" style="margin-bottom:16px"><label class="fl">一句话介绍</label><textarea class="f" id="bio" rows="2" placeholder="写点什么..."></textarea></div>
@@ -21,12 +21,12 @@ import Layout from '../layouts/Layout.astro';
     </div>
     <div>
       <div class="sect-head" style="margin-top:0"><h2 class="sect-title">外观</h2></div>
-      <div class="card">
+      <div class="card reveal reveal-delay-1">
         <div class="switch-row"><div><div class="small">深色模式</div><div class="tiny muted">保护你的眼睛</div></div>
           <button class="switch" data-act="toggle-theme"></button></div>
       </div>
       <div class="sect-head"><h2 class="sect-title">高级</h2></div>
-      <div class="card">
+      <div class="card reveal reveal-delay-2">
         <div class="row between">
           <div><div class="small">主页自定义</div><div class="tiny muted">使用区块编辑器搭建</div></div>
           <a href="/editor" class="btn sm">进入</a>
@@ -38,6 +38,23 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import { supabase } from '../lib/supabase';
     import { toastSuccess, toastError } from '../lib/toast';
+
+    const themeSwitch = document.querySelector('.switch[data-act="toggle-theme"]');
+    function syncThemeSwitch() {
+      if (!themeSwitch) return;
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeSwitch.classList.toggle('on', isDark);
+    }
+    syncThemeSwitch();
+    document.addEventListener('astro:page-load', syncThemeSwitch);
+
+    themeSwitch?.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      syncThemeSwitch();
+    });
 
     async function loadProfile() {
       const uid = localStorage.getItem('ziji_uid');
