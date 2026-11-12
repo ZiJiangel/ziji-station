@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
-import { toastSuccess, toastError } from '../../lib/toast';
+import { toastError } from '../../lib/toast';
 
-// 预设二次元立绘
 const SKINS = [
   { id: 'miku', name: '初音', color: '#39C5BB', glow: 'rgba(57,197,187,0.6)', icon: 'M' },
   { id: 'rem',  name: '雷姆', color: '#5BA4CF', glow: 'rgba(91,164,207,0.6)', icon: 'R' },
@@ -11,41 +10,54 @@ const SKINS = [
   { id: 'saber', name: 'Saber', color: '#F2C94C', glow: 'rgba(242,201,76,0.6)', icon: 'S' },
 ];
 
-// 15x15 经典飞行棋地图路径 (算法生成，非常精确)
-const N = 15; // 15x15 网格
-// 路径序列，从红色起飞点 (6,13) 开始，顺时针转一圈
+// 15x15 标准 Ludo 棋盘路径，共 52 格 (顺时针)
 const TRACK: [number, number][] = [
-  // 左区上方
-  [6,13],[6,12],[6,11],[6,10],[6,9], [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],
-  // 下区左侧
-  [0,7],[0,6], [1,6],[2,6],[3,6],[4,6],[5,6], [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],
-  // 右区上方
-  [7,0],[8,0], [8,1],[8,2],[8,3],[8,4],[8,5], [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],
-  // 上区右侧
-  [14,7],[14,8], [13,8],[12,8],[11,8],[10,8],[9,8], [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],
-  // 回到起点前
-  [7,14]
+  // 下臂向上 (5) - 红方起飞区
+  [6, 13], [6, 12], [6, 11], [6, 10], [6, 9],
+  // 左臂向右 (6)
+  [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8],
+  // 左臂向上 (2)
+  [0, 7], [0, 6],
+  // 上臂向右 (5) - 绿方起飞区
+  [1, 6], [2, 6], [3, 6], [4, 6], [5, 6],
+  // 上臂向上 (6)
+  [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0],
+  // 上臂向右 (2)
+  [7, 0], [8, 0],
+  // 右臂向下 (5) - 蓝方起飞区
+  [8, 1], [8, 2], [8, 3], [8, 4], [8, 5],
+  // 右臂向右 (6)
+  [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6],
+  // 右臂向下 (2)
+  [14, 7], [14, 8],
+  // 下臂向左 (5) - 黄方起飞区
+  [13, 8], [12, 8], [11, 8], [10, 8], [9, 8],
+  // 下臂向下 (6)
+  [8, 9], [8, 10], [8, 11], [8, 12], [8, 13], [8, 14],
+  // 下臂向左 (2)
+  [7, 14], [6, 14]
 ];
-
-// 终点通道 (6个格子)，每个玩家有独立的
-const HOME_RUNS = [
-  [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]], // 红(右下)
-  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],     // 绿(左下)
-  [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],     // 黄(左上)
-  [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]  // 蓝(右上)
-];
-
-// 停机坪坐标 (每个玩家4个格子的中心点)
-const YARDS = [
-  [[6,14],[6,15],[7,15],[7,14]], // 红(右下)
-  [[-1,6],[-1,7],[0,7],[0,6]],   // 绿(左下)
-  [[6,-1],[7,-1],[7,0],[6,0]],   // 黄(左上)
-  [[14,6],[14,7],[15,7],[15,6]]  // 蓝(右上)
-];
-
-const STARTS = [0, 13, 26, 39];
 const TRACK_LEN = 52;
-const FINISH_POS = 58; // 52 + 6 个终点格
+const FINISH_POS = 58;
+
+// 起点索引
+const STARTS = [0, 13, 26, 39];
+
+// 终点通道
+const HOME_RUNS = [
+  [[7, 14], [7, 13], [7, 12], [7, 11], [7, 10], [7, 9]], // 红
+  [[0, 7], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7]],       // 绿
+  [[7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5]],       // 蓝
+  [[14, 7], [13, 7], [12, 7], [11, 7], [10, 7], [9, 7]]   // 黄
+];
+
+// 营地（每个营地选四个点放棋子）
+const YARDS = [
+  [[10.5, 10.5], [13, 10.5], [10.5, 13], [13, 13]], // 红右下
+  [[1, 10.5], [3.5, 10.5], [1, 13], [3.5, 13]],     // 绿左下
+  [[1, 1], [3.5, 1], [1, 3.5], [3.5, 3.5]],         // 蓝左上
+  [[10.5, 1], [13, 1], [10.5, 3.5], [13, 3.5]]      // 黄右上
+];
 
 export default function FlightChess({ roomId, initialRoom }: { roomId: string, initialRoom: any }) {
   const [room, setRoom] = useState(initialRoom);
@@ -53,7 +65,6 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
   const [username, setUsername] = useState<string>('');
   
   const [rolling, setRolling] = useState(false);
-  const [diceValue, setDiceValue] = useState<number | null>(null);
   const [showRules, setShowRules] = useState(false);
   
   const state = room.state || { 
@@ -78,28 +89,23 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     return () => { supabase.removeChannel(channel); };
   }, [roomId]);
 
-  // 解决棋子重叠：相同位置加一点偏移
   const getPieceCoords = (pos: number, playerIdx: number, pieceIdx: number, allPieces: any[]) => {
     let [x, y] = [0, 0];
     
     if (pos === 0) {
-      // 在停机坪
       [x, y] = YARDS[playerIdx][pieceIdx];
     } else if (pos > TRACK_LEN) {
-      // 终点通道 (53~58)
       const homeIdx = pos - TRACK_LEN - 1;
       [x, y] = HOME_RUNS[playerIdx][homeIdx];
     } else {
-      // 外圈 (1~52)
       const idx = (STARTS[playerIdx] + pos - 1) % TRACK_LEN;
       [x, y] = TRACK[idx];
     }
 
-    // 如果有多枚棋子在同一格，稍微偏移
+    // 同格重叠偏移
     if (pos > 0 && pos <= TRACK_LEN) {
       const samePosCount = allPieces.filter(p => p.pos === pos).length;
       if (samePosCount > 1) {
-        // 简单的类聚错位
         x += (pieceIdx % 2) * 0.3 - 0.15;
         y += Math.floor(pieceIdx / 2) * 0.3 - 0.15;
       }
@@ -114,7 +120,7 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     
     const newPlayer = {
       uid: myUid, name: username, skinId: skin.id, color: skin.color, glow: skin.glow, icon: skin.icon,
-      pieces: [0, 0, 0, 0] // 4 个棋子初始化在停机坪
+      pieces: [0, 0, 0, 0]
     };
 
     const newPlayers = [...players, newPlayer];
@@ -144,23 +150,17 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     if (state.players[state.turnIndex]?.uid !== myUid) return toastError('还没轮到你');
     
     setRolling(true);
-    setDiceValue(null);
-    
-    // 假动画延迟（增加手感）
     await new Promise(r => setTimeout(r, 600));
 
     try {
       const { data: newState, error: err1 } = await supabase.rpc('fc_roll_dice', { p_room_id: roomId });
       if (err1) throw err1;
       
-      setDiceValue(newState.lastDice);
       setRolling(false);
 
-      // 如果后端判断没有合法的移动 (phase === 'moving')，自动跳过
       if (newState.phase === 'moving') {
         await new Promise(r => setTimeout(r, 800));
         await supabase.rpc('fc_skip_turn', { p_room_id: roomId });
-        setDiceValue(null);
       }
     } catch (e: any) {
       toastError(e.message);
@@ -173,52 +173,71 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     if (myPlayerIdx !== state.turnIndex) return;
 
     try {
-      const { data: newState, error } = await supabase.rpc('fc_move_piece', { p_room_id: roomId, p_piece_idx: pieceIdx });
+      const { error } = await supabase.rpc('fc_move_piece', { p_room_id: roomId, p_piece_idx: pieceIdx });
       if (error) throw error;
-      setDiceValue(null); // 移动完成，清空骰子状态
     } catch (e: any) {
       toastError(e.message);
     }
   };
 
+  // 渲染独立格子，辅助生成十字背景
+  const renderCell = (x: number, y: number) => {
+    let isTrack = false, trackIdx = -1;
+    for(let i=0; i<TRACK.length; i++) { if(TRACK[i][0]===x && TRACK[i][1]===y) { isTrack = true; trackIdx = i; break; } }
+    let isHome = false, homeOwner = -1, homeIdx = -1;
+    for(let p=0; p<4; p++) { for(let h=0; h<6; h++) { if(HOME_RUNS[p][h][0]===x && HOME_RUNS[p][h][1]===y) { isHome = true; homeOwner = p; homeIdx = h; break; } } }
+    
+    if (isTrack || isHome) {
+      let bg = 'var(--bg-elevated)';
+      let borderColor = 'var(--border)';
+      if (isHome) {
+        bg = `${SKINS[homeOwner].color}30`;
+        borderColor = SKINS[homeOwner].color;
+      } else if (isTrack) {
+        // 起点区域上色
+        if (trackIdx < 5) bg = `${SKINS[0].color}20`;
+        else if (trackIdx >= 13 && trackIdx < 18) bg = `${SKINS[1].color}20`;
+        else if (trackIdx >= 26 && trackIdx < 31) bg = `${SKINS[2].color}20`;
+        else if (trackIdx >= 39 && trackIdx < 44) bg = `${SKINS[3].color}20`;
+      }
+      
+      return <div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: bg, border: `1px solid ${borderColor}`, borderRadius: 3, margin: 1 }} />;
+    }
+    
+    // 中心区域
+    if (x >= 6 && x <= 8 && y >= 6 && y <= 8) {
+      // 画成对角线四个色块或者直接留空
+      return <div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'var(--surface)', border: '1px solid var(--border)', margin: 1 }} />;
+    }
+    
+    return <div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1 }} />;
+  };
+
   const renderBoard = () => {
     const grid = [];
-    const trackSet = new Set(TRACK.map(([x,y]) => `${x}-${y}`));
-    
-    // 渲染底色格子
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        const isTrack = trackSet.has(`${x}-${y}`);
-        const isHomeRun = HOME_RUNS.some(run => run.some(([rx,ry]) => rx===x && ry===y));
-        const isYard = YARDS.some(yard => yard.some(([yx,yy]) => yx===x && yy===y));
-        const isCenter = x > 5 && x < 9 && y > 5 && y < 9;
-
-        if (isCenter) {
-          grid.push(<div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'var(--border)', borderRadius: 8, margin: 2 }} />);
-        } else if (isTrack || isHomeRun || isYard) {
-          let bg = 'var(--bg-elevated)';
-          if (isHomeRun) {
-             const owner = HOME_RUNS.findIndex(run => run.some(([rx,ry]) => rx===x && ry===y));
-             bg = `${SKINS[owner].color}40`;
-          }
-          if (isYard) bg = `${SKINS[YARDS.findIndex(yard => yard.some(([yx,yy]) => yx===x && yy===y))].color}20`;
-
-          grid.push(
-            <div key={`t-${x}-${y}`} style={{
-              gridColumn: x + 1, gridRow: y + 1,
-              background: bg,
-              border: '1px solid var(--border)',
-              borderRadius: 4, margin: 1,
-              boxShadow: isTrack ? 'inset 0 0 8px rgba(0,0,0,0.05)' : 'none'
-            }} />
-          );
-        } else {
-          grid.push(<div key={`b-${x}-${y}`} style={{ gridColumn: x + 1, gridRow: y + 1 }} />);
-        }
+    for (let y = 0; y < 15; y++) {
+      for (let x = 0; x < 15; x++) {
+        grid.push(renderCell(x, y));
       }
     }
 
-    // 提取所有棋子的扁平数组，用于计算重叠
+    // 画四个营地背景
+    const yardsBg = [
+      { x: 9, y: 9, color: SKINS[0].color }, // 右下红
+      { x: 0, y: 9, color: SKINS[1].color }, // 左下绿
+      { x: 0, y: 0, color: SKINS[2].color }, // 左上蓝
+      { x: 9, y: 0, color: SKINS[3].color }  // 右上黄
+    ].map((bg, i) => (
+      <div key={`bg-${i}`} style={{
+        gridColumn: `${bg.x + 1} / span 6`, gridRow: `${bg.y + 1} / span 6`,
+        background: `${bg.color}15`,
+        border: `2px solid ${bg.color}40`,
+        borderRadius: 12,
+        margin: 4,
+        zIndex: 0
+      }} />
+    ));
+
     const allPieces: any[] = [];
     players.forEach((p: any, pIdx: number) => {
       p.pieces.forEach((pos: number, pcIdx: number) => {
@@ -229,7 +248,6 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     const pieceEls = allPieces.map((item) => {
       const { x, y } = getPieceCoords(item.pos, item.playerIdx, item.pieceIdx, allPieces);
       const isSelectable = state.phase === 'awaiting_move' && myPlayerIdx === state.turnIndex;
-      // 只有在可移动状态下，才能点击（后端会二次校验）
       
       return (
         <motion.div
@@ -238,12 +256,7 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
           initial={{ scale: 0 }}
           animate={{ scale: 1, x: `${(x + 0.5) * (100/15)}%`, y: `${(y + 0.5) * (100/15)}%` }}
           transition={{ type: 'spring', stiffness: 250, damping: 20 }}
-          onClick={() => {
-            if (isSelectable) {
-              // 简单拦截：如果在停机坪且点数不对，后端会报错，这里也可以做前端提示
-              handleMove(item.pieceIdx);
-            }
-          }}
+          onClick={() => { if (isSelectable) handleMove(item.pieceIdx); }}
           style={{
             position: 'absolute', top: 0, left: 0, width: '6.66%', height: '6.66%',
             zIndex: 10 + item.pieceIdx,
@@ -273,12 +286,14 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
       <div style={{
         width: '100%', maxWidth: 600, aspectRatio: 1,
         background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)', padding: 12, position: 'relative'
+        borderRadius: 'var(--radius-lg)', padding: 12, position: 'relative',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.1)'
       }}>
         <div style={{
-          display: 'grid', gridTemplateColumns: `repeat(${N}, 1fr)`, gridTemplateRows: `repeat(${N}, 1fr)`,
-          width: '100%', height: '100%'
+          display: 'grid', gridTemplateColumns: `repeat(15, 1fr)`, gridTemplateRows: `repeat(15, 1fr)`,
+          width: '100%', height: '100%', position: 'relative'
         }}>
+          {yardsBg}
           {grid}
         </div>
         {pieceEls}
@@ -385,7 +400,7 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
         </div>
       </aside>
 
-      {/* 自定义规则弹窗 */}
+      {/* 规则弹窗保持不变 */}
       <AnimatePresence>
         {showRules && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -228,7 +228,8 @@ import Layout from '../layouts/Layout.astro';
           const room = await createGameRoom(uid, gameType);
           window.location.href = '/room/' + room.id;
         } catch (e: any) {
-          toastError('创建失败: ' + e.message);
+          console.error('[createRoom]', e);
+          toastError('创建失败: ' + (e.message || String(e)));
           (btn as HTMLButtonElement).disabled = false;
           (btn as HTMLButtonElement).textContent = '去玩';
         }
