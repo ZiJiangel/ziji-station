@@ -11,38 +11,56 @@ const SKINS = [
   { id: 'saber', name: 'Saber', color: '#F2C94C', glow: 'rgba(242,201,76,0.8)', icon: 'S' },
 ];
 
-// 15x15 标准轨道（52格）
+// ── 绝对精确的 15x15 飞行棋坐标系 ──
+
+// 52格外圈轨道 (顺时针)
 const TRACK: [number, number][] = [
-  [6,13],[6,12],[6,11],[6,10],[6,9],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8],
-  [0,7],[0,6],[1,6],[2,6],[3,6],[4,6],[5,6],[6,5],[6,4],[6,3],[6,2],[6,1],[6,0],
-  [7,0],[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],
-  [14,7],[14,8],[13,8],[12,8],[11,8],[10,8],[9,8],[8,9],[8,10],[8,11],[8,12],[8,13],[8,14],
-  [7,14]
+  // 左臂上侧 (向右)
+  [1,6],[2,6],[3,6],[4,6],[5,6],
+  // 上臂左侧 (向上)
+  [6,5],[6,4],[6,3],[6,2],[6,1],
+  // 顶边 (向右)
+  [6,0],[7,0],[8,0],
+  // 上臂右侧 (向下)
+  [8,1],[8,2],[8,3],[8,4],[8,5],
+  // 右臂上侧 (向右)
+  [9,6],[10,6],[11,6],[12,6],[13,6],
+  // 右边 (向下)
+  [14,6],[14,7],[14,8],
+  // 右臂下侧 (向左)
+  [13,8],[12,8],[11,8],[10,8],[9,8],
+  // 下臂右侧 (向下)
+  [8,9],[8,10],[8,11],[8,12],[8,13],
+  // 底边 (向左)
+  [8,14],[7,14],[6,14],
+  // 下臂左侧 (向上)
+  [6,13],[6,12],[6,11],[6,10],[6,9],
+  // 左臂下侧 (向左)
+  [5,8],[4,8],[3,8],[2,8],[1,8],
+  // 左边 (向上)
+  [0,8],[0,7],[0,6]
 ];
 const TRACK_LEN = 52;
 const FINISH_POS = 58;
 
-// 各玩家起飞起点索引
-const STARTS = [0, 13, 26, 39];
+// 四色起飞点索引 (红右下, 绿左下, 黄左上, 蓝右上)
+const STARTS = [35, 48, 9, 26];
 
-// 终点通道
+// 四色终点通道坐标
 const HOME_RUNS = [
-  [[7,14],[7,13],[7,12],[7,11],[7,10],[7,9]],
-  [[0,7],[1,7],[2,7],[3,7],[4,7],[5,7]],
-  [[7,0],[7,1],[7,2],[7,3],[7,4],[7,5]],
-  [[14,7],[13,7],[12,7],[11,7],[10,7],[9,7]]
+  [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]], // 0:红 右下
+  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],     // 1:绿 左下
+  [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],     // 2:黄 左上
+  [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]  // 3:蓝 右上
 ];
 
-// 营地坐标
-const YARDS = [
-  [[10.5, 10.5], [13, 10.5], [10.5, 13], [13, 13]],
-  [[1, 10.5], [3.5, 10.5], [1, 13], [3.5, 13]],
-  [[1, 1], [3.5, 1], [1, 3.5], [3.5, 3.5]],
-  [[10.5, 1], [13, 1], [10.5, 3.5], [13, 3.5]]
+// 营地内的四个棋子初始坐标
+const YARDS_POS = [
+  [[10,10],[13,10],[10,13],[13,13]], // 0:红 右下
+  [[1,10],[4,10],[1,13],[4,13]],     // 1:绿 左下
+  [[1,1],[4,1],[1,4],[4,4]],         // 2:黄 左上
+  [[10,1],[13,1],[10,4],[13,4]]      // 3:蓝 右上
 ];
-
-// 颜色映射 (0:红, 1:绿, 2:黄, 3:蓝) - 对应营地/通道
-const PLAYER_COLORS = ['#E74C3C', '#2ECC71', '#F1C40F', '#3498DB'];
 
 export default function FlightChess({ roomId, initialRoom }: { roomId: string, initialRoom: any }) {
   const [room, setRoom] = useState(initialRoom);
@@ -73,20 +91,24 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     return () => { supabase.removeChannel(channel); };
   }, [roomId]);
 
-  // 计算棋子最终坐标（支持同格重叠错位）
+  // 计算棋子的绝对网格坐标
   const getPieceCoords = (pos: number, playerIdx: number, pieceIdx: number, allPieces: any[]) => {
     let [x, y] = [0, 0];
     
     if (pos === 0) {
-      [x, y] = YARDS[playerIdx][pieceIdx];
+      // 在营地，使用预设的 4 个点
+      [x, y] = YARDS_POS[playerIdx][pieceIdx];
     } else if (pos > TRACK_LEN) {
+      // 在终点通道
       const homeIdx = pos - TRACK_LEN - 1;
       [x, y] = HOME_RUNS[playerIdx][homeIdx];
     } else {
+      // 在外圈轨道
       const idx = (STARTS[playerIdx] + pos - 1) % TRACK_LEN;
       [x, y] = TRACK[idx];
     }
 
+    // 同格重叠时，稍微错开一点距离，避免完全盖住
     if (pos > 0 && pos <= TRACK_LEN) {
       const samePosCount = allPieces.filter(p => p.pos === pos).length;
       if (samePosCount > 1) {
@@ -128,14 +150,11 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
   const handleRoll = async () => {
     if (rolling) return;
     if (state.players[state.turnIndex]?.uid !== myUid) return toastError('还没轮到你');
-    
     setRolling(true);
     await new Promise(r => setTimeout(r, 600));
-
     try {
       const { data: newState, error: err1 } = await supabase.rpc('fc_roll_dice', { p_room_id: roomId });
       if (err1) throw err1;
-      
       setRolling(false);
       if (newState.phase === 'moving') {
         await new Promise(r => setTimeout(r, 800));
@@ -150,7 +169,6 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
   const handleMove = async (pieceIdx: number) => {
     if (state.phase !== 'awaiting_move') return;
     if (myPlayerIdx !== state.turnIndex) return;
-
     try {
       const { error } = await supabase.rpc('fc_move_piece', { p_room_id: roomId, p_piece_idx: pieceIdx });
       if (error) throw error;
@@ -159,53 +177,50 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     }
   };
 
-  // ── 渲染层：3D 实体棋盘 ──
+  // 绘制底层格子
   const renderCell = (x: number, y: number) => {
-    let isTrack = false, trackIdx = -1;
-    for(let i=0; i<TRACK.length; i++) { if(TRACK[i][0]===x && TRACK[i][1]===y) { isTrack = true; trackIdx = i; break; } }
-    
-    let isHome = false, homeOwner = -1, homeIdx = -1;
-    for(let p=0; p<4; p++) { for(let h=0; h<6; h++) { if(HOME_RUNS[p][h][0]===x && HOME_RUNS[p][h][1]===y) { isHome = true; homeOwner = p; homeIdx = h; break; } } }
-    
-    // 安全格坐标
-    const safeSpots = [[6,13],[8,1],[14,8],[1,6],[7,14],[0,7],[7,0],[14,7]]; 
-    const isSafe = safeSpots.some(s => s[0]===x && s[1]===y);
+    const isTrack = TRACK.some(([tx,ty]) => tx===x && ty===y);
+    const isHomeRun = HOME_RUNS.some(run => run.some(([hx,hy]) => hx===x && hy===y));
+    const isCenter = x >= 6 && x <= 8 && y >= 6 && y <= 8;
 
-    if (isTrack || isHome) {
-      let color = 'var(--surface)';
-      if (isHome) color = `${PLAYER_COLORS[homeOwner]}90`; 
-      else if (isTrack) color = 'var(--bg-elevated)';
-      
+    if (isCenter) {
+      // 中心终点区
       return (
         <div key={`c-${x}-${y}`} style={{
-          gridColumn: x+1, gridRow: y+1, 
-          background: `linear-gradient(135deg, ${color}, var(--surface))`, 
-          border: '1px solid rgba(255,255,255,0.1)', 
-          borderRadius: 4, margin: 1,
-          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(255,255,255,0.1)',
+          gridColumn: x+1, gridRow: y+1,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          {isSafe && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>★</span>}
+          <div style={{ width: '50%', height: '50%', borderRadius: '50%', background: 'var(--primary)', opacity: 0.1 }} />
         </div>
       );
     }
-    
-    // 大本营背景 (6x6 区域)
-    if (x >= 9 && x <= 14 && y >= 9 && y <= 14) return <div key={`bg-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'rgba(231, 76, 60, 0.05)' }} />;
-    if (x >= 0 && x <= 5 && y >= 9 && y <= 14) return <div key={`bg-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'rgba(46, 204, 113, 0.05)' }} />;
-    if (x >= 0 && x <= 5 && y >= 0 && y <= 5) return <div key={`bg-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'rgba(241, 196, 15, 0.05)' }} />;
-    if (x >= 9 && x <= 14 && y >= 0 && y <= 5) return <div key={`bg-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1, background: 'rgba(52, 152, 219, 0.05)' }} />;
 
-    // 中心终点
-    if (x >= 6 && x <= 8 && y >= 6 && y <= 8) {
+    if (isTrack || isHomeRun) {
+      let bg = 'var(--bg-elevated)';
+      let border = 'var(--border)';
+      
+      if (isHomeRun) {
+        const owner = HOME_RUNS.findIndex(run => run.some(([hx,hy]) => hx===x && hy===y));
+        bg = `${SKINS[owner].color}30`;
+        border = `${SKINS[owner].color}80`;
+      }
+
       return (
-        <div key={`c-${x}-${y}`} style={{ 
-          gridColumn: x+1, gridRow: y+1, background: 'var(--surface)', 
-          border: '1px solid rgba(255,255,255,0.1)',
-          backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 70%)'
+        <div key={`c-${x}-${y}`} style={{
+          gridColumn: x+1, gridRow: y+1,
+          background: bg,
+          border: `1px solid ${border}`,
+          borderRadius: 3,
+          margin: 1,
+          boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.05)',
+          // 轨道内的中心小圆点
+          backgroundImage: isTrack ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 15%, transparent 20%)' : 'none'
         }} />
       );
     }
+
     return <div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1 }} />;
   };
 
@@ -216,6 +231,23 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
         grid.push(renderCell(x, y));
       }
     }
+
+    // 营地背景框
+    const yards = [
+      { x: 9, y: 9, color: SKINS[0].color }, // 红 右下
+      { x: 0, y: 9, color: SKINS[1].color }, // 绿 左下
+      { x: 0, y: 0, color: SKINS[2].color }, // 黄 左上
+      { x: 9, y: 0, color: SKINS[3].color }  // 蓝 右上
+    ].map((bg, i) => (
+      <div key={`bg-${i}`} style={{
+        gridColumn: `${bg.x + 1} / span 6`, gridRow: `${bg.y + 1} / span 6`,
+        background: `${bg.color}15`,
+        border: `2px solid ${bg.color}40`,
+        borderRadius: 16,
+        margin: 4,
+        zIndex: 0
+      }} />
+    ));
 
     const allPieces: any[] = [];
     players.forEach((p: any, pIdx: number) => {
@@ -233,11 +265,11 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
           key={`p-${item.playerIdx}-${item.pieceIdx}`}
           layout
           initial={{ scale: 0 }}
-          animate={{ scale: 1, x: `${(x + 0.5) * (100/15)}%`, y: `${(y + 0.5) * (100/15)}%` }}
+          animate={{ scale: 1, left: `${(x / 15) * 100}%`, top: `${(y / 15) * 100}%` }}
           transition={{ type: 'spring', stiffness: 250, damping: 20 }}
           onClick={() => { if (isSelectable) handleMove(item.pieceIdx); }}
           style={{
-            position: 'absolute', top: 0, left: 0, width: '6.66%', height: '6.66%',
+            position: 'absolute', width: '6.66%', height: '6.66%',
             zIndex: 10 + item.pieceIdx,
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}
@@ -245,14 +277,14 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
           <motion.div
             whileHover={isSelectable ? { scale: 1.3, zIndex: 30 } : {}}
             style={{
-              width: '80%', height: '80%',
+              width: '75%', height: '75%',
               background: `radial-gradient(circle at 30% 30%, ${item.player.color}, ${item.player.color}80)`,
               borderRadius: '50%',
-              boxShadow: `0 0 15px ${item.player.glow}, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.4)`,
+              boxShadow: `0 0 12px ${item.player.glow}, inset 0 -2px 4px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.5)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', fontSize: 12, fontWeight: 800,
               cursor: isSelectable ? 'pointer' : 'default',
-              border: item.pos === FINISH_POS ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
+              border: item.pos === FINISH_POS ? '2px solid #fff' : '1px solid rgba(255,255,255,0.3)',
               textShadow: '0 1px 2px rgba(0,0,0,0.5)'
             }}
           >
@@ -267,17 +299,15 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
         width: '100%', maxWidth: 600, aspectRatio: 1,
         background: 'var(--surface)', 
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)', padding: 16,
+        borderRadius: 'var(--radius-lg)', padding: 12,
         position: 'relative',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        transform: 'perspective(1000px) rotateX(8deg)', // 3D 立体透视
+        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) inset'
       }}>
         <div style={{
           display: 'grid', gridTemplateColumns: `repeat(15, 1fr)`, gridTemplateRows: `repeat(15, 1fr)`,
-          width: '100%', height: '100%', position: 'relative',
-          background: 'var(--bg)', borderRadius: 8,
-          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)'
+          width: '100%', height: '100%', position: 'relative'
         }}>
+          {yards}
           {grid}
         </div>
         {pieceEls}
