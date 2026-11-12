@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import { ViewTransitions } from 'astro:transitions';
 
 const { title = '朋友们的数字客厅', description = '朋友们的数字客厅', hideNav = false } = Astro.props;
 ---
@@ -12,7 +11,9 @@ const { title = '朋友们的数字客厅', description = '朋友们的数字客
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
-    <ViewTransitions />
+    <script is:inline define:vars={{ SB_URL: import.meta.env.PUBLIC_SUPABASE_URL, SB_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY }}>
+      window.__ZJ_CFG = { url: SB_URL, key: SB_KEY };
+    </script>
     <script is:inline>
       (function () {
         var THEMES = ['ink', 'moss', 'ember'];
@@ -76,6 +77,7 @@ const { title = '朋友们的数字客厅', description = '朋友们的数字客
               <div class="menu-panel" id="menu-panel" role="menu" hidden>
                 <a href="#" id="menu-profile" role="menuitem">我的主页</a>
                 <a href="/settings" role="menuitem">设置</a>
+                <a href="/admin" id="menu-admin" role="menuitem" style="display:none">管理后台</a>
                 <button type="button" id="menu-logout" role="menuitem" style="color:var(--danger)">退出登录</button>
               </div>
             </div>

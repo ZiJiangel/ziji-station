@@ -1,0 +1,303 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="管理后台 · 子骥的小站">
+  <div id="admin-gate" class="gate">
+    <p>检查权限中…</p>
+  </div>
+
+  <div id="admin-body" hidden>
+    <div class="pagehead">
+      <div>
+        <h1>管理后台</h1>
+        <p>用户、内容与邀请码管理。</p>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-panel="overview" role="tab" aria-selected="true">概览</button>
+      <button class="tab" data-panel="users" role="tab" aria-selected="false">用户</button>
+      <button class="tab" data-panel="moments" role="tab" aria-selected="false">动态</button>
+      <button class="tab" data-panel="articles" role="tab" aria-selected="false">文章</button>
+    </div>
+
+    <section id="panel-overview" class="panel">
+      <div class="stat-row" id="stats"></div>
+    </section>
+
+    <section id="panel-users" class="panel" hidden>
+      <div id="users-body"></div>
+    </section>
+
+    <section id="panel-moments" class="panel" hidden>
+      <div id="moments-body"></div>
+    </section>
+
+    <section id="panel-articles" class="panel" hidden>
+      <div id="articles-body"></div>
+    </section>
+  </div>
+
+  <script>
+    import {
+      checkIsAdmin, getStats, listUsers, setUserRole, purgeUserContent,
+      listMoments, deleteMoment, listArticles, deleteArticle,
+    } from '../lib/admin';
+    import { toastSuccess, toastError } from '../lib/toast';
+
+    function esc(s: string | null | undefined) {
+      return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    }
+
+    function fmtDate(s: string) {
+      const d = new Date(s);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    let currentUser: any = null;
+
+    async function boot() {
+      const gate = document.getElementById('admin-gate')!;
+      const body = document.getElementById('admin-body')!;
+
+      const ok = await checkIsAdmin();
+      if (!ok) {
+        gate.innerHTML = '<p class="denied">无权访问。<a href="/">返回首页</a></p>';
+        return;
+      }
+
+      const { supabase } = await import('../lib/supabase');
+      const { data } = await supabase.auth.getUser();
+      currentUser = data.user;
+
+      gate.hidden = true;
+      body.hidden = false;
+      loadStats();
+      loadUsers();
+      loadMoments();
+      loadArticles();
+    }
+
+    async function loadStats() {
+      const el = document.getElementById('stats')!;
+      try {
+        const s = await getStats();
+        el.innerHTML = `
+          <div class="stat"><div class="v">${s.users}</div><div class="k">用户</div></div>
+          <div class="stat"><div class="v">${s.articles}</div><div class="k">文章</div></div>
+          <div class="stat"><div class="v">${s.moments}</div><div class="k">动态</div></div>
+          <div class="stat"><div class="v">${s.comments}</div><div class="k">留言</div></div>
+          <div class="stat"><div class="v">${s.invites.active}<span class="sub">/${s.invites.total}</span></div><div class="k">可用邀请码</div></div>
+        `;
+      } catch (e: any) {
+        el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadUsers() {
+      const el = document.getElementById('users-body')!;
+      try {
+        const users = await listUsers();
+        if (!users.length) { el.innerHTML = '<p class="muted">暂无用户。</p>'; return; }
+        el.innerHTML = `
+          <div class="card" style="padding:2px 18px">
+            <table class="tbl">
+              <thead><tr><th>用户名</th><th>显示名</th><th>角色</th><th>注册时间</th><th>操作</th></tr></thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr data-uid="${u.id}">
+                    <td><b>@${esc(u.username)}</b></td>
+                    <td class="muted">${esc(u.display_name) || '—'}</td>
+                    <td><span class="tag ${u.role === 'admin' ? 'ready' : ''}">${u.role === 'admin' ? '管理员' : '成员'}</span></td>
+                    <td class="muted">${fmtDate(u.created_at)}</td>
+                    <td>
+                      <button class="btn sm" data-act="toggle-role" data-uid="${u.id}" data-role="${u.role}">
+                        ${u.role === 'admin' ? '降为成员' : '设为管理员'}
+                      </button>
+                      <button class="btn sm danger" data-act="purge" data-uid="${u.id}" data-name="${esc(u.username)}">清空内容</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <p class="hint">删除账号需在 Supabase 控制台操作（Authentication → Users）。此处仅可清空内容或调整角色。</p>
+        `;
+      } catch (e: any) {
+        el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadMoments() {
+      const el = document.getElementById('moments-body')!;
+      try {
+        const ms = await listMoments(200);
+        if (!ms.length) { el.innerHTML = '<p class="muted">暂无动态。</p>'; return; }
+        el.innerHTML = `<div class="list">${ms.map(m => {
+          const p = m.profiles || {} as any;
+          return `
+            <div class="li" data-mid="${m.id}">
+              <div class="li-body">
+                <div class="li-meta"><b>@${esc(p.username) || '未知'}</b> · ${fmtDate(m.created_at)} ${m.is_public ? '' : '· 未公开'}</div>
+                <p class="li-excerpt">${esc(m.content)}</p>
+              </div>
+              <button class="btn sm danger" data-act="del-moment" data-mid="${m.id}">删除</button>
+            </div>
+          `;
+        }).join('')}</div>`;
+      } catch (e: any) {
+        el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadArticles() {
+      const el = document.getElementById('articles-body')!;
+      try {
+        const as = await listArticles(200);
+        if (!as.length) { el.innerHTML = '<p class="muted">暂无文章。</p>'; return; }
+        el.innerHTML = `<div class="list">${as.map(a => {
+          const p = a.profiles || {} as any;
+          return `
+            <div class="li" data-aid="${a.id}">
+              <div class="li-body">
+                <a class="li-title" href="/post/${a.id}" target="_blank">${esc(a.title)}</a>
+                <div class="li-meta"><b>@${esc(p.username) || '未知'}</b> · ${fmtDate(a.published_at)} ${a.is_public ? '' : '· 未公开'}</div>
+              </div>
+              <button class="btn sm danger" data-act="del-article" data-aid="${a.id}">删除</button>
+            </div>
+          `;
+        }).join('')}</div>`;
+      } catch (e: any) {
+        el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
+      }
+    }
+
+    // tab 切换
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(x => {
+          x.classList.remove('on');
+          x.setAttribute('aria-selected', 'false');
+        });
+        (t as HTMLElement).classList.add('on');
+        t.setAttribute('aria-selected', 'true');
+        const target = (t as HTMLElement).dataset.panel;
+        document.querySelectorAll('.panel').forEach(p => {
+          (p as HTMLElement).hidden = p.id !== 'panel-' + target;
+        });
+      });
+    });
+
+    // 事件委托
+    document.addEventListener('click', async (e) => {
+      const t = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+      if (!t) return;
+      const act = t.dataset.act;
+
+      if (act === 'toggle-role') {
+        const uid = t.dataset.uid!;
+        if (uid === currentUser?.id) { toastError('不能修改自己的角色'); return; }
+        const next = t.dataset.role === 'admin' ? 'member' : 'admin';
+        t.setAttribute('disabled', '1');
+        try {
+          await setUserRole(uid, next as any);
+          toastSuccess(next === 'admin' ? '已设为管理员' : '已降为成员');
+          loadUsers();
+        } catch (err: any) {
+          toastError(err.message);
+          t.removeAttribute('disabled');
+        }
+      }
+
+      if (act === 'purge') {
+        const uid = t.dataset.uid!;
+        const name = t.dataset.name;
+        if (!confirm(`确定清空 @${name} 的全部动态、文章和留言？此操作不可撤销。`)) return;
+        t.setAttribute('disabled', '1');
+        try {
+          await purgeUserContent(uid);
+          toastSuccess('已清空');
+          loadStats(); loadMoments(); loadArticles();
+        } catch (err: any) {
+          toastError(err.message);
+          t.removeAttribute('disabled');
+        }
+      }
+
+      if (act === 'del-moment') {
+        if (!confirm('删除这条动态？')) return;
+        t.setAttribute('disabled', '1');
+        try {
+          await deleteMoment(t.dataset.mid!);
+          (t.closest('.li') as HTMLElement)?.remove();
+          toastSuccess('已删除');
+          loadStats();
+        } catch (err: any) { toastError(err.message); t.removeAttribute('disabled'); }
+      }
+
+      if (act === 'del-article') {
+        if (!confirm('删除这篇文章？')) return;
+        t.setAttribute('disabled', '1');
+        try {
+          await deleteArticle(t.dataset.aid!);
+          (t.closest('.li') as HTMLElement)?.remove();
+          toastSuccess('已删除');
+          loadStats();
+        } catch (err: any) { toastError(err.message); t.removeAttribute('disabled'); }
+      }
+    });
+
+    boot();
+  </script>
+
+  <style>
+    .gate { padding: 80px 0; text-align: center; color: var(--muted); font-size: 14px; }
+    .denied { color: var(--secondary); }
+    .denied a { color: var(--accent); text-decoration: underline; }
+
+    .tabs { display: flex; gap: 4px; margin: 24px 0 20px; border-bottom: 1px solid var(--border); }
+    .tab {
+      padding: 9px 16px; font-size: 13.5px; color: var(--secondary);
+      background: transparent; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; margin-bottom: -1px; transition: all var(--dur-fast);
+    }
+    .tab:hover { color: var(--primary); }
+    .tab.on { color: var(--primary); border-bottom-color: var(--accent); font-weight: 600; }
+
+    .panel { animation: fadeIn 0.22s var(--ease-out); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .stat .v .sub { font-size: 14px; color: var(--muted); font-weight: 400; }
+
+    .err { color: var(--danger); font-size: 13px; padding: 20px; }
+    .hint { font-size: 11.5px; color: var(--muted); margin-top: 12px; line-height: 1.7; }
+
+    .btn.danger { color: var(--danger); border-color: transparent; }
+    .btn.danger:hover { background: oklch(0.62 0.20 25 / 0.10); border-color: var(--danger); }
+
+    table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.tbl th { text-align: left; font-weight: 600; font-size: 11px; color: var(--muted); padding: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.04em; }
+    table.tbl td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table.tbl tr:last-child td { border-bottom: 0; }
+    table.tbl td:last-child { white-space: nowrap; }
+    table.tbl td:last-child .btn { margin-right: 4px; }
+
+    .list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+    .li { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: center; }
+    .li:last-child { border-bottom: 0; }
+    .li-body { flex: 1; min-width: 0; }
+    .li-title { font-size: 14px; font-weight: 600; color: var(--primary); text-decoration: none; display: block; margin-bottom: 4px; }
+    .li-title:hover { color: var(--accent); }
+    .li-excerpt { font-size: 13px; color: var(--secondary); line-height: 1.7; margin: 4px 0 0; overflow-wrap: anywhere; }
+    .li-meta { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); }
+    .li-meta b { color: var(--primary); font-weight: 600; }
+
+    @media (max-width: 760px) {
+      .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      table.tbl { font-size: 12px; }
+      table.tbl th, table.tbl td { padding: 8px 6px; }
+      table.tbl td:last-child .btn { display: block; width: 100%; margin: 0 0 4px; }
+    }
+  </style>
+</Layout>

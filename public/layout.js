@@ -131,6 +131,29 @@ function refreshAuth() {
     av.title = u;
     if (profileLink) profileLink.setAttribute('href', '/' + u);
 
+    // 管理员入口：查一次角色，仅 admin 可见
+    var adminLink = document.getElementById('menu-admin');
+    if (adminLink) {
+      if (adminLink.dataset.isAdmin !== undefined) {
+        adminLink.style.display = adminLink.dataset.isAdmin === '1' ? 'block' : 'none';
+      } else {
+        adminLink.style.display = 'none';
+        var cfg = window.__ZJ_CFG;
+        if (cfg && cfg.url && cfg.key && sessionStr) {
+          fetch(cfg.url + '/rest/v1/profiles?select=role&id=eq.' + encodeURIComponent(sessionStr), {
+            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
+          })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (rows) {
+              var isAdmin = Array.isArray(rows) && rows[0] && rows[0].role === 'admin';
+              adminLink.dataset.isAdmin = isAdmin ? '1' : '0';
+              adminLink.style.display = isAdmin ? 'block' : 'none';
+            })
+            .catch(function () { adminLink.dataset.isAdmin = '0'; });
+        }
+      }
+    }
+
     if (av.dataset.bound !== '1') {
       av.dataset.bound = '1';
       var toggle = function (e) {
@@ -148,6 +171,8 @@ function refreshAuth() {
       logoutBtn.addEventListener('click', function () {
         localStorage.removeItem('ziji_uid');
         localStorage.removeItem('ziji_user');
+        var al = document.getElementById('menu-admin');
+        if (al) { delete al.dataset.isAdmin; al.style.display = 'none'; }
         window.location.href = '/';
       });
     }
