@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node scripts/astro-runner.mjs dev",
-    "build": "node scripts/astro-runner.mjs build",
+    "build": "node scripts/astro-runner.mjs build && node scripts/fix-routes.mjs",
     "preview": "node scripts/astro-runner.mjs preview",
     "astro": "astro",
     "build:check": "astro check && node scripts/astro-runner.mjs build"
