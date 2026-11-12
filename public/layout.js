@@ -131,25 +131,34 @@ function refreshAuth() {
     av.title = u;
     if (profileLink) profileLink.setAttribute('href', '/' + u);
 
-    // 管理员入口：查一次角色，仅 admin 可见
+    // 管理员入口：优先读缓存，老用户走 token 兜底
     var adminLink = document.getElementById('menu-admin');
     if (adminLink) {
-      if (adminLink.dataset.isAdmin !== undefined) {
-        adminLink.style.display = adminLink.dataset.isAdmin === '1' ? 'block' : 'none';
+      var role = localStorage.getItem('ziji_role');
+      if (role) {
+        adminLink.style.display = role === 'admin' ? 'block' : 'none';
       } else {
         adminLink.style.display = 'none';
+        var authTokenKey = Object.keys(localStorage).find(function(k) { return k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0; });
         var cfg = window.__ZJ_CFG;
-        if (cfg && cfg.url && cfg.key && sessionStr) {
-          fetch(cfg.url + '/rest/v1/profiles?select=role&id=eq.' + encodeURIComponent(sessionStr), {
-            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
-          })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .then(function (rows) {
-              var isAdmin = Array.isArray(rows) && rows[0] && rows[0].role === 'admin';
-              adminLink.dataset.isAdmin = isAdmin ? '1' : '0';
-              adminLink.style.display = isAdmin ? 'block' : 'none';
-            })
-            .catch(function () { adminLink.dataset.isAdmin = '0'; });
+        if (authTokenKey && cfg && cfg.url && cfg.key && sessionStr) {
+          try {
+            var authData = JSON.parse(localStorage.getItem(authTokenKey));
+            var accessToken = authData.access_token;
+            if (accessToken) {
+              fetch(cfg.url + '/rest/v1/profiles?select=role&id=eq.' + encodeURIComponent(sessionStr), {
+                headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + accessToken }
+              })
+                .then(function (r) { return r.ok ? r.json() : []; })
+                .then(function (rows) {
+                  if (Array.isArray(rows) && rows[0]) {
+                    var isAdmin = rows[0].role === 'admin';
+                    localStorage.setItem('ziji_role', rows[0].role || 'member');
+                    adminLink.style.display = isAdmin ? 'block' : 'none';
+                  }
+                }).catch(function () {});
+            }
+          } catch (e) {}
         }
       }
     }
@@ -171,8 +180,9 @@ function refreshAuth() {
       logoutBtn.addEventListener('click', function () {
         localStorage.removeItem('ziji_uid');
         localStorage.removeItem('ziji_user');
+        localStorage.removeItem('ziji_role');
         var al = document.getElementById('menu-admin');
-        if (al) { delete al.dataset.isAdmin; al.style.display = 'none'; }
+        if (al) { al.style.display = 'none'; }
         window.location.href = '/';
       });
     }

@@ -28,7 +28,7 @@ export async function login(username: string, password: string) {
   // 封禁检查：登录成功但账号被封，立即登出
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, banned_at')
+    .select('id, role, banned_at')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -43,6 +43,9 @@ export async function login(username: string, password: string) {
   // 兜底：老用户若无 profiles 记录则补建
   if (!profile) {
     await supabase.from('profiles').insert({ id: user.id, username });
+    localStorage.setItem('ziji_role', 'member');
+  } else {
+    localStorage.setItem('ziji_role', profile.role || 'member');
   }
   return { id: user.id, username };
 }
@@ -69,6 +72,7 @@ export async function register(username: string, password: string, inviteCode: s
 
   localStorage.setItem('ziji_uid', user.id);
   localStorage.setItem('ziji_user', username);
+  localStorage.setItem('ziji_role', 'member');
 
   // 3. 建档案与画布；失败则回滚提示，避免"有号没资料"的半残状态
   try {
