@@ -1,0 +1,7929 @@
+* {
+    -webkit-user-select: none;
+    user-select: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+body {
+    margin: 0;
+    padding: 0px;
+    background: var(--bg-light-1);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    color: var(--text-primary);
+}
+
+/* 大屏优化：仅游戏页在宽高充足时垂直居中，避免全屏时整体偏上 */
+@media (min-width: 1261px) and (min-height: 860px) {
+    body.game-page {
+        align-items: center;
+    }
+}
+
+@keyframes dicePenaltyTremble {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(2px);
+    }
+
+    50% {
+        transform: translateX(-2px);
+    }
+
+    75% {
+        transform: translateX(2px);
+    }
+}
+
+@keyframes overflow-pulse {
+
+    0%,
+    100% {
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: translateX(-50%) scale(1.2);
+        opacity: 0.9;
+    }
+}
+
+@keyframes particle-rise {
+    0% {
+        bottom: 0;
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        bottom: 60px;
+        opacity: 0;
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes skillPanelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes mysteryBoxGlow {
+
+    0%,
+    100% {
+        scale: 1;
+        opacity: 1;
+    }
+
+    50% {
+        scale: 1.1;
+        opacity: 0.8;
+    }
+}
+
+@keyframes energyGainFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.5);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(0) scale(1.2);
+    }
+
+    80% {
+        opacity: 1;
+        transform: translateY(-10px) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.8);
+    }
+}
+
+@keyframes PanelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes waveDots {
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes diceFlash {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes diceShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    12.5%,
+    37.5%,
+    62.5% {
+        transform: translateX(3px);
+    }
+
+    25%,
+    50%,
+    75% {
+        transform: translateX(-3px);
+    }
+}
+
+@keyframes chessGlow {
+    0% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes startAreaGlow {
+    0% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes glitch-flicker {
+
+    0%,
+    19%,
+    21%,
+    23%,
+    25%,
+    54%,
+    56%,
+    100% {
+        opacity: 1;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes glitch-layer-1 {
+    0% {
+        transform: translate(0);
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+
+    5% {
+        transform: translate(-4px, 2px);
+        clip-path: inset(40% 0 35% 0);
+        opacity: 0.9;
+    }
+
+    10% {
+        transform: translate(0);
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+
+    15% {
+        transform: translate(3px, -2px);
+        clip-path: inset(60% 0 15% 0);
+        opacity: 0.8;
+    }
+
+    20% {
+        transform: translate(0);
+        opacity: 0;
+    }
+
+    30% {
+        transform: translate(-2px, 3px);
+        clip-path: inset(10% 0 70% 0);
+        opacity: 0.85;
+    }
+
+    35%,
+    100% {
+        transform: translate(0);
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+}
+
+@keyframes glitch-layer-2 {
+    0% {
+        transform: translate(0);
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+
+    8% {
+        transform: translate(3px, -3px);
+        clip-path: inset(25% 0 50% 0);
+        opacity: 0.8;
+    }
+
+    12% {
+        transform: translate(0);
+        opacity: 0;
+    }
+
+    18% {
+        transform: translate(-3px, 2px);
+        clip-path: inset(75% 0 10% 0);
+        opacity: 0.9;
+    }
+
+    25% {
+        transform: translate(0);
+        opacity: 0;
+    }
+
+    35% {
+        transform: translate(4px, -1px);
+        clip-path: inset(5% 0 80% 0);
+        opacity: 0.7;
+    }
+
+    40%,
+    100% {
+        transform: translate(0);
+        clip-path: inset(0 0 0 0);
+        opacity: 0;
+    }
+}
+
+@keyframes gradientShift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes diceTilt {
+    0% {
+        transform: translateY(-50%) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-50%) rotate(20deg);
+    }
+
+    100% {
+        transform: translateY(-50%) rotate(0deg);
+    }
+}
+
+@keyframes chatMessageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes chatMessageFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.players-info {
+    position: absolute;
+    width: 120%;
+    height: 80%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.board-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+    border-radius: 12px;
+    background: var(--glow-1);
+}
+
+.player-info {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: all;
+}
+
+.player-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.public-room-list-head {
+    display: grid;
+    grid-template-columns: 1.6fr 0.7fr 0.7fr 0.7fr 0.9fr;
+    gap: 10px;
+    padding: 0 14px;
+    margin-bottom: 8px;
+    color: var(--font-faint);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.public-room-list-head .head-col:last-child {
+    text-align: right;
+}
+
+.public-room-list-head .head-col {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.defeat-counts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.defeat-count {
+    width: 30px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background: none;
+}
+
+/* 为不同玩家的击败次数和积分获得设置颜色 */
+.player-1-defeat,
+.energy-gain-text.player-1 {
+    color: var(--player-1-color);
+    text-shadow: 0 1px 2px var(--shadow-3);
+}
+
+.player-2-defeat,
+.energy-gain-text.player-2 {
+    color: var(--player-2-color);
+    text-shadow: 0 1px 2px var(--shadow-3);
+}
+
+.player-3-defeat,
+.energy-gain-text.player-3 {
+    color: var(--player-3-color);
+    text-shadow: 0 1px 2px var(--shadow-3);
+}
+
+.player-4-defeat,
+.energy-gain-text.player-4 {
+    color: var(--player-4-color);
+    text-shadow: 0 1px 2px var(--shadow-3);
+}
+
+/* 积分条基础样式保持不变 */
+.energy-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    padding: 12px 0 0 0;
+}
+
+/* 玩家基础位置（桌面端使用） */
+.player-info.pos-tr {
+    top: 10%;
+    right: 10%;
+}
+
+.player-info.pos-br {
+    bottom: 10%;
+    right: 10%;
+}
+
+.player-info.pos-bl {
+    bottom: 10%;
+    left: 10%;
+}
+
+.player-info.pos-tl {
+    top: 10%;
+    left: 10%;
+}
+
+/* 桌面端排版顺序 - 使用 flex order 避免 JS 修改 DOM 结构 */
+.players-info .pos-tr .defeat-counts,
+.players-info .pos-br .defeat-counts {
+    order: 1;
+}
+
+.players-info .pos-tr .player-main,
+.players-info .pos-br .player-main {
+    order: 2;
+}
+
+.players-info .pos-tr .energy-bar-wrapper,
+.players-info .pos-br .energy-bar-wrapper {
+    order: 3;
+}
+
+.players-info .pos-tl .energy-bar-wrapper,
+.players-info .pos-bl .energy-bar-wrapper {
+    order: 1;
+}
+
+.players-info .pos-tl .player-main,
+.players-info .pos-bl .player-main {
+    order: 2;
+}
+
+.players-info .pos-tl .defeat-counts,
+.players-info .pos-bl .defeat-counts {
+    order: 3;
+}
+
+.energy-bar-container {
+    position: relative;
+    width: 10px;
+    height: 60px;
+    background: transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid var(--current-player-color);
+    z-index: 1;
+    box-shadow: 0 1px 3px var(--shadow-2);
+    box-sizing: border-box;
+}
+
+.energy-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    border-radius: 2px;
+    transition: height 0.5s ease;
+}
+
+/* 玩家颜色 - 简约风格 */
+.energy-bar-fill.player-1 {
+    background: var(--player-1-color);
+}
+
+.energy-bar-fill.player-2 {
+    background: var(--player-2-color);
+}
+
+.energy-bar-fill.player-3 {
+    background: var(--player-3-color);
+}
+
+.energy-bar-fill.player-4 {
+    background: var(--player-4-color);
+}
+
+/* 积分数值显示 */
+.energy-value {
+    font-size: 10px;
+    color: var(--text-primary);
+    text-align: center;
+    font-weight: bold;
+    text-shadow: none;
+    width: 24px;
+    display: inline-block;
+}
+
+.energy-particle {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--radius-full);
+    position: absolute;
+    background-color: var(--energy-particle-color, var(--white));
+    transform: scale(0);
+    box-shadow: 0 0 1px var(--shadow-3);
+}
+
+.energy-particle-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.player-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px var(--shadow-2);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.player-avatar:hover {
+    transform: scale(1.06);
+}
+
+.player-emoji {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+}
+
+.player-emoji svg {
+    width: 100%;
+    height: 100%;
+}
+
+.multiplayer-emoji {
+    width: 80%;
+    height: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: currentColor;
+}
+
+.multiplayer-emoji svg {
+    width: 100%;
+    height: 100%;
+    stroke-width: 0.5;
+}
+
+.player-name {
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: none;
+    color: var(--text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 90px;
+}
+
+.player-1-avatar {
+    background: var(--player-1-color);
+    border: 2px solid var(--player-1-border);
+    color: var(--white);
+    /* 默认状态下不显示阴影 */
+}
+
+.player-2-avatar {
+    background: var(--player-2-color);
+    border: 2px solid var(--player-2-border);
+    color: var(--white);
+}
+
+.player-3-avatar {
+    background: var(--player-3-color);
+    border: 2px solid var(--player-3-border);
+    color: var(--white);
+}
+
+.player-4-avatar {
+    background: var(--player-4-color);
+    border: 2px solid var(--player-4-border);
+    color: var(--white);
+}
+
+.player-avatar-active::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: inherit;
+    border-radius: var(--radius-full);
+    -webkit-mask: repeating-conic-gradient(from 0deg, #000 0deg 14deg, transparent 14deg 20deg);
+    mask: repeating-conic-gradient(from 0deg, #000 0deg 14deg, transparent 14deg 20deg);
+    opacity: 0.45;
+    animation: spin 6s linear infinite;
+    pointer-events: none;
+}
+
+/* 桌面端默认样式 */
+.players-top,
+.players-bottom {
+    display: none;
+}
+
+/* 游戏控制区域 */
+.game-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 101;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    height: 100px;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.game-controls-left {
+    flex: 0 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-controls-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 100px;
+    position: relative;
+}
+
+.game-controls-right {
+    flex: 0 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-icon {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px var(--shadow-2));
+    background: var(--glow-1);
+    border-radius: 8px;
+    padding: 4px;
+    color: var(--ui-default-color);
+}
+
+.chat-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    filter: drop-shadow(0 4px 8px var(--shadow-2));
+    color: var(--ui-hover-color);
+}
+
+/* 闪电模式图标 */
+.lightning-icon {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 4px;
+    color: var(--ui-default-color);
+}
+
+.lightning-icon:hover {
+    transform: scale(1.1);
+}
+
+.lightning-btn.active .lightning-icon {
+    color: var(--lightning);
+}
+
+/* 道具图标 */
+.skill-icon {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px var(--shadow-2));
+    background: var(--glow-1);
+    border-radius: 8px;
+    padding: 4px;
+    color: var(--ui-default-color);
+}
+
+.skill-icon:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 2px 4px var(--shadow-2));
+    color: var(--ui-hover-color);
+}
+
+/* 道具按钮容器 */
+.skill-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* 道具按钮提示动画 */
+@keyframes skill-btn-q-bounce {
+    0%, 100% { transform: scale(1); }
+    10% { transform: scale(1.15, 0.85); }
+    20% { transform: scale(0.85, 1.15); }
+    30% { transform: scale(1.1, 0.9); }
+    40% { transform: scale(0.95, 1.05); }
+    50% { transform: scale(1.02, 0.98); }
+}
+
+.skill-btn-hint {
+    animation: skill-btn-q-bounce 1s ease-in-out;
+}
+
+.skill-panel {
+    position: absolute;
+    bottom: 50px;
+    right: -2px;
+    width: 400px;
+    background: var(--bg-light-1);
+    border: 2px solid var(--border-medium);
+    border-radius: 12px;
+    box-shadow: var(--modal-shadow);
+    display: none;
+    z-index: 1000;
+}
+
+.skill-panel.show {
+    display: block;
+    animation: skillPanelSlideIn 0.2s ease-out;
+}
+
+/* 骰子位置的积分获得数值样式 */
+.energy-gain-text {
+    font-size: 32px;
+    color: var(--text-color, var(--gold));
+    text-shadow: 0 0 10px var(--shadow-2);
+    animation: energyGainFloat 1s ease-out;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 90px;
+    width: 120px;
+    margin: 20px 0;
+    padding: 8px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.energy-gain-text svg {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+/* 道具面板头部 */
+.skill-panel-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: var(--glow-1);
+}
+
+.skill-panel-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.skill-energy-hint {
+    font-size: 11px;
+    color: var(--font-faint);
+    text-align: center;
+    font-style: italic;
+}
+
+.skill-energy-display {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 道具面板内容 */
+.skill-panel-content {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* 道具项 */
+.skill-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--glow-1);
+    border: 2px solid var(--border-medium);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    transform: translateZ(0);
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.skill-item:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+}
+
+.skill-item.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: none;
+}
+
+.skill-item.active {
+    border-color: rgba(76, 175, 80, 0.8);
+    background: rgba(76, 175, 80, 0.08);
+    box-shadow: 0 1px 2px var(--shadow-1);
+}
+
+/* 道具图标容器 */
+.skill-icon-container {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-base);
+    color: var(--text-primary);
+    box-shadow: none;
+}
+
+.skill-item:hover .skill-icon-container {
+    border-color: var(--border-medium);
+    box-shadow: 0 1px 2px var(--border-soft);
+}
+
+/* 道具信息 */
+.skill-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* 确保在移动端浏览器下能够正确渲染 */
+    min-width: 0;
+    transform: translateZ(0);
+}
+
+.skill-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+.skill-desc {
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.skill-cost {
+    font-size: 11px;
+    color: var(--text-primary-soft);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 道具面板滚动条 */
+.skill-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.skill-panel-content::-webkit-scrollbar-track {
+    background: var(--glow-1);
+    border-radius: 3px;
+}
+
+.skill-panel-content::-webkit-scrollbar-thumb {
+    background: var(--border-soft);
+    border-radius: 3px;
+    box-shadow: 0 1px 2px var(--shadow-2);
+}
+
+.skill-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--border-soft);
+    box-shadow: none;
+}
+
+/* 骰子图标 */
+.dice-icon {
+    font-size: 75px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-primary-soft);
+    position: relative;
+    z-index: 3;
+    margin: 20px 0;
+    line-height: 1;
+    height: 90px;
+    width: 120px;
+    box-sizing: border-box;
+    text-shadow: 0 2px 4px var(--glow-2);
+    border-radius: 12px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* 骰子未投掷状态 */
+.dice-icon.not-rolled {
+    color: var(--ui-default-color);
+    filter: drop-shadow(0 3px 6px var(--shadow-2));
+    text-shadow: 0 2px 4px var(--glow-2);
+}
+
+#mysteryBoxIcon svg,
+#teleportIcon svg {
+    width: 65px;
+    height: 65px;
+}
+
+.dice-icon:not(.dice-icon-centered):hover {
+    transform: scale(1.2);
+    color: var(--ui-hover-color);
+    filter: drop-shadow(0 6px 12px var(--shadow-3));
+    text-shadow: 0 2px 6px var(--glow-2);
+}
+
+.dice-icon:not(.dice-icon-centered):active {
+    transform: scale(0.95);
+    filter: drop-shadow(0 1px 2px var(--shadow-2));
+    text-shadow: 0 1px 2px var(--glow-1);
+}
+
+/* 骰子禁用状态 */
+.dice-icon.disabled {
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px var(--shadow-1));
+    text-shadow: 0 1px 2px var(--glow-1);
+    opacity: var(--disabled-opacity);
+}
+
+/* 掷骰闪烁：亮色下保持中性色，暗色下按掷骰者的玩家配色 */
+.dice-icon.dice-flashing {
+    color: var(--text-primary-soft);
+}
+
+:root[data-theme="dark"] .dice-icon.dice-flashing.player-1 {
+    color: var(--player-1-dice);
+}
+
+:root[data-theme="dark"] .dice-icon.dice-flashing.player-2 {
+    color: var(--player-2-dice);
+}
+
+:root[data-theme="dark"] .dice-icon.dice-flashing.player-3 {
+    color: var(--player-3-dice);
+}
+
+:root[data-theme="dark"] .dice-icon.dice-flashing.player-4 {
+    color: var(--player-4-dice);
+}
+
+.dice-icon.disabled:hover {
+    cursor: not-allowed;
+    filter: drop-shadow(0 1px 2px var(--shadow-1));
+    text-shadow: 0 1px 2px var(--glow-1);
+}
+
+/* 遥控骰子特效（颜色见下方「覆盖玩家配色」）*/
+.dice-icon.remote-dice {
+    scale: 1.05;
+}
+
+/* 骰子已投掷状态 - 玩家颜色 */
+.dice-icon.rolled.player-1 {
+    color: var(--player-1-dice);
+    text-shadow: 0 2px 2px var(--glow-2);
+}
+
+.dice-icon.rolled.player-2 {
+    color: var(--player-2-dice);
+    text-shadow: 0 2px 2px var(--glow-2);
+}
+
+.dice-icon.rolled.player-3 {
+    color: var(--player-3-dice);
+    text-shadow: 0 2px 2px var(--glow-2);
+}
+
+.dice-icon.rolled.player-4 {
+    color: var(--player-4-dice);
+    text-shadow: 0 2px 2px var(--glow-2);
+}
+
+.dice-icon.rolled.remote-dice,
+.dice-icon.not-rolled.remote-dice {
+    color: #5bd0d6;
+    text-shadow: 0 2px 2px rgba(86, 86, 86, 0.5);
+}
+
+.dice-icon.not-rolled.dice-penalty-warning,
+.dice-icon.rolled.dice-penalty-warning,
+.dice-icon.not-rolled.dice-third-penalty,
+.dice-icon.rolled.dice-third-penalty,
+.dice-icon.dice-flashing.dice-penalty-warning,
+.dice-icon.dice-flashing.dice-third-penalty {
+    color: rgba(242, 47, 47, 0.95);
+    opacity: 1;
+    filter: none;
+}
+
+/* 待投掷：摇晃提示 */
+.dice-icon.not-rolled.dice-penalty-warning,
+.dice-icon.rolled.dice-penalty-warning {
+    animation: dicePenaltyTremble 0.9s ease-in-out infinite;
+}
+
+/* 投掷中：闪烁优先，红色保留 */
+.dice-icon.dice-flashing.dice-penalty-warning,
+.dice-icon.dice-flashing.dice-third-penalty {
+    animation: diceFlash 0.15s ease-in-out infinite;
+}
+
+/* 多面骰子显示样式 */
+.polyhedral-dice-display {
+    position: relative;
+    z-index: 3;
+    margin: 20px auto;
+    height: 90px;
+    width: 120px;
+    overflow: hidden;
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--ui-default-color);
+    background: transparent;
+    text-shadow: 0 2px 3px var(--shadow-2);
+    pointer-events: none;
+}
+
+.polyhedral-dice-display .reel-viewport {
+    position: absolute;
+    left: 35px;
+    top: 20px;
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+}
+
+.polyhedral-dice-display .reel-strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    transition: transform 1s cubic-bezier(0.1, 0.7, 0.2, 1);
+    will-change: transform;
+}
+
+.polyhedral-dice-display .reel-strip span {
+    display: block;
+    height: 44px;
+    line-height: 44px;
+    text-align: center;
+    font-size: 40px;
+    width: 100%;
+}
+
+.polyhedral-dice-display .final-number {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+
+.polyhedral-dice-display::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 4px solid currentColor;
+    box-shadow: 0 2px 4px var(--shadow-2);
+    z-index: -1;
+}
+
+/* 多面骰子玩家颜色：与骰面同色同透明度（骰面被 disabled 压到 0.6，数字牌也照着来，两边看着才是一个色） */
+.polyhedral-dice-display.player-1-color {
+    color: var(--player-1-dice);
+    border-color: var(--player-1-dice);
+    opacity: var(--disabled-opacity);
+}
+
+.polyhedral-dice-display.player-2-color {
+    color: var(--player-2-dice);
+    border-color: var(--player-2-dice);
+    opacity: var(--disabled-opacity);
+}
+
+.polyhedral-dice-display.player-3-color {
+    color: var(--player-3-dice);
+    border-color: var(--player-3-dice);
+    opacity: var(--disabled-opacity);
+}
+
+.polyhedral-dice-display.player-4-color {
+    color: var(--player-4-dice);
+    border-color: var(--player-4-dice);
+    opacity: var(--disabled-opacity);
+}
+
+/* 传送门图标样式 */
+#teleportIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+    margin: 20px 0;
+    height: 90px;
+    width: 120px;
+    box-sizing: border-box;
+    color: var(--ui-default-color);
+}
+
+#teleportIcon svg {
+    width: 60px;
+    height: 60px;
+}
+
+/* 传送门玩家颜色 */
+#teleportIcon.player-1-border {
+    color: var(--player-1-border);
+}
+
+#teleportIcon.player-2-border {
+    color: var(--player-2-border);
+}
+
+#teleportIcon.player-3-border {
+    color: var(--player-3-border);
+}
+
+#teleportIcon.player-4-border {
+    color: var(--player-4-border);
+}
+
+/* 骰子闪烁动画 */
+.dice-flashing {
+    animation: diceFlash 0.15s ease-in-out infinite;
+}
+
+.pulse-animation {
+    animation: pulse 1s infinite;
+}
+
+.mysteryBox-glow-animation {
+    animation: mysteryBoxGlow 0.5s ease-in-out 2;
+}
+
+/* 加载提示样式 */
+.loading-indicator,
+.pause-indicator,
+.chat-input-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--ui-default-color);
+    font-size: 18px;
+    margin: 20px 0;
+    height: 90px;
+    min-height: 90px;
+    width: 100%;
+}
+
+.loading-indicator,
+.pause-indicator {
+    display: none;
+}
+
+.chat-input-area {
+    display: none;
+    width: 100%;
+}
+
+.loading-text,
+.pause-text {
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px var(--glow-2);
+    min-width: 200px;
+    text-align: center;
+}
+
+/* 聊天输入区域样式 */
+.chat-input-container {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 2px;
+    background: transparent;
+    position: relative;
+    width: 100%;
+    max-width: 220px;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    min-width: 0;
+}
+
+.chat-input:focus {
+    box-shadow: 0 0 2px var(--white),
+        inset 0 0 2px var(--white);
+}
+
+.chat-input::placeholder {
+    color: #a9a7a7;
+}
+
+.chat-send-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--ui-default-color);
+}
+
+.chat-send-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
+.chat-send-btn:hover {
+    scale: 1.1;
+    color: var(--ui-default-color);
+}
+
+/* Emoji按钮样式 */
+.emoji-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: var(--radius-full);
+    margin-right: 5px;
+    color: var(--ui-default-color);
+}
+
+.emoji-btn:hover {
+    transform: scale(1.1);
+    color: var(--ui-default-color);
+    background: rgba(var(--ui-default-color-rgb), 0.1);
+}
+
+.emoji-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Emoji选择面板样式 */
+.emoji-panel {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    width: 280px;
+    max-height: 200px;
+    color: var(--text-primary);
+    background: var(--warm-white);
+    border: 1.5px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-1);
+    display: none;
+    z-index: 1000;
+}
+
+.emoji-panel.show {
+    display: block;
+    animation: PanelSlideIn 0.2s ease-out;
+}
+
+.emoji-panel-content {
+    padding: 10px;
+    display: grid;
+    /* 列宽可收缩：纵向滚动条一出现，固定列就会顶出一根粗横条 */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* 自定义滚动条 */
+.emoji-panel-content::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.emoji-panel-content::-webkit-scrollbar-track {
+    background: var(--shadow-1);
+    border-radius: 3px;
+}
+
+.emoji-panel-content::-webkit-scrollbar-thumb {
+    background: var(--border-soft);
+    border-radius: 3px;
+}
+
+.emoji-panel-content::-webkit-scrollbar-thumb:hover {
+    background: var(--border-soft);
+}
+
+/* Emoji项样式 */
+.emoji-item {
+    width: auto;
+    min-width: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 24px;
+    user-select: none;
+    background: transparent;
+}
+
+.emoji-item:hover {
+    background: var(--overlay-warm);
+    transform: scale(1.15);
+}
+
+.emoji-item:active {
+    transform: scale(0.95);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border: 4px solid var(--border-soft);
+    border-top: 4px solid var(--ui-default-color);
+    border-radius: var(--radius-full);
+    animation: spin 1s linear infinite;
+    flex-shrink: 0;
+}
+
+/* 房间号加载动画 */
+.loading-dots {
+    display: inline-block;
+}
+
+.loading-dots .dot {
+    display: inline-block;
+    animation: waveDots 1.4s infinite ease-in-out;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.loading-dots .dot1 {
+    animation-delay: 0s;
+}
+
+.loading-dots .dot2 {
+    animation-delay: 0.2s;
+}
+
+.loading-dots .dot3 {
+    animation-delay: 0.4s;
+}
+
+/* 骰子震动动画 - 表示无效点数 */
+.dice-shake {
+    animation: diceShake 0.5s ease-in-out;
+}
+
+/* 思考时间进度条容器 */
+.thinking-progress-container {
+    width: 200px;
+    height: 8px;
+    background: transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid var(--current-player-color);
+    /* 可见性只由 .active 决定，避免回合切换动画期间提前露出下一家的颜色 */
+    display: none;
+    box-shadow: none;
+    transform: translateY(-10px);
+}
+
+.thinking-progress-container.active {
+    display: block;
+}
+
+/* 思考时间进度条 */
+.thinking-progress-bar {
+    height: 110%;
+    width: 100%;
+    background: var(--current-player-color);
+    transition: width 0.1s linear;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 玩家颜色变量 */
+.thinking-progress-container.player-1 {
+    --current-player-color: var(--player-1-color);
+}
+
+.thinking-progress-container.player-2 {
+    --current-player-color: var(--player-2-color);
+}
+
+.thinking-progress-container.player-3 {
+    --current-player-color: var(--player-3-color);
+}
+
+.thinking-progress-container.player-4 {
+    --current-player-color: var(--player-4-color);
+}
+
+/* 桌面端棋盘样式 */
+#board-svg {
+    width: min(600px, 75vw);
+    height: min(600px, 75vw);
+    min-width: 280px;
+    min-height: 280px;
+    z-index: 2;
+}
+
+.neon-red {
+    stroke: var(--player-1-color);
+    fill: none;
+    filter: none;
+}
+
+.neon-green {
+    stroke: var(--player-2-color);
+    fill: none;
+    filter: none;
+}
+
+.neon-blue {
+    stroke: var(--player-3-color);
+    fill: none;
+    filter: none;
+}
+
+.neon-yellow {
+    stroke: var(--player-4-color);
+    fill: none;
+    filter: none;
+}
+
+.neon-cyan {
+    stroke: var(--track-primary);
+    fill: none;
+    filter: none;
+}
+
+.neon-magenta {
+    stroke: var(--track-accent);
+    fill: none;
+    filter: none;
+}
+
+/* 新的语义化玩家类名 */
+.player-1 {
+    stroke: var(--player-1-color);
+    fill: var(--player-1-color);
+    color: var(--player-1-color);
+    filter: none;
+}
+
+.player-2 {
+    stroke: var(--player-2-color);
+    fill: var(--player-2-color);
+    color: var(--player-2-color);
+    filter: none;
+}
+
+.player-3 {
+    stroke: var(--player-3-color);
+    fill: var(--player-3-color);
+    color: var(--player-3-color);
+    filter: none;
+}
+
+.player-4 {
+    stroke: var(--player-4-color);
+    fill: var(--player-4-color);
+    color: var(--player-4-color);
+    filter: none;
+}
+
+/* 棋子填充颜色设置 */
+#board-svg use[href="#chess"].player-1 .chess-fill {
+    fill: var(--player-1-fill);
+}
+
+#board-svg use[href="#chess"].player-2 .chess-fill {
+    fill: var(--player-2-fill);
+}
+
+#board-svg use[href="#chess"].player-3 .chess-fill {
+    fill: var(--player-3-fill);
+}
+
+#board-svg use[href="#chess"].player-4 .chess-fill {
+    fill: var(--player-4-fill);
+}
+
+/* 为整个棋子添加真实的阴影 */
+#board-svg use[href="#chess"].player-1 {
+    stroke: #7fb089;
+    /* 更深的薄荷绿 */
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+}
+
+#board-svg use[href="#chess"].player-2 {
+    stroke: #d4a574;
+    /* 更深的橘色 */
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+}
+
+#board-svg use[href="#chess"].player-3 {
+    stroke: #8fb4d4;
+    /* 更深的蓝色 */
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+}
+
+#board-svg use[href="#chess"].player-4 {
+    stroke: #e67d73;
+    /* 更深的红色 */
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+}
+
+/* 为到达基地的棋子（勾号）添加相同的样式 */
+#board-svg use[href="#checkmark"].player-1 {
+    stroke: none;
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+    fill: none;
+}
+
+#board-svg use[href="#checkmark"].player-2 {
+    stroke: none;
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+    fill: none;
+}
+
+#board-svg use[href="#checkmark"].player-3 {
+    stroke: none;
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+    fill: none;
+}
+
+#board-svg use[href="#checkmark"].player-4 {
+    stroke: none;
+    filter: drop-shadow(0 1px 1px var(--shadow-3));
+    fill: none;
+}
+
+/* 棋子阴影滤镜的着色（属性里写不了 var，改由 CSS 给色） */
+#chessShadow .chess-shadow-flood {
+    flood-color: var(--shadow-2);
+    flood-opacity: 1;
+}
+
+/* 棋子基础样式 */
+#board-svg use[href="#chess"] {
+    filter: drop-shadow(1px 0.5px 0.5px var(--shadow-2));
+}
+
+/* 为到达终点的棋子（半透明状态）变成纯色单色 */
+#board-svg use[href="#chess"].player-1[style*="opacity: 0.5"] {
+    stroke: none !important;
+}
+
+#board-svg use[href="#chess"].player-1[style*="opacity: 0.5"] .chess-fill {
+    fill: var(--player-1-color) !important;
+}
+
+#board-svg use[href="#chess"].player-2[style*="opacity: 0.5"] {
+    stroke: none !important;
+}
+
+#board-svg use[href="#chess"].player-2[style*="opacity: 0.5"] .chess-fill {
+    fill: var(--player-2-color) !important;
+}
+
+#board-svg use[href="#chess"].player-3[style*="opacity: 0.5"] {
+    stroke: none !important;
+}
+
+#board-svg use[href="#chess"].player-3[style*="opacity: 0.5"] .chess-fill {
+    fill: var(--player-3-color) !important;
+}
+
+#board-svg use[href="#chess"].player-4[style*="opacity: 0.5"] {
+    stroke: none !important;
+}
+
+#board-svg use[href="#chess"].player-4[style*="opacity: 0.5"] .chess-fill {
+    fill: var(--player-4-color) !important;
+}
+
+.player-1 use,
+.player-2 use,
+.player-3 use,
+.player-4 use {
+    stroke: currentColor;
+}
+
+/* 轨道相关类名 */
+.track-primary {
+    stroke: var(--track-primary);
+    fill: none;
+    filter: none;
+}
+
+
+/* 当前玩家棋子发光效果 */
+.chess-active {
+    filter: none;
+    animation: chessGlow 0.8s ease-in-out infinite alternate;
+}
+
+.chess-teleport-fade {
+    transition: opacity 0.2s ease-out;
+}
+
+/* 传送门：源格与目标格的标记类（无样式，只用来把这两格排除在聚光的“清空”之外） */
+
+/* 传送门聚光：格子逐格清成「无填充」（形状是 fill="currentColor"，把 color 设成背景色即可），
+   每格的过渡延迟由 JS 递增给出，进出两道波纹；源格与目标格不带这个类，保持本色填充 */
+#board-svg use[href="#arrow"] {
+    transition: opacity 0.18s ease;
+}
+
+#board-svg.teleport-focus use[data-cpos] {
+    transition: color 0.18s ease, stroke-opacity 0.18s ease;
+}
+
+#board-svg.teleport-focus use[data-cpos].teleport-void {
+    color: var(--bg-light-1);
+    stroke-opacity: 0.35;
+}
+
+#board-svg.teleport-focus use[href="#arrow"].teleport-void {
+    opacity: 0.2;
+}
+
+/* 同期隐去环道上正在跑的其它棋子，只留被传送的那一颗 */
+#board-svg.teleport-focus use[href="#chess"].teleport-dimmed {
+    visibility: hidden;
+}
+
+#board-svg.teleport-focus use[href="#chess"].teleport-spotlight {
+    filter: drop-shadow(0 0 3px var(--white));
+}
+
+.no-transition {
+    transition: none !important;
+}
+
+.chess-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+/* 到达终点的棋子（勾号）样式 */
+use[href="#checkmark"] {
+    pointer-events: none;
+}
+
+/* 棋子颜色适配 */
+.player-1 {
+    color: var(--player-1-color);
+    --player-border: var(--player-1-border);
+}
+
+.player-2 {
+    color: var(--player-2-color);
+    --player-border: var(--player-2-border);
+}
+
+.player-3 {
+    color: var(--player-3-color);
+    --player-border: var(--player-3-border);
+}
+
+.player-4 {
+    color: var(--player-4-color);
+    --player-border: var(--player-4-border);
+}
+
+/* 棋子中心飞机图标样式 */
+.chess-airplane {
+    opacity: var(--airplane-opacity, 0.5);
+    transition: opacity 0.3s ease-in-out;
+    filter: drop-shadow(8px 8px 8px rgb(66, 66, 66));
+    transform: translate(16.5px, 16.5px) rotate(90deg) scale(0.018) translate(-512px, -512px);
+}
+
+.chess-stacked {
+    stroke: var(--shadow-3) !important;
+    stroke-width: 1.5px;
+}
+
+.chess-movable {
+    --airplane-opacity: 1;
+}
+
+/* 主布局容器 */
+.main-layout {
+    display: flex;
+    width: 100%;
+    max-width: 1600px;
+    gap: 15px;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    min-width: 300px;
+    position: relative;
+}
+
+/* 控制面板 */
+.control-panel {
+    min-height: 600px;
+    background: none;
+    border: none;
+    padding: 15px;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 102;
+}
+
+.main-layout .control-panel {
+    height: auto;
+    max-height: 100vh;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-panel-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+}
+
+/* 标题区域 */
+.control-title {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    box-shadow: none;
+}
+
+.control-title h3 {
+    font-size: 25px;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+    position: relative;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+.control-title h3::before,
+.control-title h3::after {
+    display: none;
+}
+
+/* 房间号显示 */
+.game-room-code-display {
+    text-align: center;
+    font-size: 16px;
+    color: #86b1c0;
+    text-shadow: none;
+    font-weight: bold;
+    background: rgba(143, 180, 192, 0.1);
+    padding: 6px 16px;
+    margin: 0 10%;
+    border: 2px solid #7ca4b1;
+    border-radius: 20px;
+    display: block;
+    letter-spacing: 0.5px;
+}
+
+.game-room-code-display-column {
+    display: none;
+}
+
+.game-room-label {
+    font-weight: normal;
+    margin-right: 5px;
+}
+
+.game-room-code {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 操控区域容器 */
+.control-content {
+    --control-content-padding-right: 15px;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: none;
+    border: 2.5px solid var(--border-light);
+    border-radius: 15px;
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 4px var(--shadow-3);
+}
+
+/* 游戏信息面板 */
+.game-info-panel {
+    background: var(--bg-soft);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-base);
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+    max-width: 250px;
+    min-width: 250px;
+    box-shadow: none;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-body-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-top: 5px;
+}
+
+.game-info-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 15px 15px 15px;
+    box-sizing: border-box;
+}
+
+/* 滚动条样式 */
+.game-info-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.game-info-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.game-info-content::-webkit-scrollbar-thumb {
+    background: var(--shadow-3);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.game-info-content::-webkit-scrollbar-thumb:hover {
+    background: var(--scrim-strong);
+}
+
+/* 信息消息样式 */
+.info-message {
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-size: 14px;
+    word-wrap: break-word;
+    color: var(--text-primary);
+}
+
+.info-message:last-child {
+    margin-bottom: 0;
+}
+
+/* 玩家文字颜色 */
+.player-text.player-1 {
+    color: var(--player-1-border);
+    font-weight: bold;
+}
+
+.player-text.player-2 {
+    color: var(--player-2-border);
+    font-weight: bold;
+}
+
+.player-text.player-3 {
+    color: var(--player-3-border);
+    font-weight: bold;
+}
+
+.player-text.player-4 {
+    color: var(--player-4-border);
+    font-weight: bold;
+}
+
+/* 动作文字样式 */
+.action-text {
+    color: var(--text-primary);
+}
+
+/* 聊天消息文字样式 */
+.chat-message-text {
+    color: var(--text-primary);
+    padding: 3px 4px;
+    display: inline-block;
+}
+
+/* 系统消息文字样式 */
+.system-message-text {
+    color: #8fb4c0;
+    font-weight: bold;
+    font-style: italic;
+}
+
+/* 观战者昵称样式：无座位配色，用灰色区分 */
+.spectator-text {
+    color: #8a8f98;
+    font-weight: bold;
+}
+
+/* 击败文字样式 */
+.beat-text {
+    color: #f26969;
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: none;
+}
+
+.crash-text {
+    color: #cc7777;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 移动类型样式 */
+.move-type-launch {
+    color: #87d687;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.move-type-move {
+    color: #7890d4;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.move-type-jump {
+    color: #7fc5db;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.move-type-fly {
+    color: #de8bef;
+    font-weight: bold;
+    text-shadow: none;
+}
+.move-type-bonus {
+    color: var(--collision);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.finish-text {
+    color: #85c594;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 叠子文字特殊颜色效果 */
+.stack-text {
+    color: #fbb87a;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 道具名称文字样式 */
+.skill-name-text {
+    color: #b878c4;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 传送距离文字样式 */
+.teleport-distance-text {
+    color: var(--text-primary);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 普通骰子点数 */
+.dice-text {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+/* 积分点数文字样式 */
+.energy-value-text {
+    color: #f48d89;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 特殊骰子点数（6点）、连投奖励文字*/
+.dice-special,
+.consecutive-bonus {
+    color: #65bb9e;
+    font-weight: bold;
+    text-shadow: none;
+}
+.collision-bonus {
+    color: var(--collision);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+.control-section,
+.game-panel-section {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.index-content .control-section {
+    flex: 1;
+}
+
+.control-content>.control-section:first-child {
+    flex-shrink: 0;
+    min-height: 0;
+}
+
+.game-control-content>.game-panel-section:first-child {
+    flex-shrink: 0;
+}
+
+/* 游戏内专用控制区域容器 */
+.game-control-content {
+    flex: none;
+    background: none;
+    border: none;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2x2网格布局容器 */
+.control-buttons-grid.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+}
+
+/* 1x2网格布局容器 */
+.control-buttons-grid.grid-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 8px;
+}
+
+.control-section:last-child,
+.game-panel-section:last-child {
+    margin-bottom: 0;
+}
+
+.control-section h3,
+.game-panel-section h3 {
+    color: var(--text-primary);
+    margin: 0 0 3px 0;
+    font-size: 19px;
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 4px;
+}
+
+/* 信息面板头部容器 */
+.info-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px;
+    border-bottom: none;
+    background: linear-gradient(to right, var(--border-soft) 60%, transparent 40%) repeat-x 0 100%;
+    background-size: 13px 1px;
+}
+
+.info-header h3,
+.progress-header-container h3 {
+    margin: 0;
+    padding-bottom: 0;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.6;
+}
+
+/* 面板切换按钮 */
+.panel-switch-btn {
+    position: static;
+    /* 取消绝对定位 */
+    background: transparent;
+    border: 1.5px solid var(--border-light);
+    border-radius: 6px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    font-size: 11px;
+    /* 进一步减小字号 */
+    font-weight: 500;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+.panel-switch-btn:hover {
+    background: #f5bf60;
+    color: var(--text-primary);
+}
+
+.panel-switch-btn:active {
+    transform: scale(0.95);
+}
+
+/* 聊天信息内容容器 */
+.chat-info-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px 15px 15px 15px;
+    box-sizing: border-box;
+}
+
+/* 聊天面板滚动条样式（与游戏信息面板一致） */
+.chat-info-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-info-content::-webkit-scrollbar-track {
+    background: var(--shadow-1);
+    border-radius: 3px;
+}
+
+.chat-info-content::-webkit-scrollbar-thumb {
+    background: var(--border-soft);
+    border-radius: 3px;
+}
+
+.chat-info-content::-webkit-scrollbar-thumb:hover {
+    background: var(--border-soft);
+}
+
+/* 聊天面板中的信息消息样式 */
+.chat-info-content .info-message {
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-size: 14px;
+    word-wrap: break-word;
+    color: var(--text-primary);
+}
+
+.chat-info-content .info-message:last-child {
+    margin-bottom: 0;
+}
+
+/* 控制按钮样式 */
+.control-btn {
+    top: 20px;
+    left: 20px;
+    padding: 8px 10px;
+    color: var(--text-primary);
+    border: 2px solid var(--border-light);
+    background: none;
+    border-radius: var(--radius-base);
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: none;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1px 3px var(--shadow-2);
+}
+
+.control-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.control-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.game-mode-selection {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* 通用配置面板样式 */
+.config-panel {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    width: 90%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.player-config-panel,
+.online-multiplayer-config,
+.local-multiplayer-config,
+.ai-battle-config,
+.room-selection,
+.room-config {
+    display: none;
+    flex-direction: column;
+    flex: 1 0 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.control-section {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex-shrink: 0;
+    /* 禁止收缩 */
+}
+
+.player-config-panel {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.online-multiplayer-config,
+.local-multiplayer-config,
+.ai-battle-config,
+.online-multiplayer-config {
+    position: relative;
+}
+
+.room-selection,
+.room-config {
+    width: 100%;
+    gap: 16px;
+    margin: 0 auto;
+}
+
+.public-room-actions-bar {
+    width: 100%;
+    margin-top: auto;
+}
+
+/* 首页主菜单样式 */
+.main-menu-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 400px;
+    max-width: 95%;
+    margin: 20px auto;
+}
+
+.menu-card-btn {
+    width: 100%;
+    height: 60px;
+    background: var(--ui-default-color);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 2px 2px var(--shadow-3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+}
+
+#menuOnlineBtn {
+    background-color: var(--player-3-color);
+}
+
+#menuAiBtn {
+    background-color: var(--player-4-color);
+}
+
+#menuLocalBtn {
+    background-color: var(--player-1-color);
+}
+
+#menuStatsBtn {
+    background-color: var(--player-2-color);
+}
+
+.menu-card-btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+    box-shadow: 0 6px 6px var(--shadow-3);
+}
+
+.menu-card-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px var(--shadow-1);
+}
+
+.menu-card-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+}
+
+.menu-card-btn:disabled:hover {
+    transform: none;
+    opacity: 0.45;
+    box-shadow: 0 2px 2px var(--shadow-3);
+}
+
+.menu-btn-text {
+    color: var(--white);
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px var(--shadow-3);
+}
+
+.menu-btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    color: var(--white);
+    filter: drop-shadow(1px 1px 2px var(--shadow-3));
+}
+
+.menu-btn-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.mode-btn {
+    width: 100%;
+    padding: 16px 20px;
+    color: var(--text-primary);
+    border: 2px solid var(--border-light);
+    background: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 硬件加速 */
+    transform: translateZ(0);
+}
+
+.mode-btn:hover {
+    text-shadow: none;
+    box-shadow: 0 4px 12px var(--shadow-1);
+    transform: translateY(-2px) translateZ(0);
+}
+
+.mode-btn-content {
+    text-align: center;
+}
+
+.mode-btn-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.mode-btn-desc {
+    font-size: 12px;
+    opacity: 0.8;
+    font-weight: normal;
+}
+
+.public-room-list-panel {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: clamp(260px, 45vh, 420px);
+}
+
+.public-room-list-header {
+    display: flex;
+    gap: 8px;
+}
+
+.public-room-search {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--glow-1);
+    border: 1.5px solid var(--border-soft);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.public-room-search::placeholder {
+    color: var(--font-faint);
+}
+
+.public-room-search:focus {
+    box-shadow: none;
+    border-color: var(--border-soft);
+}
+
+.public-room-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.public-room-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.public-room-list::-webkit-scrollbar-track {
+    background: var(--shadow-1);
+    border-radius: 3px;
+}
+
+.public-room-list::-webkit-scrollbar-thumb {
+    background: rgba(252, 250, 255, 0.751);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.public-room-list::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+    cursor: pointer;
+}
+
+.public-room-list-empty {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--font-faint);
+    font-size: 13px;
+    padding: 10px 0;
+}
+
+.public-room-item {
+    display: grid;
+    grid-template-columns: 1.6fr 0.7fr 0.7fr 0.7fr 0.9fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-medium);
+    background: var(--glow-1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.public-room-status {
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.status-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.status-badge.waiting {
+    color: var(--status-ok);
+    border: 1.5px solid var(--status-ok);
+}
+
+.status-badge.playing {
+    color: var(--status-wait);
+    border: 1.5px solid var(--status-wait);
+}
+
+.status-badge.finished {
+    color: var(--status-off);
+    border: 1px solid var(--status-off);
+}
+
+.public-room-item:hover {
+    background: var(--shadow-1);
+    border-color: var(--border-light);
+    box-shadow: 0 1px 3px var(--shadow-2);
+}
+
+.public-room-name {
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.public-room-mode,
+.public-room-piece-count,
+.public-room-player-count {
+    color: var(--text-secondary);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.public-room-actions-bar {
+    position: sticky;
+    bottom: 0;
+    padding-top: 8px;
+}
+
+.mode-buttons.mode-buttons-bottom {
+    margin-top: 0;
+    flex-direction: row;
+    gap: 12px;
+}
+
+.mode-buttons.mode-buttons-bottom .mode-btn {
+    flex: 1;
+    min-height: 54px;
+    padding: 12px 14px;
+}
+
+.mode-buttons.mode-buttons-bottom .mode-btn-title {
+    font-size: 16px;
+    margin-bottom: 0;
+}
+
+/* 配置面板头部样式 */
+.config-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+    min-height: 44px;
+    padding: 0 44px;
+}
+
+.back-btn {
+    background: none;
+    border: 2px solid transparent;
+    color: var(--text-primary);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    box-sizing: border-box;
+}
+
+.back-btn:hover {
+    border: 2px solid var(--border-light);
+    box-shadow: none;
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover svg {
+    scale: 1.2;
+}
+
+/* 重试按钮样式 */
+.retry-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 10px 5px;
+    transition: all 0.3s ease;
+    box-shadow: none;
+    min-width: 100px;
+}
+
+.retry-btn:hover {
+    transform: translateY(-2px);
+}
+
+#configTitle {
+    margin: 0;
+    width: 100%;
+    text-align: center;
+}
+
+.room-title-input {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+
+    color: var(--text-primary);
+    background: transparent;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 6px 10px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.room-title-input:focus {
+    border-color: var(--border-medium);
+    background: var(--glow-1);
+}
+
+/* 调试面板样式 */
+.debug-section {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-100%);
+    width: 260px;
+    background: var(--bg-light-1);
+    border: 2px solid var(--border-light);
+    border-left: none;
+    border-radius: 0 12px 12px 0;
+    padding: 0;
+    box-shadow: var(--modal-shadow);
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-direction: column;
+    max-height: 90vh;
+    backdrop-filter: blur(10px);
+    overflow: visible;
+    /* 允许把手露在外面 */
+}
+
+.dice-btn {
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    font-size: 20px;
+    padding: 0;
+    border: 1px solid var(--border-soft);
+    cursor: pointer;
+}
+
+.dice-btn:hover {
+    background-color: #78d299;
+}
+
+.debug-content-wrapper {
+    padding: 20px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.debug-toggle-handle {
+    position: absolute;
+    right: -40px;
+    top: 5%;
+    color: var(--text-primary);
+    transform: translateY(-50%);
+    width: 36px;
+    height: 30px;
+    background: var(--bg-light-1);
+    border: 2px solid var(--border-light);
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    box-shadow: var(--modal-shadow);
+    transition: background 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.debug-section.is-enabled {
+    display: flex;
+}
+
+.debug-section.show-debug {
+    transform: translateY(-50%) translateX(0);
+}
+
+.room-chat-drawer {
+    position: absolute;
+    top: 40%;
+    right: calc(-1 * var(--control-content-padding-right, 10px));
+    transform: translateY(-50%);
+    height: min(360px, calc(100% - 24px));
+    width: 0;
+    max-width: 90%;
+    background: transparent;
+    border: none;
+    border-radius: 12px 0 0 12px;
+    z-index: 100;
+    box-shadow: none;
+    transition: width 0.25s ease;
+    display: none;
+    overflow: visible;
+}
+
+.room-chat-drawer.is-enabled {
+    display: block;
+}
+
+.room-chat-drawer.is-open {
+    width: min(280px, calc(100% - 8px - var(--control-content-padding-right, 10px)));
+    background: var(--warm-white);
+    border: 2px solid var(--border-light);
+    border-right: none;
+    box-shadow: var(--modal-shadow);
+}
+
+.room-chat-toggle {
+    position: absolute;
+    left: -34px;
+    top: 12%;
+    width: 34px;
+    height: 30px;
+    border: 2px solid var(--border-light);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    background: var(--warm-white);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    overflow: visible;
+}
+
+.room-chat-toggle-icon {
+    width: 18px;
+    height: 18px;
+    transform-origin: center;
+}
+
+.room-chat-toggle:hover .room-chat-toggle-icon {
+    animation: room-chat-icon-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes room-chat-icon-pop {
+    0% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.room-chat-toggle:active .room-chat-toggle-icon {
+    transform: scale(0.9);
+}
+
+.room-chat-unread-badge {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff484e;
+    box-sizing: border-box;
+    display: none;
+}
+
+.room-chat-unread-badge.is-visible {
+    display: block;
+}
+
+.room-chat-panel {
+    margin-left: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity 0.12s ease;
+}
+
+.room-chat-drawer.is-open .room-chat-panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0.16s;
+}
+
+.room-chat-header {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.room-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 8px;
+    background: var(--bg-faint);
+}
+
+.room-chat-messages::-webkit-scrollbar {
+    width: 5px;
+}
+
+.room-chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.room-chat-messages::-webkit-scrollbar-thumb {
+    background: var(--shadow-3);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.room-chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--scrim-strong);
+}
+
+.room-chat-messages::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.room-chat-item {
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-word;
+    color: var(--text-primary);
+}
+
+.room-chat-item:last-child {
+    margin-bottom: 0;
+}
+
+.room-chat-name {
+    font-weight: bold;
+    margin-right: 4px;
+}
+
+.room-chat-input-wrap {
+    position: relative;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.room-chat-emoji-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    transform-origin: center;
+}
+
+.room-chat-emoji-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.room-chat-input {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid var(--border-light);
+    border-radius: 8px;
+    background: transparent;
+    padding: 5px 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.room-chat-send-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-primary);
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    transform-origin: center;
+}
+
+.room-chat-send-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.room-chat-emoji-panel {
+    position: absolute;
+    left: 0;
+    bottom: 38px;
+    width: 257px;
+    max-height: 132px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-light);
+    border-radius: 4px;
+    display: none;
+    z-index: 300;
+}
+
+.room-chat-emoji-panel.is-open {
+    display: block;
+}
+
+.room-chat-emoji-panel-content {
+    padding: 6px;
+    display: grid;
+    /* 同游戏内表情面板：列宽可收缩 + 横向不外溢 */
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 4px;
+    max-height: 118px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-soft) transparent;
+}
+
+.room-chat-emoji-panel-content::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.room-chat-emoji-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.room-chat-emoji-panel-content::-webkit-scrollbar-thumb {
+    background: var(--border-soft);
+    border-radius: 3px;
+}
+
+.room-chat-emoji-item {
+    width: auto;
+    min-width: 0;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 18px;
+    user-select: none;
+    background: transparent;
+}
+
+.room-chat-emoji-item:hover {
+    background: var(--overlay-warm);
+    transform: scale(1.1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .room-chat-emoji-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .room-chat-send-btn:hover {
+        transform: scale(1.1);
+    }
+}
+
+.debug-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.control-group label,
+.debug-group-label {
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.debug-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.debug-player-radio-group {
+    flex-wrap: nowrap;
+}
+
+.debug-piece-radio-group {
+    gap: 5px;
+}
+
+.debug-radio-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.debug-radio-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.debug-radio-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.debug-radio-option input[type="radio"]:checked+.debug-radio-label {
+    background: var(--bg-soft);
+    border-color: var(--border-medium);
+    color: var(--text-primary);
+    box-shadow: var(--modal-shadow);
+}
+
+.debug-radio-option input[type="radio"]:focus-visible+.debug-radio-label {
+    outline: 2px solid var(--border-medium);
+    outline-offset: 1px;
+}
+
+.debug-move-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.debug-move-btn {
+    padding: 7px 10px;
+    background: var(--bg-soft);
+    color: var(--text-primary);
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.debug-move-btn:hover {
+    background: var(--bg-medium);
+    border-color: var(--border-medium);
+    transform: translateY(-1px);
+    box-shadow: var(--modal-shadow);
+}
+
+.debug-move-btn.forward {
+    background: color-mix(in srgb, var(--player-1-color) 40%, transparent);
+    border-color: color-mix(in srgb, var(--player-1-color) 60%, transparent);
+    color: var(--text-primary);
+}
+
+.debug-move-btn.backward {
+    background: color-mix(in srgb, var(--player-4-color) 40%, transparent);
+    border-color: color-mix(in srgb, var(--player-4-color) 60%, transparent);
+    color: var(--text-primary);
+}
+
+.debug-energy-btn {
+    padding: 7px 10px;
+    background: color-mix(in srgb, var(--player-2-color) 40%, transparent);
+    color: var(--text-primary);
+    border: 1.5px solid color-mix(in srgb, var(--player-2-color) 60%, transparent);
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.debug-energy-btn:hover {
+    background: color-mix(in srgb, var(--player-2-color) 60%, transparent);
+    border-color: color-mix(in srgb, var(--player-2-color) 80%, transparent);
+    transform: translateY(-1px);
+    box-shadow: var(--modal-shadow);
+}
+
+.debug-dice-panel h4,
+.debug-move-panel h4,
+.debug-energy-panel h4 {
+    margin: 0 0 5px 0;
+    color: var(--text-primary);
+}
+
+.player-profile-stats {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin-bottom: 10px;
+}
+
+.player-profile-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
+.player-profile-item:first-child {
+    padding-left: 0;
+}
+
+.player-profile-item + .player-profile-item {
+    border-left: 1px solid var(--border-soft);
+}
+
+.player-profile-item em {
+    font-style: normal;
+    font-size: 10px;
+    color: var(--ui-default-color);
+}
+
+.player-profile-item b {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 完成进度面板样式 */
+.progress-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-soft);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-base);    min-height: 100px;
+    max-height: 250px;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+.progress-header-container {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: linear-gradient(to right, var(--border-soft) 60%, transparent 40%) repeat-x 0 100%;
+    background-size: 13px 1px;
+}
+
+.progress-elapsed {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px 15px 15px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.progress-item {
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.progress-player-name {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.progress-percentage {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--shadow-1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    flex: 1;
+}
+
+/* 进度条头像样式 */
+.progress-avatar {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    border: 2px solid var(--border-soft);
+}
+
+.progress-avatar.player-1 {
+    background: var(--player-1-color);
+    border-color: var(--player-1-color);
+}
+
+.progress-avatar.player-2 {
+    background: var(--player-2-color);
+    border-color: var(--player-2-color);
+}
+
+.progress-avatar.player-3 {
+    background: var(--player-3-color);
+    border-color: var(--player-3-color);
+}
+
+.progress-avatar.player-4 {
+    background: var(--player-4-color);
+    border-color: var(--player-4-color);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    position: relative;
+    width: 0%;
+}
+
+.progress-fill.player-1 {
+    background: var(--player-1-color);
+}
+
+.progress-fill.player-2 {
+    background: var(--player-2-color);
+}
+
+.progress-fill.player-3 {
+    background: var(--player-3-color);
+}
+
+.progress-fill.player-4 {
+    background: var(--player-4-color);
+}
+
+/* 进度条玩家名称颜色 */
+.progress-item[data-player="1"] .progress-player-name {
+    color: var(--player-1-color);
+}
+
+.progress-item[data-player="2"] .progress-player-name {
+    color: var(--player-2-color);
+}
+
+.progress-item[data-player="3"] .progress-player-name {
+    color: var(--player-3-color);
+}
+
+.progress-item[data-player="4"] .progress-player-name {
+    color: var(--player-4-color);
+}
+
+/* 进度条排序动画 */
+.progress-item.moving {
+    transform: translateY(-5px);
+    z-index: 10;
+}
+
+/* 结算模态框样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--scrim-strong);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+.modal-overlay.show {
+    display: flex;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background: var(--bg-light-1);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 8px 32px var(--shadow-1);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 规则模态框特殊样式 */
+.rules-modal-content {
+    width: 90%;
+    max-width: 500px;
+    min-width: 300px;
+    max-height: 90vh;
+    background: linear-gradient(135deg, var(--bg-light-1), var(--bg-light-2));
+    color: var(--text-primary);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px var(--shadow-1);
+    backdrop-filter: blur(10px);
+}
+
+.rules-modal-content .modal-header {
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--overlay-warm);
+    border-radius: 8px 8px 0 0;
+    backdrop-filter: blur(5px);
+}
+
+.rules-modal-content .modal-header h2 {
+    color: var(--text-primary);
+}
+
+.modal-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--shadow-1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-soft);
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 拓展规则介绍弹窗（简单弹出，无遮罩动效） */
+.mode-rules-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.mode-rules-overlay.show {
+    display: flex;
+}
+.mode-rules-popup {
+    max-width: 460px;
+    width: 90%;
+    background: var(--bg-medium);
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: 0 4px 24px var(--shadow-2);
+}
+.mode-rules-popup-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--shadow-1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.mode-rules-popup-header h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.mode-rules-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--font-faint);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+.mode-rules-close:hover {
+    color: var(--text-primary);
+}
+.mode-rules-popup-body {
+    padding: 18px 20px;
+}
+.mode-rule-section {
+    margin-bottom: 20px;
+}
+.mode-rule-section:last-child {
+    margin-bottom: 0;
+}
+.mode-rule-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    color: var(--text-primary);
+}
+.mode-rule-section ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.mode-rule-section li {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+.mode-rule-section li.sub-item {
+    padding-left: 14px;
+    list-style: circle;
+    font-size: 13px;
+}
+
+.settlement-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-left: 5px;
+    gap: 10px;
+}
+
+.settlement-timestamp,
+.settlement-duration {
+    color: var(--font-faint);
+    font-size: 14px;
+    font-weight: normal;
+    white-space: nowrap;
+}
+.settlement-mode {
+    color: var(--accent-color);
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--glow-1);
+}
+
+/* 窄屏结算弹框：模式独占一行，时间戳和用时靠左挨在一起 */
+@media (max-width: 520px) {
+    .settlement-info {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 4px 10px;
+    }
+    .settlement-mode {
+        flex: 0 0 100%;
+    }
+}
+
+.modal-close {
+    background: none;
+    border: 2px solid transparent;
+    color: var(--font-faint);
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    border: 2px solid var(--ui-default-color);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 15px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    background: var(--bg-soft);
+}
+
+/* 自定义滚动条样式*/
+.modal-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: rgba(67, 60, 40, 0.1);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(67, 60, 40, 0.4);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-soft);
+}
+
+.settlement-rankings {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.ranking-item {
+    perspective: 1000px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    height: 75px;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.ranking-item.is-flipped .flip-card-inner {
+    transform: rotateX(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    border: 2px solid var(--border-medium);
+    box-shadow: 0 3px 2px var(--shadow-1);
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.flip-card-front {
+    background: var(--bg-soft);
+}
+
+.flip-card-back {
+    transform: rotateX(180deg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 称号样式 */
+/* 称号一览（数据分析面板底部） */
+/* 结算页底部的回放入口 */
+.replay-entry-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.title-list-section {
+    margin-top: 24px;
+}
+
+.title-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title-list-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg-faint);
+}
+
+/* 左栏：昵称与个数竖排，换行只发生在右栏的标签里 */
+.title-list-who {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: none;
+    min-width: 68px;
+}
+
+.title-list-player {
+    font-size: 14px;
+}
+
+.title-list-count {
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+.title-list-chips {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.title-chip {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-primary);
+    background: rgba(101, 187, 158, 0.18);
+    border: 1px solid rgba(101, 187, 158, 0.45);
+}
+
+.title-chip-empty {
+    font-weight: normal;
+    color: var(--ui-default-color);
+    background: transparent;
+    border-color: var(--shadow-1);
+}
+
+.title-chip.tier-common {
+    color: #4b8a63;
+    background: #e3f1e8;
+    border-color: rgba(75, 138, 99, 0.4);
+}
+
+.title-chip.title-chip-default {
+    color: #7d7269;
+    background: #eae6e2;
+    border-color: rgba(140, 130, 120, 0.35);
+}
+
+.title-chip.tier-rare {
+    color: #3f7fb5;
+    background: #e0e8f0;
+    border-color: rgba(74, 144, 217, 0.4);
+}
+
+.title-chip.tier-epic {
+    color: #8455b8;
+    background: #ebe1ef;
+    border-color: rgba(155, 107, 211, 0.45);
+}
+
+.title-chip.tier-legendary,
+.title-chip.tier-mythic {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.title-chip.tier-legendary {
+    color: #b7791f;
+    background: #f5e8d2;
+    border-color: rgba(224, 161, 58, 0.5);
+}
+
+/* 神话档：红色系（实色底 + 同色系描边） */
+.title-chip.tier-mythic {
+    color: #c0453c;
+    background: #f9dedb;
+    border-color: rgba(192, 69, 60, 0.5);
+}
+
+/* 称号播报里的称号名：按稀有度上色 */
+.title-earned-title {
+    font-weight: bold;
+}
+
+.title-earned-title.tier-common {
+    color: #4b8a63;
+}
+
+.title-earned-title.tier-rare {
+    color: #3f7fb5;
+}
+
+.title-earned-title.tier-epic {
+    color: #8455b8;
+}
+
+.title-earned-title.tier-legendary {
+    color: #b7791f;
+}
+
+.title-earned-title.tier-mythic {
+    color: #c0453c;
+}
+
+/* 传说与神话档：一道光定期掠过 */
+.title-chip.tier-legendary::after,
+.title-chip.tier-mythic::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -50%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+    transform: skewX(-18deg);
+    animation: titleSweep 3.2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes titleSweep {
+    0% {
+        left: -50%;
+    }
+
+    55%,
+    100% {
+        left: 110%;
+    }
+}
+
+/* 「称号一览」切换按钮：首页规则面板与局内规则弹框共用同一颗胶囊 */
+.rules-view-toggle {
+    background: transparent;
+    border: 1.5px solid var(--border-light);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.25s ease;
+}
+
+.rules-view-toggle:hover {
+    transform: translateY(-2px);
+}
+
+.rules-view-toggle:active {
+    transform: translateY(-2px) scale(0.95);
+}
+
+/* 首页规则面板：标题居中，按钮贴右上角 */
+.config-header .rules-view-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.config-header .rules-view-toggle:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* 局内规则弹框：按钮排在关闭按钮左边 */
+.rules-modal-content .modal-header {
+    gap: 8px;
+}
+
+.rules-modal-content .modal-header h2 {
+    margin-right: auto;
+}
+
+/* 称号一览：按稀有度配色的标签 + 一张张称号卡 */
+.titles-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.titles-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border-soft);
+}
+
+.titles-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.titles-group-title em {
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ui-default-color);
+}
+
+.titles-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title-card {
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: var(--bg-faint);
+    border: 1px solid var(--border-soft);
+}
+
+.title-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.title-chain-arrow {
+    color: var(--ui-default-color);
+    font-size: 12px;
+}
+
+.title-tag {
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px dashed var(--border-soft);
+    font-size: 10px;
+    color: var(--ui-default-color);
+}
+
+.title-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 7px 0 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.title-card-list li {
+    position: relative;
+    padding-left: 10px;
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+.title-card-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border-medium);
+}
+
+.title-keyword {
+    color: var(--text-primary-soft);
+    font-weight: 700;
+}
+
+.title-card-desc {
+    margin: 7px 0 0 0;
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+.titles-default-note {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+/* 头像悬浮卡：内容自己撑开，但给个最小尺寸，别缩成一小条 */
+.titles-hover-card {
+    position: fixed;
+    z-index: 3000;
+    display: none;
+    min-width: 168px;
+    min-height: 72px;
+    /* 宽度上限就跟着走势图（172）+ 左右内边距（24），称号标签在这宽度里换行 */
+    max-width: 196px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-light-1);
+    box-shadow: 0 2px 6px var(--shadow-1);
+    pointer-events: none;
+}
+
+.titles-hover-head {
+    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--ui-default-color);
+}
+
+.titles-hover-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.titles-hover-trend {
+    display: block;
+    width: 172px;
+    height: 46px;
+    margin: 2px 0 10px;
+}
+
+.titles-hover-empty {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+.ranking-title-badge {
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0px 1px 1px var(--shadow-2);
+    letter-spacing: 1px;
+}
+
+.ranking-title-desc {
+    font-size: 13px;
+    color: var(--track-primary);
+    opacity: 0.8;
+}
+
+.ranking-title-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s ease-in;
+}
+
+/* 右下角斜角计数带 */
+.title-counter-ribbon {
+    position: absolute;
+    bottom: 10px;
+    right: 5px;
+    width: 50px;
+    height: 20px;
+    transform: rotate(-20deg);
+    transform-origin: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--on-color-ink);
+    border-radius: 3px;
+    box-shadow: 0 1px 2px var(--shadow-2);
+    pointer-events: none;
+}
+
+.title-counter-ribbon.player-1-ribbon { background: var(--player-1-fill); }
+.title-counter-ribbon.player-2-ribbon { background: var(--player-2-fill); }
+.title-counter-ribbon.player-3-ribbon { background: var(--player-3-fill); }
+.title-counter-ribbon.player-4-ribbon { background: var(--player-4-fill); }
+
+.ranking-position {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 15px;
+    background: var(--surface);
+    color: #c6c6c6;
+    border: 1.5px solid var(--border-soft);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 15px;
+    box-shadow: 0px 1px 2px var(--shadow-2);
+    text-shadow: 0px 1px 2px var(--shadow-2);
+}
+
+.ranking-position.first {
+    border-color: var(--gold-muted);
+    background-color: #fee39d;
+    color: var(--gold-muted);
+    text-shadow: 0px 1px 2px var(--shadow-2);
+}
+
+.ranking-position.second {
+    border-color: #c8c8c8;
+    background-color: #d9d9d9;
+    color: #7a7a7a;
+    text-shadow: 0px 1px 2px var(--shadow-2);
+}
+
+.ranking-position.third {
+    border-color: #c4a57b;
+    background-color: #d4b896;
+    color: #8b6f47;
+    text-shadow: 0px 1px 2px var(--shadow-2);
+}
+
+/* 结算面板中的玩家头像 */
+.ranking-avatar {
+    width: 45px;
+    height: 45px;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+.ranking-info {
+    flex: 1;
+    margin-left: 0;
+}
+
+.ranking-name {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+    text-shadow: 0px 1px 2px var(--shadow-2);
+}
+
+/* 玩家名称颜色 */
+.player-1-name {
+    color: var(--player-1-color);
+}
+
+.player-2-name {
+    color: var(--player-2-color);
+}
+
+.player-3-name {
+    color: var(--player-3-color);
+}
+
+.player-4-name {
+    color: var(--player-4-color);
+}
+
+.ranking-progress {
+    font-size: 14px;
+    color: var(--font-faint);
+}
+
+.ranking-defeats {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ranking-defeats .defeat-count {
+    font-size: 25px;
+    font-weight: bold;
+    min-width: 25px;
+    text-align: center;
+}
+
+.modal-footer {
+    padding: 15px;
+    border-top: 1px solid var(--shadow-1);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    background: var(--bg-soft);
+    flex-shrink: 0;
+}
+
+/* 数据分析样式 */
+.settlement-data-analysis {
+    display: flex;
+    flex-direction: column;
+}
+
+.data-analysis-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+    text-shadow: none;
+}
+
+/* 完成度折线图样式 */
+.progress-chart-section {
+    background: var(--glow-1);
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.chart-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin: 0 0 10px 0;
+    text-shadow: none;
+}
+
+.chart-container {
+    width: 100%;
+    height: 240px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.chart-container::-webkit-scrollbar {
+    height: 5px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+    background: rgba(187, 142, 101, 0.1);
+    border-radius: 3px;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+    background: rgba(187, 165, 101, 0.4);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+    background: var(--gold-soft);
+}
+
+.chart-container canvas {
+    height: 100%;
+    display: block;
+}
+
+/* 结算模态框特殊样式 */
+.settlement-modal-content {
+    max-width: 550px;
+}
+
+/* 骰子统计表格区域样式 */
+.dice-stats-section {
+    background: var(--glow-1);
+    border-radius: 10px;
+    padding: 10px 10px;
+}
+
+.dice-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-primary);
+    border: 2px solid var(--border-light);
+    table-layout: fixed;
+}
+
+.dice-stats-table thead th {
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    background: var(--glow-1);
+    border: 2px solid var(--border-light);
+}
+
+.dice-stats-table .dice-header {
+    font-size: 14px;
+    width: 40px;
+}
+
+.dice-stats-table .player-header {
+    color: var(--font-faint);
+    word-break: break-all;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+.dice-stats-table .player-header.player-1 {
+    color: var(--player-1-color);
+    background: none;
+}
+
+.dice-stats-table .player-header.player-2 {
+    color: var(--player-2-color);
+    background: none;
+}
+
+.dice-stats-table .player-header.player-3 {
+    color: var(--player-3-color);
+    background: none;
+}
+
+.dice-stats-table .player-header.player-4 {
+    color: var(--player-4-color);
+    background: none;
+}
+
+.dice-stats-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.dice-stats-table tbody tr:hover {
+    background: var(--glow-1);
+}
+
+.dice-stats-table td {
+    text-align: center;
+    border: 2px solid var(--border-light);
+    padding: 6px 2px;
+    text-shadow: 0px 1px 1px var(--shadow-3);
+    /* 添加极轻微的文字阴影 */
+}
+
+.dice-stats-table .dice-cell {
+    font-size: 32px;
+    text-shadow: none;
+}
+
+.skill-icon-cell {
+    padding: 2px !important;
+    line-height: 0;
+    vertical-align: middle;
+}
+
+.skill-icon-cell svg {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    color: var(--font-faint);
+    vertical-align: middle;
+}
+
+.dice-stats-table .player-cell {
+    font-size: 18px;
+    /* 取消固定宽度，让其自适应 */
+}
+
+.dice-stats-table .player-cell .count {
+    display: block;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0px;
+}
+
+.dice-stats-table .player-cell .percentage {
+    display: block;
+    color: var(--font-faint);
+    font-size: 10px;
+}
+
+.dice-stats-table .player-cell.player-1 .count {
+    color: var(--player-1-color);
+}
+
+.dice-stats-table .player-cell.player-2 .count {
+    color: var(--player-2-color);
+}
+
+.dice-stats-table .player-cell.player-3 .count {
+    color: var(--player-3-color);
+}
+
+.dice-stats-table .player-cell.player-4 .count {
+    color: var(--player-4-color);
+}
+
+/* 高亮最高占比的格子 */
+.dice-stats-table .player-cell.player-1.highlight {
+    background: var(--player-1-stats-bg);
+}
+
+.dice-stats-table .player-cell.player-2.highlight {
+    background: var(--player-2-stats-bg);
+}
+
+.dice-stats-table .player-cell.player-3.highlight {
+    background: var(--player-3-stats-bg);
+}
+
+.dice-stats-table .player-cell.player-4.highlight {
+    background: var(--player-4-stats-bg);
+}
+
+/* 前进距离统计样式 */
+.distance-stats-section {
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.distance-bars-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: none;
+    padding: 5px 10px;
+}
+
+.distance-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.distance-player-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.distance-player-name {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.distance-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--track-primary);
+}
+
+.distance-value small {
+    font-weight: normal;
+    opacity: 0.7;
+}
+
+.distance-bar-bg {
+    height: 8px;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.distance-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1s cubic-bezier(0.1, 0.5, 0.5, 1);
+}
+
+/* 玩家对应颜色 */
+.distance-bar-fill.player-1 {
+    background: var(--player-1-color);
+}
+
+.distance-bar-fill.player-2 {
+    background: var(--player-2-color);
+}
+
+.distance-bar-fill.player-3 {
+    background: var(--player-3-color);
+}
+
+.distance-bar-fill.player-4 {
+    background: var(--player-4-color);
+}
+
+.distance-player-name.player-1 {
+    color: var(--player-1-border);
+}
+
+.distance-player-name.player-2 {
+    color: var(--player-2-border);
+}
+
+.distance-player-name.player-3 {
+    color: var(--player-3-border);
+}
+
+.distance-player-name.player-4 {
+    color: var(--player-4-border);
+}
+
+.skill-stats-section {
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.skill-stats-subtitle {
+    margin: 12px 0 8px;
+    font-size: 13px;
+    color: var(--font-faint);
+    font-weight: bold;
+}
+
+.no-data {
+    text-align: center;
+    color: var(--font-faint);
+    font-size: 18px;
+    padding: 40px;
+}
+
+.btn-primary {
+    padding: 8px 10px;
+    color: var(--text-primary);
+    border: 1.5px solid var(--border-light);
+    background: none;
+    border-radius: var(--radius-base);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: none;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 1px 3px var(--shadow-2);
+}
+
+/* 主容器 */
+.index-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 20px 20px;
+    background: var(--bg-primary);
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* 标题区域 */
+.index-title {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.index-title h1 {
+    font-weight: bold;
+    font-size: 2.8rem;
+    margin: 0;
+    text-shadow: none;
+    letter-spacing: 2px;
+}
+
+.rainbow-title span {
+    text-shadow: 0px 1px 1px var(--shadow-3);
+}
+
+/* 多色标题样式 */
+.rainbow-title {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.rainbow-title span {
+    display: inline-block;
+    transform-origin: center bottom;
+}
+
+.rainbow-title span {
+    display: inline-block;
+    transform-origin: center bottom;
+    animation: titleJump 1s steps(1, end) infinite;
+}
+
+.rainbow-title span:nth-child(1) {
+    color: var(--player-1-color);
+    animation-delay: 0s;
+}
+
+.rainbow-title span:nth-child(2) {
+    color: var(--player-2-color);
+    animation-delay: 0.2s;
+}
+
+.rainbow-title span:nth-child(3) {
+    color: var(--player-3-color);
+    animation-delay: 0.4s;
+}
+
+.rainbow-title span:nth-child(4) {
+    color: var(--player-4-color);
+    animation-delay: 0.5s;
+}
+
+.rainbow-title span:nth-child(5) {
+    color: var(--player-1-color);
+    animation-delay: 0.8s;
+}
+
+@keyframes titleJump {
+
+    0%,
+    100% {
+        transform: rotate(-3deg);
+    }
+
+    50% {
+        transform: rotate(3deg);
+    }
+}
+
+/* 游戏提示轮播 */
+.game-tips {
+    margin-top: 15px;
+    height: 18px;
+    overflow: hidden;
+    position: relative;
+}
+
+.tip-content {
+    font-size: 0.8rem;
+    color: var(--font-faint);
+    text-align: center;
+    line-height: 18px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+.tip-content.slide-up-out {
+    transform: translateY(-18px);
+    opacity: 0;
+}
+
+.tip-content.slide-up-in {
+    transform: translateY(18px);
+    opacity: 0;
+}
+
+.tip-content.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.index-footer {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    text-align: center;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.footer-feedback {
+    opacity: 0.8;
+}
+
+.footer-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.footer-link:hover {
+    opacity: 0.65;
+}
+
+.footer-split {
+    margin: 0 8px;
+    opacity: 0.5;
+}
+
+.footer-copyright {
+    opacity: 0.8;
+}
+
+.footer-version {
+    opacity: 0.55;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    user-select: all;
+}
+.qq-group-number{
+    user-select: all;
+}
+.index-footer .heart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0 2px;
+}
+
+.index-footer a {
+    color: var(--text-primary);
+    text-decoration: none;
+    text-shadow: none;
+}
+
+.index-footer .heart:hover,
+.index-footer a:hover {
+    transform: scale(1.2);
+}
+
+/* 内容区域 */
+.index-content {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    perspective: 1200px;
+    box-sizing: border-box;
+}
+
+@keyframes panelFlipIn {
+    0% {
+        transform: rotateY(-180deg);
+    }
+
+    100% {
+        transform: rotateY(0deg);
+    }
+}
+
+.index-content .control-panel,
+.index-content .main-menu-container {
+    animation: panelFlipIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.local-multiplayer-config,
+.online-multiplayer-config,
+.ai-battle-config {
+    animation: panelFlipIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+/* 联机内部的房间列表和房间配置面板取消翻转动画，避免在同一个大面板内切换时过度抖动 */
+.room-selection,
+.room-config {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+/* 模拟卡片背面，填补翻转时的视觉空白 */
+.index-content .control-panel::before,
+.index-content .main-menu-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-light-1);
+    border-radius: 15px;
+    border: 2.5px solid var(--border-light);
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    z-index: -1;
+    box-sizing: border-box;
+    box-shadow: 0 4px 4px var(--shadow-3);
+}
+
+.index-content .control-panel {
+    width: 400px;
+    max-width: 95%;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.player-config-panel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.index-content .control-content {
+    --control-content-padding-right: 10px;
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-medium);
+    backdrop-filter: blur(10px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* 区域样式 */
+.player-setup-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 房间信息样式 */
+.room-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.room-info {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: transparent;
+    border-radius: 10px;
+    border: 2px solid var(--border-light);
+    box-shadow: none;
+}
+
+.room-privacy-toggle {
+    margin-top: 10px;
+    display: inline-flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.privacy-toggle-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 2px solid var(--border-light);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.privacy-toggle-btn:hover {
+    font-weight: bold;
+    background: var(--pink-soft);
+}
+.privacy-toggle-btn.active {
+    background: var(--pink-soft);
+}
+
+/* 选中/悬停时底是固定的浅粉，文字必须跟着固定成深墨，否则深色模式下会变白字压浅底 */
+:root[data-theme="dark"] .privacy-toggle-btn:hover,
+:root[data-theme="dark"] .privacy-toggle-btn.active {
+    color: var(--on-color-ink-strong);
+}
+.room-code-display {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+    justify-content: center;
+}
+
+.room-code-label {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.room-code {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    background: transparent;
+    padding: 2px 8px;
+    border-radius: 5px;
+    border: 2px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: all;
+    line-height: 18px;
+    min-width: 55px;
+    text-align: center;
+    user-select: none;
+}
+
+.room-code:hover {
+    background: #9ddfb5;
+    box-shadow: none;
+}
+
+.player-count-info {
+    text-align: center;
+    color: var(--white);
+    font-size: 18px;
+}
+
+.game-config-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary-soft);
+    font-size: 14px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border-soft);
+    margin-top: 5px;
+}
+
+.color-selection h4,
+.username-setting h4,
+.piece-count-setting h4,
+.bot-players-preview h4,
+.player-count-setting h4,
+.rules-content h4 {
+    margin: 10px;
+    color: var(--text-primary);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.rules-content h5 {
+    color: var(--text-primary);
+    margin: 0px 0 6px 0;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.color-options {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 10px;
+    justify-content: center;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.color-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-items: start;
+    justify-items: center;
+    gap: 6px;
+    height: 100%;
+}
+
+.color-circle {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    border: 2px solid;
+    background: transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    border-color: transparent;
+    box-shadow: 0 2px 6px var(--shadow-2);
+    color: var(--gray-mid);
+}
+
+.offline-countdown-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--scrim);
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.kick-player-btn {
+    position: absolute;
+    top: -10px;
+    right: -12px;
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 4;
+}
+
+.kick-player-btn svg {
+    width: 8px;
+    height: 8px;
+    color: var(--text-primary);
+}
+
+.kick-player-btn:hover {
+    transform: scale(1.1);
+}
+
+.player-1-color {
+    border-color: var(--player-1-color);
+}
+
+.player-2-color {
+    border-color: var(--player-2-color);
+}
+
+.player-3-color {
+    border-color: var(--player-3-color);
+}
+
+.player-4-color {
+    border-color: var(--player-4-color);
+}
+
+.color-option .player-1-color {
+    --seat-accent: var(--player-1-border);
+    --seat-fill: var(--player-1-fill);
+}
+
+.color-option .player-2-color {
+    --seat-accent: var(--player-2-border);
+    --seat-fill: var(--player-2-fill);
+}
+
+.color-option .player-3-color {
+    --seat-accent: var(--player-3-border);
+    --seat-fill: var(--player-3-fill);
+}
+
+.color-option .player-4-color {
+    --seat-accent: var(--player-4-border);
+    --seat-fill: var(--player-4-fill);
+}
+
+.color-option:not(.selected):hover .color-circle {
+    transform: translateY(-2px) scale(1.08);
+    background: var(--seat-fill);
+    border-color: var(--seat-accent);
+    box-shadow: 0 8px 16px -8px var(--seat-accent);
+}
+
+.color-option.selected .color-circle {
+    box-shadow: 0 3px 8px var(--shadow-2);
+}
+
+.color-option.selected .player-1-color {
+    background: var(--player-1-color);
+    border: 2px solid var(--player-1-border);
+    box-shadow: 0 3px 8px var(--shadow-2);
+    color: var(--white);
+}
+
+.color-option.selected .player-1-color .multiplayer-emoji svg,
+.color-option.selected .player-1-color .multiplayer-emoji svg path {
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+    color: var(--white) !important;
+}
+
+.color-option.selected .player-2-color {
+    background: var(--player-2-color);
+    border: 2px solid var(--player-2-border);
+    box-shadow: 0 3px 8px var(--shadow-2);
+    color: var(--white);
+}
+
+.color-option.selected .player-2-color .multiplayer-emoji svg,
+.color-option.selected .player-2-color .multiplayer-emoji svg path {
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+    color: var(--white) !important;
+}
+
+.color-option.selected .player-3-color {
+    background: var(--player-3-color);
+    border: 2px solid var(--player-3-border);
+    box-shadow: 0 3px 8px var(--shadow-2);
+    color: var(--white);
+}
+
+.color-option.selected .player-3-color .multiplayer-emoji svg,
+.color-option.selected .player-3-color .multiplayer-emoji svg path {
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+    color: var(--white) !important;
+}
+
+.color-option.selected .player-4-color {
+    background: var(--player-4-color);
+    border: 2px solid var(--player-4-border);
+    box-shadow: 0 3px 8px var(--shadow-2);
+    color: var(--white);
+}
+
+.color-option.selected .player-4-color .multiplayer-emoji svg,
+.color-option.selected .player-4-color .multiplayer-emoji svg path {
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+    color: var(--white) !important;
+}
+
+.player-nickname {
+    font-size: 12px;
+    color: var(--text-primary-soft);
+    text-align: center;
+    max-width: 58px;
+    white-space: normal;
+    word-break: break-all;
+    line-height: 1.2;
+}
+
+.player-nickname-me {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.player-ready-status {
+    font-size: 11px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: var(--radius-base);
+    font-weight: 500;
+    line-height: 14px;
+}
+
+.player-ready-status.ready {
+    color: var(--text-primary);
+    background: rgba(124, 175, 136, 0.16);
+    border: 1.5px solid rgba(124, 175, 136, 0.45);
+}
+
+.player-ready-status.host {
+    color: var(--text-primary);
+    background: rgba(94, 164, 196, 0.16);
+    border: 1.5px solid rgba(94, 164, 196, 0.45);
+}
+
+.player-ready-status.not-ready,
+.player-ready-status.offline {
+    color: #6b7280;
+    background: rgba(120, 130, 145, 0.12);
+    border: 1.5px solid rgba(120, 130, 145, 0.35);
+}
+
+
+/* 人数选择器样式 */
+.player-count-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.player-count-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.player-count-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.player-count-option {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-light);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.player-count-option:hover,
+.player-count-option.selected {
+    border: 2px solid var(--lightning);
+    box-shadow: 0 1px 3px var(--shadow-2);
+}
+
+/* 玩家设置区域 */
+.players-setup-area {
+    margin-top: 15px;
+}
+
+.player-setup-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-base);
+}
+
+.player-setup-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.player-setup-item h5 {
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* 本地多人配置面板 */
+
+.piece-count-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.piece-count-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 5px 0px;
+}
+
+.piece-count-option {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-light);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.piece-count-option:hover,
+.piece-count-option.selected {
+    border: 2px solid var(--periwinkle);
+    background: var(--periwinkle-soft);
+    box-shadow: 0 1px 3px var(--shadow-1);
+}
+
+.local-piece-count-options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 5px 0px;
+}
+
+.local-piece-count-option {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--border-light);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.local-piece-count-option:hover,
+.local-piece-count-option.selected {
+    border: 2px solid var(--periwinkle);
+    background: var(--periwinkle-soft);
+    box-shadow: 0 1px 3px var(--shadow-1);
+}
+
+.username-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.username-input-with-icon {
+    position: relative;
+    width: 75%;
+    display: flex;
+    align-items: center;
+}
+
+.username-input {
+    padding: 8px 10px;
+
+    padding-right: 48px;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-base);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.player-setup-row .username-input-group {
+    width: auto;
+    max-width: 160px;
+}
+
+.player-setup-row .username-input {
+    padding-right: 10px;
+}
+
+.form-input:focus {
+    color: var(--text-primary);
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: none;
+}
+
+.form-input::placeholder {
+    color: var(--white);
+}
+
+.nickname-dice-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.nickname-dice-btn.clicking {
+    animation: diceTilt 0.5s ease-out;
+}
+
+/* 提示文本样式 */
+.hint-text {
+    font-size: 0.8rem;
+    color: var(--font-faint);
+    text-align: center;
+}
+
+/* 道具模式设置 */
+.skill-mode-setting {
+    margin: 8px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.toggle-option-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 20px;
+    border: 2px solid var(--border-light);
+    gap: 15px;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.toggle-option-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+.toggle-group-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #aaa;
+    color: var(--white);
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    user-select: none;
+    transition: background 0.15s;
+}
+.toggle-group-help:hover {
+    background: #888;
+}
+
+.toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.toggle-label-text {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: none;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.toggle-switch input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    border: 2px solid var(--border-light);
+    border-radius: 16px;
+    transition: all 0.3s ease-in-out;
+}
+
+.toggle-slider::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    left: 4px;
+    top: 2.5px;
+    background: var(--text-primary);
+    border-radius: var(--radius-full);
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 1px 2px var(--shadow-2);
+}
+
+.toggle-switch input[type="checkbox"]:checked+.toggle-slider {
+    background: var(--blue-soft);
+    border-color: var(--blue-line);
+    box-shadow: none;
+}
+
+.toggle-switch input[type="checkbox"]:checked+.toggle-slider::after {
+    transform: translateX(24px);
+    background: var(--white);
+    box-shadow: 0 2px 4px var(--shadow-3);
+}
+
+.toggle-switch input[type="checkbox"]:active+.toggle-slider::after {
+    width: 30px;
+}
+
+.toggle-switch input[type="checkbox"]:checked:active+.toggle-slider::after {
+    transform: translateX(18px);
+}
+
+.skill-mode-hint {
+    font-size: 0.8rem;
+    color: var(--font-faint);
+    padding-left: 28px;
+    line-height: 1.4;
+}
+
+/* 表情切换器 */
+.emoji-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+.emoji-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    transform: translateY(-15px);
+}
+
+.emoji-nav-btn:hover {
+    border-color: var(--primary-color);
+    text-shadow: none;
+}
+
+.current-emoji-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+}
+
+/* 表情预览区域 - 与player-avatar相同的样式 */
+.current-emoji-display .emoji-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* 默认状态下透明边框，等待颜色分配 */
+    border: 3px solid transparent;
+    box-shadow: 0 2px 6px var(--shadow-2);
+    color: var(--gray-mid);
+}
+
+/* 表情内容容器 */
+.emoji-preview .emoji-content {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: currentColor;
+}
+
+.emoji-preview .emoji-content svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* 玩家颜色样式 - 已分配玩家使用填充背景和白色表情 */
+.emoji-preview.player-1-color {
+    background: var(--player-1-color);
+    border: 2px solid var(--player-1-border);
+    box-shadow: 0 3px 8px var(--shadow-3);
+    color: var(--white);
+}
+
+.emoji-preview.player-2-color {
+    background: var(--player-2-color);
+    border: 2px solid var(--player-2-border);
+    box-shadow: 0 3px 8px var(--shadow-3);
+    color: var(--white);
+}
+
+.emoji-preview.player-3-color {
+    background: var(--player-3-color);
+    border: 2px solid var(--player-3-border);
+    box-shadow: 0 3px 8px var(--shadow-3);
+    color: var(--white);
+}
+
+.emoji-preview.player-4-color {
+    background: var(--player-4-color);
+    border: 2px solid var(--player-4-border);
+    box-shadow: 0 3px 8px var(--shadow-3);
+    color: var(--white);
+}
+
+.current-emoji-display .emoji-preview svg {
+    width: 100%;
+    height: 100%;
+}
+
+.emoji-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    text-align: center;
+    font-weight: 500;
+}
+
+.bot-players {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 73.5px;
+}
+
+/* AI添加选项样式 */
+.bot-add-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0px 12px;
+    background: transparent;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.4s ease;
+    border: 1px solid transparent;
+    min-height: 72px;
+}
+
+
+.bot-add-option .color-circle,
+.bot-player .difficulty-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 2px solid;
+    background: transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px var(--shadow-2);
+}
+
+.bot-add-option .add-icon {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+}
+
+.black-icon {
+    width: 15px;
+    height: 15px;
+    color: var(--ui-hover-color);
+}
+
+.bot-add-option .placeholder-text {
+    color: transparent;
+    font-size: 0.9rem;
+    height: 1.2em;
+}
+
+.bot-add-option .player-1-color {
+    --bot-accent: var(--player-1-border);
+    --bot-fill: var(--player-1-fill);
+}
+
+.bot-add-option .player-2-color {
+    --bot-accent: var(--player-2-border);
+    --bot-fill: var(--player-2-fill);
+}
+
+.bot-add-option .player-3-color {
+    --bot-accent: var(--player-3-border);
+    --bot-fill: var(--player-3-fill);
+}
+
+.bot-add-option .player-4-color {
+    --bot-accent: var(--player-4-border);
+    --bot-fill: var(--player-4-fill);
+}
+
+.bot-add-option .color-circle:hover {
+    background: var(--bot-fill);
+    border-color: var(--bot-accent);
+    box-shadow: 0 8px 18px -8px var(--bot-accent);
+}
+
+.bot-add-option .color-circle:hover .add-icon {
+    color: var(--bot-accent);
+    transform: rotate(90deg);
+}
+
+/* 已添加的AI玩家样式 */
+.bot-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0px 12px;
+    border-radius: var(--radius-base);
+    position: relative;
+    min-height: 72px;
+}
+
+.bot-player .color-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px var(--shadow-1);
+}
+
+.bot-player .remove-btn {
+    position: absolute;
+    top: -5px;
+    right: -2px;
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bot-player .remove-btn svg {
+    width: 8px;
+    height: 8px;
+    color: var(--text-primary);
+}
+
+.bot-player .remove-btn:hover {
+    transform: scale(1.1);
+}
+
+.bot-add-option .player-1-color,
+.bot-player .player-1-color {
+    border-color: var(--player-1-border);
+}
+
+.bot-add-option .player-2-color,
+.bot-player .player-2-color {
+    border-color: var(--player-2-border);
+}
+
+.bot-add-option .player-3-color,
+.bot-player .player-3-color {
+    border-color: var(--player-3-border);
+}
+
+.bot-add-option .player-4-color,
+.bot-player .player-4-color {
+    border-color: var(--player-4-border);
+}
+
+/* 激活状态的AI玩家样式 */
+.bot-player .player-1-color {
+    background: var(--player-1-fill);
+}
+
+.bot-player .player-2-color {
+    background: var(--player-2-fill);
+}
+
+.bot-player .player-3-color {
+    background: var(--player-3-fill);
+}
+
+.bot-player .player-4-color {
+    background: var(--player-4-fill);
+}
+
+.bot-player span {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.bot-player .difficulty-text {
+    color: var(--on-color-ink-strong);
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: none;
+    pointer-events: none;
+}
+
+.start-game-section {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.start-game-section .control-btn {
+    position: static;
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+/* 文字跟「道具模式 / 欢乐模式」那排开关保持一套 */
+.initial-energy-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    text-shadow: none;
+}
+
+.initial-energy-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.initial-energy-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin: 10px 0;
+    border-radius: 1px;
+    /* 已选段实色填充：--fill 由 JS 按档位更新 */
+    background: linear-gradient(to right, var(--text-primary) var(--fill, 0%), var(--bg-light-2) var(--fill, 0%));
+    cursor: pointer;
+}
+
+.initial-energy-slider::-webkit-slider-runnable-track {
+    height: 2px;
+    background: none;
+}
+
+.initial-energy-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
+    border: none;
+    border-radius: 50%;
+    background: var(--text-primary);
+}
+
+.initial-energy-slider::-moz-range-track {
+    height: 2px;
+    background: none;
+}
+
+.initial-energy-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: var(--text-primary);
+}
+
+/* 对局回放：面板里只放一句说明和一个选文件的入口 */
+
+/* 固定高度的列表区：条数变化、删掉一条都不会让面板跟着长缩，多了自己滚 */
+
+.recent-replay-tag {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--bg-light-2);
+    font-size: 11px;
+    color: var(--text-primary);
+}
+
+/* 模式那一枚上色：和首页三个入口同色（人机红 / 本地绿 / 联机蓝） */
+.recent-replay-tag.mode-ai {
+    background: var(--player-4-color);
+    color: var(--on-color-ink-strong);
+}
+
+.recent-replay-tag.mode-local {
+    background: var(--player-1-color);
+    color: var(--on-color-ink-strong);
+}
+
+.recent-replay-tag.mode-online {
+    background: var(--player-3-color);
+    color: var(--on-color-ink-strong);
+}
+
+/* 整行是打开回放的入口，左右两个图标各管一件事 */
+
+.recent-replay-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.recent-replay-icon:hover {
+    background: var(--bg-light-2);
+}
+
+/* 准备按钮区域样式 */
+.player-ready-section {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.player-ready-section .control-btn {
+    position: static;
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+.waiting-for-host-text {
+    margin-top: 15px;
+}
+
+.game-rules-panel {
+    padding: 10px 12px;
+    max-height: 480px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: transparent;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.rules-content {
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* 机制项目容器 */
+.mechanism-item {
+    margin: 12px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    width: 100%;
+    max-width: 360px;
+    box-sizing: border-box;
+}
+
+/* 不同机制项目的边框颜色 */
+.win-item {
+    border: 2px solid rgb(199, 213, 187);
+}
+
+.launch-item {
+    border: 2px solid color-mix(in srgb, var(--player-1-color) 60%, transparent);
+}
+
+.move-item {
+    border: 2px solid rgba(120, 144, 212, 0.6);
+}
+
+.bonus-item {
+    border: 2px solid rgba(101, 187, 158, 0.6);
+}
+
+.jump-item {
+    border: 2px solid color-mix(in srgb, var(--player-3-color) 60%, transparent);
+}
+
+.fly-item {
+    border: 2px solid color-mix(in srgb, var(--player-2-color) 60%, transparent);
+}
+
+.stack-item {
+    border: 2px solid color-mix(in srgb, var(--player-4-color) 60%, transparent);
+}
+
+.beat-item {
+    border: 2px solid color-mix(in srgb, var(--player-4-color) 60%, transparent);
+}
+
+.energy-item {
+    border: 2px solid rgba(244, 141, 137, 0.6);
+}
+
+.props-item {
+    border: 2px solid rgba(184, 120, 196, 0.6);
+}
+
+.collision-item {
+    border: 2px solid rgba(239, 160, 192, 0.6);
+}
+.finish-item {
+    border: 2px solid color-mix(in srgb, var(--player-1-color) 60%, transparent);
+}
+
+/* 通用子内容容器 */
+.sub-content-item {
+    margin: 6px 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.win-sub-item {
+    background: rgba(126, 203, 124, 0.15);
+}
+
+.launch-sub-item {
+    background: color-mix(in srgb, var(--player-1-color) 15%, transparent);
+}
+
+/* 移动子内容容器 */
+.move-sub-item {
+    background: rgba(120, 144, 212, 0.15);
+}
+
+/* 飞棋子内容容器 */
+.jump-sub-item {
+    background: color-mix(in srgb, var(--player-3-color) 15%, transparent);
+}
+
+/* 连投子内容容器 */
+.bonus-sub-item {
+    background: rgba(101, 187, 158, 0.15);
+}
+
+/* 撞机类型容器 */
+.beat-sub-item {
+    background: color-mix(in srgb, var(--player-4-color) 15%, transparent);
+}
+
+/* 飞棋子内容容器 */
+.fly-sub-item {
+    background: color-mix(in srgb, var(--player-2-color) 15%, transparent);
+}
+
+/* 叠子子内容容器 */
+.stack-sub-item {
+    background: color-mix(in srgb, var(--player-4-color) 15%, transparent);
+}
+
+/* 终点子内容容器 */
+.finish-sub-item {
+    background: color-mix(in srgb, var(--player-1-color) 15%, transparent);
+}
+
+.energy-sub-item {
+    background: rgba(244, 141, 137, 0.15);
+}
+
+.props-sub-item {
+    background: rgba(184, 120, 196, 0.15);
+}
+
+.collision-sub-item {
+    background: rgba(239, 160, 192, 0.15);
+}
+
+/* 撞机详情 */
+.beat-detail {
+    margin-left: 15px;
+    color: var(--text-primary-soft);
+}
+
+.rule-section p {
+    margin: 8px 0;
+    color: var(--text-primary);
+    line-height: 1.5;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.rule-section p strong {
+    color: var(--text-primary);
+}
+
+/* 游戏规则面板中的特殊操作样式 - 移除边框，只保留颜色 */
+.rules-content .move-type-launch,
+.rules-content .move-type-move,
+.rules-content .move-type-jump,
+.rules-content .move-type-fly,
+.rules-content .stack-text,
+.rules-content .beat-text {
+    font-weight: bold;
+}
+
+.rules-content .move-type-launch,
+.rules-content .move-type-move,
+.rules-content .move-type-jump,
+.rules-content .move-type-fly,
+.rules-content .stack-text,
+.rules-content .beat-text {
+    color: var(--text-primary);
+    padding: 0;
+    border-radius: 0;
+}
+
+.rules-content .move-type-launch {
+    background: color-mix(in srgb, var(--player-1-color) 40%, transparent);
+}
+
+.rules-content .move-type-move {
+    background: rgba(120, 144, 212, 0.4);
+}
+
+.rules-content .move-type-jump {
+    background: color-mix(in srgb, var(--player-3-color) 40%, transparent);
+}
+
+.rules-content .move-type-fly {
+    background: color-mix(in srgb, var(--player-2-color) 40%, transparent);
+}
+
+.rules-content .stack-text {
+    background: color-mix(in srgb, var(--player-4-color) 40%, transparent);
+}
+
+.rules-content .beat-text {
+    background: rgba(233, 193, 223, 0.4);
+}
+
+/* 滚动条样式 */
+.game-rules-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.game-rules-panel::-webkit-scrollbar-track {
+    background: var(--shadow-1);
+    border-radius: 3px;
+}
+
+.game-rules-panel::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.game-rules-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+    cursor: pointer;
+}
+
+/* SVG 元素样式 */
+#checkmark circle[fill="transparent"],
+#chess circle[fill="transparent"] {
+    pointer-events: all;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--scrim);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.room-code-input-section {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+/* 四个输入框容器 */
+.room-code-inputs-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+/* 单个字符输入框样式 */
+.room-code-digit-input {
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    text-transform: uppercase;
+}
+
+.room-code-digit-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: none;
+    transform: scale(1.05);
+}
+
+.room-code-digit-input:hover {
+    box-shadow: none;
+}
+
+/* 输入框有内容时的样式 */
+.room-code-digit-input.filled {
+    border-color: var(--primary-color);
+}
+
+.room-code-input {
+    padding: 12px 16px;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-base);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.room-code-input::placeholder {
+    color: var(--white);
+}
+
+.modal-error {
+    padding: 10px;
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.error-message {
+    color: #F44336;
+    font-size: 14px;
+    text-align: center;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--shadow-1);
+    background: var(--bg-soft);
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 6px;
+    border: 2px solid var(--border-light);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.modal-btn.secondary {
+    border-color: var(--border-soft);
+}
+
+.modal-btn.primary {
+    border-color: var(--ui-default-color);
+}
+
+.modal-btn:hover {
+    border-color: var(--text-primary);
+    box-shadow: none;
+}
+
+.modal-btn.primary:disabled {
+    cursor: not-allowed;
+}
+
+.waiting-for-host {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.waiting-text {
+    font-size: 18px;
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+.room-error-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--alert);
+    color: var(--white);
+    padding: 8px 16px;
+    border-radius: 8px;
+    z-index: 10000;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 4px var(--shadow-2);
+    backdrop-filter: blur(5px);
+    border: 2px solid var(--border-light);
+    pointer-events: none;
+    animation: toast-fade-in 0.3s ease;
+}
+
+@keyframes toast-fade-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.multiplayer-error {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--alert);
+    box-shadow: 0 4px 4px var(--shadow-2);
+    border: 2px solid var(--border-light);
+    color: var(--white);
+    padding: 10px 15px;
+    border-radius: 8px;
+    z-index: 10000;
+    font-size: 14px;
+    max-width: 300px;
+}
+
+/* 聊天消息显示样式 */
+.chat-message-display {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+}
+
+.chat-message-content {
+    position: absolute;
+    background: var(--warm-white);
+    border: 1.5px solid var(--ui-default-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 5px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    width: auto;
+    min-width: 100px;
+    max-width: 80%;
+    min-height: auto;
+    max-height: auto;
+    display: inline-block;
+    align-items: center;
+    justify-content: left;
+    word-wrap: nowrap;
+    line-height: 1.4;
+    overflow: visible;
+    animation: chatMessageFadeIn 0.3s ease-out;
+    bottom: 20px;
+    left: 20px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px var(--shadow-1);
+    white-space: nowrap;
+}
+
+.chat-message-display.fade-out .chat-message-content {
+    animation: chatMessageFadeOut 0.3s ease-in;
+}
+
+/* ===== 骰子选择器样式 ===== */
+.dice-selection-panel {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    width: 200px;
+    max-height: 200px;
+    background: var(--bg-light-1);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 1px 3px var(--shadow-2);
+    display: block;
+    z-index: 1000;
+}
+
+.dice-selection-panel h3 {
+    color: var(--text-primary);
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: none;
+    border-bottom: 1px solid var(--border-soft);
+    background: transparent;
+}
+
+.dice-selection-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 6px;
+    padding: 10px;
+}
+
+.dice-selection-btn {
+    width: 100%;
+    height: 50px;
+    font-size: 48px;
+    font-weight: normal;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dice-selection-btn:hover {
+    border-radius: var(--radius-base);
+    transform: scale(1.15);
+}
+
+/* ===== 道具通知样式 ===== */
+.game-message-stack {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 92vw;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.game-notification {
+    background: var(--bg-light-1);
+    color: var(--text-primary);
+    padding: 7px 11px;
+    border-radius: var(--radius-base);
+    border: 1.5px solid var(--border-light);
+    box-shadow: 0 1px 3px var(--shadow-2);
+    font-size: 16px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.15s ease, transform 0.15s ease, height 0.18s ease 0.15s, margin-bottom 0.18s ease 0.15s;
+    overflow: hidden;
+    box-sizing: border-box;
+    backdrop-filter: none;
+    pointer-events: none !important;
+    width: max-content;
+    max-width: 100%;
+    word-break: break-word;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.game-notification.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.game-notification.leaving {
+    opacity: 0;
+}
+
+/* 平板和手机端通用样式 */
+@media (max-width: 1260px) {
+    body {
+        padding: 0;
+        align-items: flex-start;
+    }
+
+    .mode-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        margin: 20px 0;
+    }
+
+    .main-layout {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .game-container {
+        width: 100%;
+        max-width: 100%;
+        order: 1;
+    }
+
+    .game-notification {
+        text-align: center;
+    }
+
+    .control-panel {
+        width: 100%;
+        max-width: none;
+        order: 2;
+        min-height: auto;
+    }
+
+    .main-layout .control-panel {
+        height: auto;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 20px 0;
+    }
+
+    .control-panel-inner {
+        max-width: none;
+        width: 100%;
+    }
+
+    .game-control-content {
+        background: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        padding: 10px 0;
+    }
+
+    .players-info {
+        width: 100%;
+        height: 100%;
+    }
+    .polyhedral-dice-display{
+        font-size: 34px;
+    }
+    .polyhedral-dice-display .reel-strip span,
+    .polyhedral-dice-display .final-number {
+        font-size: 34px;
+    }
+    .polyhedral-dice-display .reel-strip span {
+        height: 40px;
+        line-height: 40px;
+    }
+    .polyhedral-dice-display::before {
+        width: 45px;
+        height: 45px;
+    }
+    .polyhedral-dice-display .reel-viewport {
+        width: 45px;
+        height: 45px;
+        left: 37px;
+        top: 22px;
+    }
+    #board-svg {
+        width: min(500px, 90vw);
+        height: min(500px, 90vw);
+    }
+
+    .player-info.pos-tr {
+        top: 8%;
+        right: 8%;
+    }
+
+    .player-info.pos-br {
+        bottom: 8%;
+        right: 8%;
+    }
+
+    .player-info.pos-bl {
+        bottom: 8%;
+        left: 8%;
+    }
+
+    .player-info.pos-tl {
+        top: 8%;
+        left: 8%;
+    }
+
+    /* 调整控制面板内容 */
+    .control-content {
+        gap: 10px;
+    }
+
+    .game-info-panel {
+        max-height: 250px;
+        max-width: none;
+    }
+
+    .progress-panel {
+        max-height: 250px;
+    }
+
+    /* 调整房间号显示 */
+    .game-room-code-display {
+        font-size: 20px;
+    }
+
+    .emoji-panel {
+        width: 260px;
+        bottom: 50px;
+    }
+
+    .index-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .tip-content {
+        font-size: 0.7rem;
+        line-height: 16px;
+    }
+
+    .tip-content.slide-up-out {
+        transform: translateY(-16px);
+    }
+
+    .tip-content.slide-up-in {
+        transform: translateY(16px);
+    }
+
+    .tip-content.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .color-options {
+        grid-template-columns: repeat(auto-fit, minmax(60px, auto));
+        gap: 10px;
+        width: 100%;
+        max-width: none;
+    }
+
+    .bot-players {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .player-setup-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* 聊天消息显示在顶部 */
+    .chat-message-content {
+        bottom: auto;
+        top: 5px;
+        left: 20px;
+    }
+
+    .skill-icon,
+    .lightning-icon,
+    .chat-icon {
+        width: 32px;
+        height: 32px;
+        padding: 3px;
+    }
+}
+
+/* 中屏优化：三个板块水平排列、等高，内部内容均匀分布 */
+@media (min-width: 695px) and (max-width: 1260px) {
+    .game-control-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        align-items: stretch;
+        width: 100%;
+    }
+    /* 第2列（完成进度）：内部进度条均匀分布 */
+    .game-control-content > .game-panel-section:nth-child(2) {
+        display: flex;
+        flex-direction: column;
+    }
+    .game-control-content > .game-panel-section:nth-child(2) .progress-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .game-control-content > .game-panel-section:nth-child(2) .panel-body-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .game-control-content > .game-panel-section:nth-child(2) .progress-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+    /* 第3列（操作按钮）：内部按钮均匀分布 */
+    .game-control-content > .game-panel-section:nth-child(3) {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+    .game-control-content > .game-panel-section:nth-child(3) .game-room-code-display-column {
+        display: block;
+        margin: 0 10% 6px 10%;
+        padding: 8px 12px;
+        font-size: 16px;
+    }
+    .control-title .game-room-code-display {
+        display: none !important;
+    }
+}
+
+/* 小型平板优化 (480px - 1000px) - 防止user-info和棋盘重叠 */
+@media (max-width: 1000px) and (min-width: 520px) {
+
+    #board-svg {
+        width: min(380px, 75vw);
+        height: min(380px, 75vw);
+    }
+
+    .players-info {
+        width: 110%;
+        height: 75%;
+    }
+
+    /* 调整玩家头像位置，更靠近边缘 */
+    .player-info.pos-tr {
+        top: 5%;
+        right: 5%;
+    }
+
+    .player-info.pos-br {
+        bottom: 5%;
+        right: 5%;
+    }
+
+    .player-info.pos-bl {
+        bottom: 5%;
+        left: 5%;
+    }
+
+    .player-info.pos-tl {
+        top: 5%;
+        left: 5%;
+    }
+
+    /* 减小玩家头像大小 */
+    .player-avatar {
+        width: 42px;
+        height: 42px;
+        border-width: 2.5px;
+    }
+
+    .player-emoji {
+        width: 42px;
+        height: 42px;
+    }
+
+    .player-name {
+        max-width: 80px;
+        font-size: 12px;
+    }
+
+    /* 调整棋盘大小 */
+    .energy-bar-container {
+        height: 50px;
+        border-radius: 10px;
+    }
+
+    .energy-value {
+        font-size: 9px;
+    }
+
+    /* 减小击败次数显示 */
+    .defeat-count {
+        width: 25px;
+        height: 18px;
+        font-size: 18px;
+    }
+
+    /* 调整控制面板字体大小 */
+    .control-title h3 {
+        font-size: 20px;
+    }
+
+    .control-section h3,
+    .game-panel-section h3 {
+        font-size: 16px;
+    }
+
+    /* 调整游戏控制区域 */
+    .dice-icon {
+        font-size: 60px;
+        height: 80px;
+        width: 100px;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .energy-gain-text {
+        height: 80px;
+        width: 100px;
+    }
+
+    .thinking-progress-container {
+        width: 160px;
+    }
+
+    .polyhedral-dice-display {
+        height: 80px;
+        width: 100px;
+        font-size: 30px;
+        margin: 18px 0;
+    }
+
+    .polyhedral-dice-display .reel-strip span,
+    .polyhedral-dice-display .final-number {
+        font-size: 30px;
+    }
+
+    .polyhedral-dice-display .reel-strip span {
+        height: 37px;
+        line-height: 37px;
+    }
+
+    .polyhedral-dice-display::before {
+        width: 42px;
+        height: 42px;
+    }
+
+    .polyhedral-dice-display .reel-viewport {
+        width: 42px;
+        height: 42px;
+        left: 29px;
+        top: 19px;
+    }
+
+    /* 调整传送门和盲盒图标 */
+    #teleportIcon,
+    #mysteryBoxIcon {
+        height: 80px;
+        width: 100px;
+        margin: 18px 0;
+    }
+
+    #teleportIcon svg,
+    #mysteryBoxIcon svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .loading-indicator,
+    .pause-indicator,
+    .chat-input-area {
+        height: 80px;
+        min-height: 80px;
+        margin: 18px 0;
+    }
+
+    /* 聊天消息显示在顶部 */
+    .chat-message-content {
+        bottom: auto;
+        top: 5px;
+        left: 20px;
+    }
+
+    .skill-icon,
+    .lightning-icon,
+    .chat-icon {
+        width: 32px;
+        height: 32px;
+        padding: 3px;
+    }
+}
+
+/* 手机端媒体查询 */
+@media (max-width: 695px) {
+    body {
+        margin: 0
+    }
+
+    /* 手机端聊天消息圆角更小 */
+    .chat-message-content {
+        border-radius: 5px;
+    }
+
+    .rules-modal-content {
+        max-width: 70%;
+    }
+
+    .room-chat-drawer {
+        height: min(320px, calc(100% - 16px));
+        width: 0;
+        max-width: 94%;
+    }
+
+    .room-chat-drawer.is-open {
+        width: min(250px, calc(100% - 6px - var(--control-content-padding-right, 10px)));
+    }
+
+    .room-chat-emoji-panel {
+        left: 0;
+        right: 0;
+        width: auto;
+        max-width: 100%;
+        bottom: 36px;
+    }
+
+    .room-chat-emoji-panel-content {
+        padding: 5px;
+        gap: 3px;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+
+    .room-chat-emoji-item {
+        width: auto;
+        min-width: 0;
+        height: 23px;
+        font-size: 16px;
+        border-radius: 4px;
+    }
+
+    .username-input-group {
+        width: 85%;
+        max-width: none;
+    }
+
+    .username-input-with-icon {
+        width: 100%;
+    }
+
+    /* 主布局在移动端改为垂直布局 */
+    .main-layout {
+        flex-direction: column;
+        padding: 0;
+        gap: 0;
+        width: 100%;
+    }
+
+    .control-panel-inner {
+        order: 2;
+        border-radius: 12px;
+        padding: 15px;
+        box-sizing: border-box;
+        min-height: 100px;
+        margin: 0 15px 15px 15px;
+        width: calc(100% - 50px);
+        align-self: center;
+    }
+
+    .game-info-panel {
+        height: 320px;
+        width: auto;
+        min-width: auto;
+        max-width: none;
+        margin-bottom: 15px;
+    }
+
+    .progress-panel {
+        height: auto;
+        min-height: auto;
+        max-height: 200px;
+        margin-bottom: 0;
+    }
+
+    .game-container {
+        flex-direction: column;
+        width: 100%;
+        min-width: auto;
+        padding: 10px 0;
+        box-sizing: border-box;
+        order: 1;
+    }
+
+    /* 隐藏桌面端玩家信息 */
+    .players-info {
+        display: none;
+    }
+
+    /* 显示移动端玩家信息 */
+    .players-top,
+    .players-bottom {
+        display: flex;
+        justify-content: space-between;
+        padding: 0px 20px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .players-top {
+        order: 1;
+    }
+
+    .players-bottom {
+        order: 3;
+    }
+
+    /* 移动端棋盘样式*/
+    #board-svg {
+        width: 100% !important;
+        height: auto !important;
+        max-width: 100vw;
+        aspect-ratio: 1;
+        min-width: 280px;
+    }
+
+    .board-container {
+        width: 100%;
+        order: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .player-info {
+        position: static;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* 移动端击败次数样式 */
+    .defeat-counts-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    /* 移动端积分条样式 */
+    .energy-bar-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .energy-value {
+        font-size: 9px;
+    }
+
+    .player-info.mobile-right .energy-bar-wrapper {
+        order: 3;
+    }
+
+    .player-info.mobile-left .energy-bar-wrapper {
+        order: 1;
+    }
+
+    .player-info.mobile-left .player-main {
+        order: 2;
+    }
+
+    .player-info.mobile-left .defeat-counts {
+        order: 3;
+    }
+
+    .player-info.mobile-right .defeat-counts {
+        order: 1;
+    }
+
+    .player-info.mobile-right .player-main {
+        order: 2;
+    }
+
+    .player-main {
+        order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .player-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .player-name {
+        max-width: 80px;
+        font-size: 12px;
+    }
+
+    /* 移动端游戏控制区域 */
+    .game-controls {
+        order: 4;
+        margin-top: 10px;
+    }
+
+    .dice-icon {
+        font-size: 60px;
+        height: 75px;
+        width: 100px;
+        line-height: 1;
+        margin: 15px 0;
+        padding: 0;
+    }
+
+    .dice-icon:hover {
+        transform: scale(1);
+    }
+
+    /* 移动端多面骰子 */
+    .polyhedral-dice-display {
+        height: 75px;
+        width: 100px;
+        font-size: 28px;
+        margin: 15px 0;
+    }
+
+    .polyhedral-dice-display .reel-strip span,
+    .polyhedral-dice-display .final-number {
+        font-size: 28px;
+    }
+
+    .polyhedral-dice-display .reel-strip span {
+        height: 30px;
+        line-height: 30px;
+    }
+
+    .polyhedral-dice-display::before {
+        width: 35px;
+        height: 35px;
+    }
+
+    .polyhedral-dice-display .reel-viewport {
+        width: 35px;
+        height: 35px;
+        left: 33px;
+        top: 20px;
+    }
+
+    /* 移动端传送门和盲盒图标 */
+    #teleportIcon,
+    #mysteryBoxIcon {
+        height: 75px;
+        width: 100px;
+        margin: 15px 0;
+    }
+
+    /* 与 .dice-icon 同尺寸同外边距：两者在同一位置轮换，盒子不一致会让进度条上下跳 */
+    .energy-gain-text {
+        height: 75px;
+        width: 100px;
+        margin: 15px 0;
+        border-radius: 10px;
+        gap: 2px;
+    }
+
+    .loading-indicator,
+    .pause-indicator,
+    .chat-input-area {
+        height: 75px;
+        min-height: 75px;
+        margin: 15px 0;
+    }
+
+    .dice-selector {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+
+    .dice-btn {
+        padding: 5px;
+        font-size: 22px;
+    }
+
+    .debug-move-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .index-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .tip-content.slide-up-out {
+        transform: translateY(-16px);
+    }
+
+    .tip-content.slide-up-in {
+        transform: translateY(16px);
+    }
+
+    .color-options {
+        grid-template-columns: repeat(auto-fit, minmax(60px, auto));
+        gap: 10px;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .bot-players {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .modal-content {
+        width: 90%;
+        margin: 10px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        padding: 12px 15px;
+        flex-shrink: 0;
+    }
+
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 15px;
+        min-height: 0;
+    }
+
+    .modal-footer {
+        padding: 10px 15px;
+        flex-shrink: 0;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+        white-space: nowrap;
+    }
+
+    .settlement-rankings {
+        gap: 10px;
+    }
+
+    .settlement-rankings .flip-card-front {
+        padding: 6px;
+    }
+
+    .ranking-item {
+        padding: 6px 8px;
+        min-height: 35px;
+    }
+
+    .ranking-name {
+        font-size: 14px;
+    }
+
+    .ranking-progress {
+        font-size: 12px;
+    }
+
+    .ranking-position {
+        font-size: 10px;
+        min-width: 20px;
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        margin-right: 10px;
+    }
+
+    .ranking-info {
+        flex: 1;
+        margin-left: 0;
+        min-width: 0;
+    }
+
+    .ranking-defeats {
+        gap: 0px;
+        flex-shrink: 0;
+    }
+
+    .ranking-defeats .defeat-count {
+        font-size: 20px;
+        min-width: 20px;
+    }
+
+    .ranking-avatar {
+        width: 30px;
+        height: 30px;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    .btn-primary {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .player-setup-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .chat-icon,
+    .skill-icon,
+    .lightning-icon {
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .chat-message-content {
+        padding: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        width: 400px;
+        min-height: 20px;
+        max-height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        left: 22%;
+        word-wrap: nowrap;
+        line-height: 1.4;
+        overflow: hidden;
+        animation: chatMessageFadeIn 0.3s ease-out;
+        top: 20px;
+        box-sizing: border-box;
+    }
+
+    /* 移动端emoji面板适配 */
+    .emoji-panel {
+        width: 250px;
+        bottom: 45px;
+    }
+
+    .emoji-panel-content {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
+        max-height: 150px;
+    }
+
+    .emoji-item {
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .emoji-btn {
+        width: 24px;
+        height: 24px;
+        margin-right: 3px;
+    }
+
+    .chat-send-btn {
+        width: 24px;
+        height: 24px;
+    }
+
+    /* 移动端道具面板样式 */
+    .skill-panel {
+        width: 340px;
+        bottom: 45px;
+        right: 20px;
+        left: auto;
+    }
+
+
+    .skill-panel-header {
+        padding: 8px 10px;
+        gap: 4px;
+    }
+
+    .skill-panel-header h4 {
+        font-size: 13px;
+    }
+
+    .skill-energy-hint {
+        font-size: 9px;
+    }
+
+    .skill-energy-display {
+        font-size: 11px;
+    }
+
+    .skill-panel-content {
+        padding: 8px;
+        gap: 8px;
+        max-height: 300px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .skill-item {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .skill-icon-container {
+        width: 36px;
+        height: 36px;
+    }
+
+    .skill-icon-container svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .skill-name {
+        font-size: 13px;
+    }
+
+    .skill-desc {
+        font-size: 10px;
+    }
+
+    .skill-cost {
+        font-size: 9px;
+    }
+
+    /* 移动端骰子选择面板 */
+    .dice-selection-panel {
+        width: 200px;
+        bottom: 45px;
+    }
+
+    .dice-selection-panel h3 {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .dice-selection-container {
+        gap: 5px;
+        padding: 8px;
+    }
+
+    .dice-selection-btn {
+        height: 45px;
+        font-size: 36px;
+    }
+
+    /* 移动端游戏通知弹窗适配 */
+    .game-notification {
+        font-size: 14px;
+        padding: 6px 10px;
+        width: max-content;
+        text-align: center;
+    }
+
+    /* 移动端积分粒子适配 */
+    .energy-particle {
+        width: 4px;
+        height: 4px;
+    }
+
+    /* 移动端隐藏棋子数这一列 */
+    .public-room-list-head,
+    .public-room-item {
+        grid-template-columns: 1.6fr 1fr 0.8fr 1.1fr;
+    }
+
+    .public-room-list-head .head-col:nth-child(3),
+    .public-room-piece-count {
+        display: none;
+    }
+
+    .public-room-list-head .head-col:last-child,
+    .public-room-status {
+        text-align: right;
+    }
+}
+
+@media(max-width: 380px) {
+    .skill-panel {
+        width: calc(100% - 20px);
+        right: 10px;
+        left: 10px;
+        max-width: 340px;
+    }
+}
+
+/* 主题切换按钮：扁平圆钮，月亮/太阳两个 SVG 靠缩放旋转互换 */
+.theme-toggle {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 9999;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    opacity: 0.7;
+    transition: border-color 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+}
+
+.theme-toggle:hover {
+    opacity: 1;
+    border-color: var(--text-primary);
+}
+
+.theme-icon {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    transition: transform 0.35s cubic-bezier(0.4, 0.1, 0.2, 1), opacity 0.35s ease;
+}
+
+.theme-icon-moon {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+}
+
+.theme-icon-sun {
+    transform: scale(0) rotate(90deg);
+    opacity: 0;
+}
+
+.theme-toggle.is-dark .theme-icon-moon {
+    transform: scale(0) rotate(-90deg);
+    opacity: 0;
+}
+
+.theme-toggle.is-dark .theme-icon-sun {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+}
+
+/* 游戏页：按钮落进信息面板头部，排在聊天切换按钮左边 */
+.theme-toggle-inline {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 24px;
+    height: 24px;
+    margin-right: 6px;
+    border: 1.5px solid var(--border-light);
+}
+
+.theme-toggle-inline .theme-icon {
+    width: 15px;
+    height: 15px;
+}
+
+/* 首页：跟页脚版本号同一号字、同一颜色，无边框 */
+.theme-toggle-footer {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    display: inline-flex;
+    font-size: inherit;
+    width: 1em;
+    height: 1em;
+    padding: 0;
+    margin-left: 0.35em;
+    vertical-align: -0.1em;
+    border: none;
+    background: none;
+    color: inherit;
+    opacity: 1;
+}
+
+.theme-toggle-footer:hover .theme-icon {
+    fill:#75cafb;
+    stroke:#75cafb;
+}
+.theme-toggle-footer .theme-icon {
+    width: 1em;
+    height: 1em;
+}
+
+.info-header h3 {
+    margin-right: auto;
+}
+
+/* 席位点击反馈：左右摇摆一下（用独立 rotate 属性，不和 hover 的 transform 抢） */
+@keyframes seatSway {
+    0%, 100% { rotate: 0deg; }
+    20% { rotate: -8deg; }
+    45% { rotate: 7deg; }
+    70% { rotate: -4deg; }
+    85% { rotate: 2deg; }
+}
+
+.seat-sway {
+    animation: seatSway 0.6s ease-in-out;
+}
+
+/* 主题切换：从按钮位置开始的圆形扩散（View Transitions API） */
+@keyframes theme-reveal {
+    from { clip-path: circle(0% at var(--theme-transition-x, 100%) var(--theme-transition-y, 0%)); }
+    to { clip-path: circle(150% at var(--theme-transition-x, 100%) var(--theme-transition-y, 0%)); }
+}
+
+::view-transition-old(root) {
+    animation: none;
+    opacity: 1;
+}
+
+::view-transition-new(root) {
+    animation: theme-reveal 0.35s ease-out both;
+}
+
+::view-transition-image-pair(root) {
+    isolation: isolate;
+}
+
+/* 续局询问：一个干净的小卡片 */
+.resume-modal .modal-content {
+    max-width: 320px;
+    padding: 22px 20px 18px;
+    text-align: center;
+    border-radius: 14px;
+}
+
+.resume-modal h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.resume-modal p {
+    margin: 0 0 18px;
+    font-size: 12px;
+    color: var(--ui-default-color);
+}
+
+.resume-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.resume-btn {
+    padding: 7px 18px;
+    border: 1.5px solid var(--border-light);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, filter 0.15s ease, transform 0.15s ease;
+}
+
+.resume-btn:hover {
+    border-color: var(--border-medium);
+    filter: brightness(0.94);
+    transform: translateY(-1px);
+}
+
+.resume-btn-primary {
+    border-color: var(--border-medium);
+    background: var(--player-1-color);
+    color: #fff;
+}
+
+.resume-modal.mode-ai .resume-btn-primary {
+    background: var(--player-4-color);
+}
+
+.resume-modal.mode-local .resume-btn-primary {
+    background: var(--player-1-color);
+}
