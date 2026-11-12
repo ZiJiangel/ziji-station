@@ -374,8 +374,8 @@ class MultiplayerManager {
                 // 立即进入房间面板，提供即时反馈
                 this.showRoomConfigWithLoading();
 
-                // 异步创建房间
-                this.createRoomAsync().finally(() => {
+                // 异步创建房间 (使用 HTTP 新版逻辑)
+                this.createRoom().finally(() => {
                     // 2秒后重新启用按钮
                     setTimeout(() => {
                         targetElement.disabled = false;
