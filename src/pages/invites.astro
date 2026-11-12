@@ -66,7 +66,7 @@ import Layout from '../layouts/Layout.astro';
 
         const { data, error } = await supabase
           .from('invite_codes')
-          .select('code, created_at, expires_at, used_at, note')
+          .select('code, created_at, expires_at, used_at')
           .eq('created_by', user.id)
           .order('created_at', { ascending: false });
 
@@ -77,35 +77,42 @@ import Layout from '../layouts/Layout.astro';
         }
 
         el.innerHTML = `
-          <div class="list">
-            ${data.map(inv => {
-              const st = inviteState(inv.used_at, inv.expires_at);
-              const link = `${location.origin}/login?code=${inv.code}`;
-              return `
-                <div class="li">
-                  <div class="li-body">
-                    <div class="li-title" style="font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;gap:8px;">
-                      ${esc(inv.code)}
-                      <span class="tag ${st.cls}">${st.label}</span>
-                    </div>
-                    <div class="li-meta" style="margin-top:6px">
-                      生成于 ${fmtDate(inv.created_at)} · 到期 ${fmtDate(inv.expires_at)}
-                      ${inv.note ? ` · ${esc(inv.note)}` : ''}
-                    </div>
-                  </div>
-                  <div class="row" style="flex:0 0 auto;gap:6px">
-                    ${!inv.used_at && new Date(inv.expires_at) > new Date()
-                      ? `<button class="btn sm" data-act="copy" data-link="${link}">复制链接</button>`
-                      : ''
-                    }
-                    ${st.canRevoke
-                      ? `<button class="btn sm danger" data-act="revoke" data-code="${inv.code}">作废</button>`
-                      : ''
-                    }
-                  </div>
-                </div>
-              `;
-            }).join('')}
+          <div class="card" style="padding:2px 18px">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>邀请码</th>
+                  <th>状态</th>
+                  <th>有效期至</th>
+                  <th>使用时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.map(inv => {
+                  const st = inviteState(inv.used_at, inv.expires_at);
+                  const link = `${location.origin}/login?code=${inv.code}`;
+                  return `
+                    <tr>
+                      <td><code style="font-family:var(--font-mono);font-size:12.5px;letter-spacing:0.02em">${esc(inv.code)}</code></td>
+                      <td><span class="tag ${st.cls}">${st.label}</span></td>
+                      <td class="muted">${fmtDate(inv.expires_at)}</td>
+                      <td class="muted">${inv.used_at ? fmtDate(inv.used_at) : '—'}</td>
+                      <td>
+                        ${!inv.used_at && new Date(inv.expires_at) > new Date()
+                          ? `<button class="btn sm" data-act="copy" data-link="${link}">复制</button>`
+                          : ''
+                        }
+                        ${st.canRevoke
+                          ? `<button class="btn sm danger" data-act="revoke" data-code="${inv.code}">作废</button>`
+                          : ''
+                        }
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
           </div>
         `;
       } catch (e: any) {
@@ -205,7 +212,18 @@ import Layout from '../layouts/Layout.astro';
     .btn.danger { color: var(--danger); }
     .btn.danger:hover { background: oklch(0.62 0.20 25 / 0.1); border-color: var(--danger); }
 
+    table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.tbl th { text-align: left; font-weight: 600; font-size: 11px; color: var(--muted); padding: 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.04em; white-space: nowrap; }
+    table.tbl td { padding: 11px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    table.tbl tr:last-child td { border-bottom: 0; }
+    table.tbl td:last-child { white-space: nowrap; }
+    table.tbl td:last-child .btn { margin-right: 4px; }
+
     @media (max-width: 640px) {
+      table.tbl { font-size: 12px; }
+      table.tbl th, table.tbl td { padding: 8px 6px; }
+      table.tbl th:nth-child(3), table.tbl td:nth-child(3),
+      table.tbl th:nth-child(4), table.tbl td:nth-child(4) { display: none; }
       .li { flex-direction: column; align-items: flex-start; gap: 10px; }
       .li .row { width: 100%; }
     }

@@ -191,36 +191,52 @@ import Layout from '../layouts/Layout.astro';
       try {
         const invs = await listInvites();
         if (!invs.length) { el.innerHTML = '<p class="muted">暂无邀请码。</p>'; return; }
-        el.innerHTML = `<div class="list">${invs.map(inv => {
-          const p = inv.profiles || {} as any;
-          const isUsed = !!inv.used_at;
-          const isExpired = !isUsed && new Date(inv.expires_at) < new Date();
-          const state = isUsed ? '已使用' : isExpired ? '已过期' : '可用';
-          const cls = isUsed ? 'used' : isExpired ? 'expired' : 'active';
-          return `
-            <div class="li">
-              <div class="li-body">
-                <div class="li-title" style="font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;gap:8px;">
-                  ${esc(inv.code)}
-                  <span class="tag ${cls}">${state}</span>
-                </div>
-                <div class="li-meta" style="margin-top:6px">
-                  创建者 @${esc(p.username) || '未知'} · ${fmtDate(inv.created_at)} · 到期 ${fmtDate(inv.expires_at)}
-                </div>
-              </div>
-              <div class="row" style="gap:6px">
-                ${!isUsed && !isExpired
-                  ? `<button class="btn sm" data-act="copy-invite" data-link="${location.origin}/login?code=${inv.code}">复制</button>`
-                  : ''
-                }
-                ${!isUsed
-                  ? `<button class="btn sm danger" data-act="delete-invite" data-code="${inv.code}">作废</button>`
-                  : ''
-                }
-              </div>
-            </div>
-          `;
-        }).join('')}</div>`;
+        el.innerHTML = `
+          <div class="card" style="padding:2px 18px">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>邀请码</th>
+                  <th>状态</th>
+                  <th>创建者 / 时间</th>
+                  <th>有效期至</th>
+                  <th>使用者</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${invs.map(inv => {
+                  const isUsed = !!inv.used_at;
+                  const isExpired = !isUsed && new Date(inv.expires_at) < new Date();
+                  const state = isUsed ? '已使用' : isExpired ? '已过期' : '可用';
+                  const cls = isUsed ? 'used' : isExpired ? 'expired' : 'active';
+                  const creator = inv.creator ? `@${esc(inv.creator.username)}` : '—';
+                  const user = inv.user ? `@${esc(inv.user.username)}` : (isUsed ? '未知用户' : '—');
+                  
+                  return `
+                    <tr>
+                      <td><code style="font-family:var(--font-mono);font-size:12.5px;letter-spacing:0.02em">${esc(inv.code)}</code></td>
+                      <td><span class="tag ${cls}">${state}</span></td>
+                      <td class="muted">${creator}<br/><span style="font-size:11px">${fmtDate(inv.created_at)}</span></td>
+                      <td class="muted">${fmtDate(inv.expires_at)}</td>
+                      <td class="muted">${user}<br/><span style="font-size:11px">${isUsed ? fmtDate(inv.used_at!) : ''}</span></td>
+                      <td>
+                        ${!isUsed && !isExpired
+                          ? `<button class="btn sm" data-act="copy-invite" data-link="${location.origin}/login?code=${inv.code}">复制</button>`
+                          : ''
+                        }
+                        ${!isUsed
+                          ? `<button class="btn sm danger" data-act="delete-invite" data-code="${inv.code}">作废</button>`
+                          : ''
+                        }
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
       } catch (e: any) {
         el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
       }

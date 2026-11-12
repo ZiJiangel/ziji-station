@@ -137,21 +137,44 @@ export async function banUser(uid: string, ban: boolean) {
 
 export interface AdminInvite {
   code: string;
-  created_by: string;
+  created_by: string | null;
   created_at: string;
   expires_at: string;
   used_at: string | null;
+  used_by: string | null;
   note: string | null;
-  profiles: { username: string; display_name: string | null } | null;
+  creator?: { username: string; display_name: string | null };
+  user?: { username: string; display_name: string | null };
 }
 
 export async function listInvites(): Promise<AdminInvite[]> {
-  const { data, error } = await supabase
+  const { data: codes, error } = await supabase
     .from('invite_codes')
-    .select('code, created_by, created_at, expires_at, used_at, note, profiles(username, display_name)')
+    .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as unknown as AdminInvite[];
+  if (!codes || codes.length === 0) return [];
+
+  const uids = Array.from(new Set(
+    codes.flatMap(c => [c.created_by, c.used_by]).filter(Boolean)
+  )) as string[];
+
+  let profileMap: Record<string, { username: string; display_name: string | null }> = {};
+  if (uids.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name')
+      .in('id', uids);
+    if (profiles) {
+      profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
+    }
+  }
+
+  return codes.map(c => ({
+    ...c,
+    creator: c.created_by ? profileMap[c.created_by] : undefined,
+    user: c.used_by ? profileMap[c.used_by] : undefined,
+  }));
 }
 
 export async function deleteInvite(code: string) {
