@@ -5,7 +5,7 @@ import Layout from '../layouts/Layout.astro';
   <div class="pagehead">
     <div>
       <h1>邀请</h1>
-      <p>生成邀请码，把朋友加进来。</p>
+      <p>生成邀请码，把朋友加进来。一次性，7 天有效。</p>
     </div>
   </div>
 
@@ -13,21 +13,27 @@ import Layout from '../layouts/Layout.astro';
     <div class="row between" style="margin-bottom:8px">
       <div>
         <div style="font-size:15px;font-weight:650">生成一张邀请码</div>
-        <div class="tiny muted">一次性，7 天有效。发给朋友后对方用邮箱登录即可。</div>
+        <div class="tiny muted">发给朋友后对方用邮箱登录即可。</div>
       </div>
       <button class="btn primary sm" id="gen-btn">+ 生成</button>
     </div>
-    
-    <div id="invite-result" style="display:none">
+    <div id="invite-result" style="display:none" class="new-invite">
       <div class="rule" style="margin:12px 0"></div>
-      <div class="row between">
-        <div>
-          <div class="tiny muted">最新生成的邀请链接</div>
-          <div class="code" style="margin-top:3px" id="invite-link"></div>
-        </div>
-        <button class="btn sm" id="copy-btn">复制链接</button>
+      <div class="tiny muted">新生成的邀请链接</div>
+      <div class="row" style="margin-top:6px; gap:8px;">
+        <div class="code flex-1" id="invite-link"></div>
+        <button class="btn sm" id="copy-btn">复制</button>
       </div>
     </div>
+  </div>
+
+  <div class="sect-head" style="margin-top:32px">
+    <h2 class="sect-title">我的邀请码</h2>
+    <button class="btn ghost sm" id="refresh-btn">刷新</button>
+  </div>
+
+  <div id="invites-body">
+    <div class="loading">加载中…</div>
   </div>
 
   <script>
@@ -36,52 +42,148 @@ import Layout from '../layouts/Layout.astro';
 
     let latestLink = '';
 
-    function showLink(code: string) {
-      latestLink = `${window.location.origin}/login?code=${code}`;
-      const resEl = document.getElementById('invite-result');
-      const linkEl = document.getElementById('invite-link');
-      if (resEl && linkEl) {
-        linkEl.textContent = latestLink;
-        resEl.style.display = 'block';
+    function esc(s: string) {
+      return String(s ?? '').replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    }
+
+    function fmtDate(s: string) {
+      const d = new Date(s);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function inviteState(used: string | null, expires: string) {
+      if (used) return { label: '已使用', cls: 'used', canRevoke: false };
+      if (new Date(expires) < new Date()) return { label: '已过期', cls: 'expired', canRevoke: true };
+      return { label: '可用', cls: 'active', canRevoke: true };
+    }
+
+    async function loadInvites() {
+      const el = document.getElementById('invites-body')!;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { el.innerHTML = '<p class="muted">请先登录。</p>'; return; }
+
+        const { data, error } = await supabase
+          .from('invite_codes')
+          .select('code, created_at, expires_at, used_at, note')
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        if (!data || !data.length) {
+          el.innerHTML = '<div class="empty"><span class="big">还没有生成过</span>点上面的按钮生成第一张。</div>';
+          return;
+        }
+
+        el.innerHTML = `
+          <div class="list">
+            ${data.map(inv => {
+              const st = inviteState(inv.used_at, inv.expires_at);
+              const link = `${location.origin}/login?code=${inv.code}`;
+              return `
+                <div class="li">
+                  <div class="li-body">
+                    <div class="li-title" style="font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;gap:8px;">
+                      ${esc(inv.code)}
+                      <span class="tag ${st.cls}">${st.label}</span>
+                    </div>
+                    <div class="li-meta" style="margin-top:6px">
+                      生成于 ${fmtDate(inv.created_at)} · 到期 ${fmtDate(inv.expires_at)}
+                      ${inv.note ? ` · ${esc(inv.note)}` : ''}
+                    </div>
+                  </div>
+                  <div class="row" style="flex:0 0 auto;gap:6px">
+                    ${!inv.used_at && new Date(inv.expires_at) > new Date()
+                      ? `<button class="btn sm" data-act="copy" data-link="${link}">复制链接</button>`
+                      : ''
+                    }
+                    ${st.canRevoke
+                      ? `<button class="btn sm danger" data-act="revoke" data-code="${inv.code}">作废</button>`
+                      : ''
+                    }
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } catch (e: any) {
+        el.innerHTML = `<div class="empty" style="color:var(--danger)">加载失败：${esc(e.message)}</div>`;
       }
     }
 
-    document.getElementById('gen-btn')?.addEventListener('click', async () => {
+    function showNewInvite(code: string) {
+      latestLink = `${location.origin}/login?code=${code}`;
+      const resEl = document.getElementById('invite-result')!;
+      const linkEl = document.getElementById('invite-link')!;
+      linkEl.textContent = latestLink;
+      resEl.style.display = 'block';
+    }
+
+    async function generate() {
       const btn = document.getElementById('gen-btn') as HTMLButtonElement;
       btn.disabled = true;
       btn.innerText = '生成中…';
 
       try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) {
-          toastError('请先登录');
-          window.location.href = '/login';
-          return;
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { toastError('请先登录'); location.href = '/login'; return; }
 
         const { data, error } = await supabase.rpc('create_invite_code');
         if (error) throw error;
         if (typeof data !== 'string' || !data) throw new Error('未返回邀请码');
 
-        showLink(data);
-        toastSuccess('邀请码已生成，7 天内有效');
+        showNewInvite(data);
+        toastSuccess('已生成，7 天内有效');
+        loadInvites();
       } catch (e: any) {
         toastError(e.message || '生成失败');
       } finally {
         btn.disabled = false;
         btn.innerText = '+ 生成';
       }
+    }
+
+    async function revoke(code: string) {
+      if (!confirm(`确定作废 ${code}？作废后该码立即失效。`)) return;
+      try {
+        const { error } = await supabase.from('invite_codes').delete().eq('code', code);
+        if (error) throw error;
+        toastSuccess('已作废');
+        loadInvites();
+      } catch (e: any) {
+        toastError(e.message);
+      }
+    }
+
+    // 事件绑定
+    document.getElementById('gen-btn')?.addEventListener('click', generate);
+    document.getElementById('refresh-btn')?.addEventListener('click', loadInvites);
+
+    document.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+      if (!t) return;
+      if (t.dataset.act === 'copy') {
+        navigator.clipboard.writeText(t.dataset.link || '')
+          .then(() => toastSuccess('链接已复制'))
+          .catch(() => toastError('复制失败'));
+      }
+      if (t.dataset.act === 'revoke') {
+        revoke(t.dataset.code!);
+      }
     });
 
-    // 事件委托，避免重复绑定
-    document.addEventListener('click', (e) => {
-      const t = e.target as HTMLElement;
-      if (t.id !== 'copy-btn' || !latestLink) return;
+    document.getElementById('copy-btn')?.addEventListener('click', () => {
+      if (!latestLink) return;
       navigator.clipboard.writeText(latestLink)
-        .then(() => toastSuccess('邀请链接已复制'))
-        .catch(() => toastError('复制失败，请手动选中'));
+        .then(() => toastSuccess('链接已复制'))
+        .catch(() => toastError('复制失败'));
     });
+
+    loadInvites();
   </script>
+
   <style>
     .code {
       font-family: var(--font-mono);
@@ -92,6 +194,20 @@ import Layout from '../layouts/Layout.astro';
       border-radius: var(--radius-sm);
       color: var(--secondary);
       word-break: break-all;
+    }
+    .flex-1 { flex: 1; }
+    .loading { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    .tag.active { background: var(--elevated); color: var(--primary); border-color: transparent; }
+    .tag.used { opacity: 0.5; }
+    .tag.expired { color: var(--muted); text-decoration: line-through; }
+
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: oklch(0.62 0.20 25 / 0.1); border-color: var(--danger); }
+
+    @media (max-width: 640px) {
+      .li { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .li .row { width: 100%; }
     }
   </style>
 </Layout>

@@ -19,6 +19,7 @@ import Layout from '../layouts/Layout.astro';
       <button class="tab" data-panel="users" role="tab" aria-selected="false">用户</button>
       <button class="tab" data-panel="moments" role="tab" aria-selected="false">动态</button>
       <button class="tab" data-panel="articles" role="tab" aria-selected="false">文章</button>
+      <button class="tab" data-panel="invites" role="tab" aria-selected="false">邀请码</button>
     </div>
 
     <section id="panel-overview" class="panel">
@@ -36,12 +37,17 @@ import Layout from '../layouts/Layout.astro';
     <section id="panel-articles" class="panel" hidden>
       <div id="articles-body"></div>
     </section>
+
+    <section id="panel-invites" class="panel" hidden>
+      <div id="invites-body"></div>
+    </section>
   </div>
 
   <script>
     import {
       checkIsAdmin, getStats, listUsers, setUserRole, purgeUserContent,
       listMoments, deleteMoment, listArticles, deleteArticle,
+      deleteUser, banUser, listInvites, deleteInvite,
     } from '../lib/admin';
     import { toastSuccess, toastError } from '../lib/toast';
 
@@ -77,6 +83,7 @@ import Layout from '../layouts/Layout.astro';
       loadUsers();
       loadMoments();
       loadArticles();
+      loadInvites();
     }
 
     async function loadStats() {
@@ -107,7 +114,10 @@ import Layout from '../layouts/Layout.astro';
               <tbody>
                 ${users.map(u => `
                   <tr data-uid="${u.id}">
-                    <td><b>@${esc(u.username)}</b></td>
+                    <td>
+                      <b>@${esc(u.username)}</b>
+                      ${u.banned_at ? '<span class="tag banned" style="margin-left:6px">已封禁</span>' : ''}
+                    </td>
                     <td class="muted">${esc(u.display_name) || '—'}</td>
                     <td><span class="tag ${u.role === 'admin' ? 'ready' : ''}">${u.role === 'admin' ? '管理员' : '成员'}</span></td>
                     <td class="muted">${fmtDate(u.created_at)}</td>
@@ -115,7 +125,10 @@ import Layout from '../layouts/Layout.astro';
                       <button class="btn sm" data-act="toggle-role" data-uid="${u.id}" data-role="${u.role}">
                         ${u.role === 'admin' ? '降为成员' : '设为管理员'}
                       </button>
-                      <button class="btn sm danger" data-act="purge" data-uid="${u.id}" data-name="${esc(u.username)}">清空内容</button>
+                      <button class="btn sm" data-act="ban" data-uid="${u.id}" data-banned="${u.banned_at ? '1' : '0'}" data-name="${esc(u.username)}">
+                        ${u.banned_at ? '解封' : '封禁'}
+                      </button>
+                      <button class="btn sm danger" data-act="delete-user" data-uid="${u.id}" data-name="${esc(u.username)}">删除账号</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -165,6 +178,46 @@ import Layout from '../layouts/Layout.astro';
                 <div class="li-meta"><b>@${esc(p.username) || '未知'}</b> · ${fmtDate(a.published_at)} ${a.is_public ? '' : '· 未公开'}</div>
               </div>
               <button class="btn sm danger" data-act="del-article" data-aid="${a.id}">删除</button>
+            </div>
+          `;
+        }).join('')}</div>`;
+      } catch (e: any) {
+        el.innerHTML = `<p class="err">加载失败：${esc(e.message)}</p>`;
+      }
+    }
+
+    async function loadInvites() {
+      const el = document.getElementById('invites-body')!;
+      try {
+        const invs = await listInvites();
+        if (!invs.length) { el.innerHTML = '<p class="muted">暂无邀请码。</p>'; return; }
+        el.innerHTML = `<div class="list">${invs.map(inv => {
+          const p = inv.profiles || {} as any;
+          const isUsed = !!inv.used_at;
+          const isExpired = !isUsed && new Date(inv.expires_at) < new Date();
+          const state = isUsed ? '已使用' : isExpired ? '已过期' : '可用';
+          const cls = isUsed ? 'used' : isExpired ? 'expired' : 'active';
+          return `
+            <div class="li">
+              <div class="li-body">
+                <div class="li-title" style="font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;gap:8px;">
+                  ${esc(inv.code)}
+                  <span class="tag ${cls}">${state}</span>
+                </div>
+                <div class="li-meta" style="margin-top:6px">
+                  创建者 @${esc(p.username) || '未知'} · ${fmtDate(inv.created_at)} · 到期 ${fmtDate(inv.expires_at)}
+                </div>
+              </div>
+              <div class="row" style="gap:6px">
+                ${!isUsed && !isExpired
+                  ? `<button class="btn sm" data-act="copy-invite" data-link="${location.origin}/login?code=${inv.code}">复制</button>`
+                  : ''
+                }
+                ${!isUsed
+                  ? `<button class="btn sm danger" data-act="delete-invite" data-code="${inv.code}">作废</button>`
+                  : ''
+                }
+              </div>
             </div>
           `;
         }).join('')}</div>`;
@@ -223,6 +276,53 @@ import Layout from '../layouts/Layout.astro';
           toastError(err.message);
           t.removeAttribute('disabled');
         }
+      }
+
+      if (act === 'ban') {
+        const uid = t.dataset.uid!;
+        const name = t.dataset.name;
+        const isBanned = t.dataset.banned === '1';
+        if (uid === currentUser?.id) { toastError('不能封禁自己'); return; }
+        if (!confirm(`确定${isBanned ? '解封' : '封禁'} @${name}？`)) return;
+        t.setAttribute('disabled', '1');
+        try {
+          await banUser(uid, !isBanned);
+          toastSuccess(isBanned ? '已解封' : '已封禁');
+          loadUsers();
+        } catch (err: any) { toastError(err.message); t.removeAttribute('disabled'); }
+      }
+
+      if (act === 'delete-user') {
+        const uid = t.dataset.uid!;
+        const name = t.dataset.name;
+        if (uid === currentUser?.id) { toastError('不能删除自己'); return; }
+        if (!confirm(`⚠️ 确定永久删除 @${name}？\n\n该账号及其全部动态、文章、留言都会被删除，此操作不可撤销。`)) return;
+        const twice = prompt(`请再次输入用户名 "${name}" 确认删除：`);
+        if (twice !== name) { toastError('用户名不匹配，已取消'); return; }
+        t.setAttribute('disabled', '1');
+        try {
+          await deleteUser(uid);
+          toastSuccess('账号已删除');
+          loadUsers(); loadStats(); loadMoments(); loadArticles();
+        } catch (err: any) { toastError(err.message); t.removeAttribute('disabled'); }
+      }
+
+      if (act === 'copy-invite') {
+        navigator.clipboard.writeText(t.dataset.link || '')
+          .then(() => toastSuccess('链接已复制'))
+          .catch(() => toastError('复制失败'));
+        return;
+      }
+
+      if (act === 'delete-invite') {
+        const code = t.dataset.code!;
+        if (!confirm(`作废邀请码 ${code}？`)) return;
+        t.setAttribute('disabled', '1');
+        try {
+          await deleteInvite(code);
+          toastSuccess('已作废');
+          loadInvites();
+        } catch (err: any) { toastError(err.message); t.removeAttribute('disabled'); }
       }
 
       if (act === 'del-moment') {
@@ -292,6 +392,11 @@ import Layout from '../layouts/Layout.astro';
     .li-excerpt { font-size: 13px; color: var(--secondary); line-height: 1.7; margin: 4px 0 0; overflow-wrap: anywhere; }
     .li-meta { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); }
     .li-meta b { color: var(--primary); font-weight: 600; }
+
+    .tag.banned { background: oklch(0.62 0.20 25 / 0.12); color: var(--danger); border-color: transparent; }
+    .tag.active { background: var(--elevated); color: var(--primary); border-color: transparent; }
+    .tag.used { opacity: 0.5; }
+    .tag.expired { color: var(--muted); text-decoration: line-through; }
 
     @media (max-width: 760px) {
       .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }

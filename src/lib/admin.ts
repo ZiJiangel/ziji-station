@@ -7,6 +7,7 @@ export interface AdminUser {
   bio: string | null;
   avatar_url: string | null;
   role: 'member' | 'admin';
+  banned_at: string | null;
   created_at: string;
 }
 
@@ -119,6 +120,43 @@ export async function listArticles(limit = 100): Promise<AdminArticle[]> {
     .limit(limit);
   if (error) throw error;
   return (data ?? []) as unknown as AdminArticle[];
+}
+
+
+// ===== v2 新增 =====
+
+export async function deleteUser(uid: string) {
+  const { error } = await supabase.rpc('admin_delete_user', { target_uid: uid });
+  if (error) throw error;
+}
+
+export async function banUser(uid: string, ban: boolean) {
+  const { error } = await supabase.rpc('admin_ban_user', { target_uid: uid, ban });
+  if (error) throw error;
+}
+
+export interface AdminInvite {
+  code: string;
+  created_by: string;
+  created_at: string;
+  expires_at: string;
+  used_at: string | null;
+  note: string | null;
+  profiles: { username: string; display_name: string | null } | null;
+}
+
+export async function listInvites(): Promise<AdminInvite[]> {
+  const { data, error } = await supabase
+    .from('invite_codes')
+    .select('code, created_by, created_at, expires_at, used_at, note, profiles(username, display_name)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as AdminInvite[];
+}
+
+export async function deleteInvite(code: string) {
+  const { error } = await supabase.from('invite_codes').delete().eq('code', code);
+  if (error) throw error;
 }
 
 export async function deleteArticle(id: string) {
