@@ -3,6 +3,20 @@ import type { PageData } from './blocks';
 
 const emailOf = (username: string) => `${username}@ziji.local`;
 
+/** 检查当前用户是否被封禁，被则抛错 */
+export async function assertNotBanned(uid?: string) {
+  const target = uid || (await supabase.auth.getUser()).data.user?.id;
+  if (!target) return;
+  const { data } = await supabase
+    .from('profiles')
+    .select('banned_at')
+    .eq('id', target)
+    .maybeSingle();
+  if (data?.banned_at) {
+    throw new Error('账号已被封禁，请联系站长');
+  }
+}
+
 /** 登录：仅做密码登录，不需要邀请码 */
 export async function login(username: string, password: string) {
   if (!password) throw new Error('密码不能为空');
@@ -11,12 +25,23 @@ export async function login(username: string, password: string) {
   const user = data.user;
   if (!user) throw new Error('无法获取用户信息');
 
+  // 封禁检查：登录成功但账号被封，立即登出
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, banned_at')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.banned_at) {
+    await supabase.auth.signOut();
+    throw new Error('账号已被封禁，请联系站长');
+  }
+
   localStorage.setItem('ziji_uid', user.id);
   localStorage.setItem('ziji_user', username);
 
   // 兜底：老用户若无 profiles 记录则补建
-  const { data: existingProfile } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
-  if (!existingProfile) {
+  if (!profile) {
     await supabase.from('profiles').insert({ id: user.id, username });
   }
   return { id: user.id, username };
@@ -82,6 +107,7 @@ export async function getMyPage(uid: string): Promise<PageData | null> {
 
 /** 保存草稿 */
 export async function saveDraft(uid: string, data: PageData) {
+  await assertNotBanned();
   const { error } = await supabase
     .from('pages')
     .upsert({ user_id: uid, draft_data: data }, { onConflict: 'user_id' });
@@ -90,6 +116,7 @@ export async function saveDraft(uid: string, data: PageData) {
 
 /** 发布（草稿 → 已发布） */
 export async function publishPage(uid: string, data: PageData) {
+  await assertNotBanned();
   const { error } = await supabase
     .from('pages')
     .upsert({ user_id: uid, draft_data: data, published_data: data, is_public: true }, { onConflict: 'user_id' });
@@ -119,12 +146,14 @@ export async function getPublicPage(username: string) {
 
 /** 发碎碎念 */
 export async function createMoment(uid: string, content: string, images: string[] = []) {
+  await assertNotBanned();
   const { error } = await supabase.from('moments').insert({ user_id: uid, content, images });
   if (error) throw error;
 }
 
 /** 发文章 */
 export async function createArticle(uid: string, title: string, content: string, summary?: string, coverUrl?: string) {
+  await assertNotBanned();
   const { error } = await supabase.from('articles').insert({
     user_id: uid,
     title,
@@ -172,6 +201,7 @@ export async function getMyArticles(uid: string) {
 
 /** 删除自己的文章 */
 export async function deleteArticle(id: string) {
+  await assertNotBanned();
   const { error } = await supabase.from('articles').delete().eq('id', id);
   if (error) throw error;
 }
@@ -214,6 +244,7 @@ export async function getComments(targetId: string) {
 
 /** 创建游戏房间 */
 export async function createGameRoom(hostId: string, gameType: string) {
+  await assertNotBanned();
   const { data, error } = await supabase
     .from('game_rooms')
     .insert({ host_id: hostId, game_type: gameType, status: 'waiting' })
@@ -247,6 +278,7 @@ export async function getGameRoom(id: string) {
 
 /** 发表留言 */
 export async function createComment(uid: string, targetId: string, content: string) {
+  await assertNotBanned();
   const { error } = await supabase.from('comments').insert({
     user_id: uid,
     target_type: 'article',
