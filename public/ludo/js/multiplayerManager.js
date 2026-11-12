@@ -374,8 +374,8 @@ class MultiplayerManager {
                 // 立即进入房间面板，提供即时反馈
                 this.showRoomConfigWithLoading();
 
-                // 异步创建房间 (使用 HTTP 新版逻辑)
-                this.createRoom().finally(() => {
+                // 异步创建房间
+                this.createRoomAsync().finally(() => {
                     // 2秒后重新启用按钮
                     setTimeout(() => {
                         targetElement.disabled = false;
@@ -869,16 +869,12 @@ class MultiplayerManager {
     }
 
     // WebSocket连接
-    async connectToServer(customUrl) {
-        if (this.wsClient && this.wsClient.isConnected && !customUrl) {
+    async connectToServer() {
+        if (this.wsClient && this.wsClient.isConnected) {
             return true;
         }
 
         try {
-            // 如果是重新连接，先断开旧的
-            if (this.wsClient && customUrl) {
-                this.wsClient.disconnect();
-            }
             // 动态导入WebSocketClient
             const { WebSocketClient } = await import('./websocketClient.js');
             this.wsClient = new WebSocketClient();
@@ -957,8 +953,10 @@ class MultiplayerManager {
                     }
                 };
 
-                // 连接到服务器 - 默认指向 Worker，如果指定了 customUrl 则用指定的
-                const wsUrl = customUrl || 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
+                // 连接到服务器 - 支持环境变量配置
+                const wsUrl = window.location.protocol === 'https:'
+                    ? `wss://${window.location.host}/ws`
+                    : `ws://${window.location.host.replace(/:\d+/, ':3001')}`;
                 this.wsClient.connect(wsUrl);
             });
         } catch (error) {
@@ -2486,42 +2484,31 @@ class MultiplayerManager {
     async createRoom() {
         console.log('开始创建房间...');
         try {
-            // 获取昵称
+            const connected = await this.connectToServer();
+            if (!connected) {
+                return;
+            }
+
+            // 获取保存的昵称或使用输入框中的昵称
             let nickname = '';
             if (window.playerIdManager) {
                 nickname = window.playerIdManager.getSavedNickname() || '';
             }
+
+            // 如果没有保存的昵称，从输入框获取
             if (!nickname) {
                 const nicknameInput = document.getElementById('multiplayerPlayerUsername');
                 nickname = nicknameInput ? nicknameInput.value.trim() : '';
             }
 
-            // 确保 wsClient 初始化，以获取正确的 playerId
-            if (!this.wsClient) {
-                const { WebSocketClient } = await import('./websocketClient.js');
-                this.wsClient = new WebSocketClient();
-            }
-            const pid = this.wsClient.playerId;
-
-            // 请求 Worker 分配房间号
-            const wsBase = `wss://ludo-ws.zqr2907629253.workers.dev/ws`;
-            const httpBase = wsBase.replace(/^ws/, 'http').replace(/\/ws$/, '');
-            
-            const res = await fetch(`${httpBase}/api/createRoom`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: pid, nickname })
+            // 使用WebSocketClient的createRoom方法
+            this.wsClient.createRoom({
+                maxPlayers: 4,
+                gameMode: 'multiplayer',
+                nickname: nickname, // 使用保存的昵称，如果为空，服务器会生成默认昵称
+                emoji: this.selectedEmoji
             });
-            const data = await res.json();
-            if (!data.roomCode) throw new Error(data.error || '创建房间失败');
 
-            // 连接专属房间的 WS
-            const connected = await this.connectToServer(`${wsBase}?room=${data.roomCode}`);
-            if (!connected) return;
-
-            // 告诉服务器我是谁，并获取房间状态
-            this.wsClient.sendMessage('identify', { playerId: pid, nickname, color: 1 });
-            
         } catch (error) {
             console.error('创建房间失败:', error);
             this.showError('创建房间失败，请重试');
@@ -2592,6 +2579,15 @@ class MultiplayerManager {
         // 清除之前的错误信息
         this.hideJoinRoomError();
 
+        const connected = await this.connectToServer();
+        if (!connected) {
+            this.showJoinRoomError('连接服务器失败');
+            // 连接失败时也清空输入框
+            this.clearRoomCodeInputs();
+            this.focusFirstInput();
+            return;
+        }
+
         try {
             const emoji = this.selectedEmoji || 'smile';
 
@@ -2600,46 +2596,29 @@ class MultiplayerManager {
             if (window.playerIdManager) {
                 nickname = window.playerIdManager.getSavedNickname() || '';
             }
+
+            // 如果没有保存的昵称，从输入框获取
             if (!nickname) {
                 const nicknameInput = document.getElementById('multiplayerPlayerUsername');
                 nickname = nicknameInput ? nicknameInput.value.trim() : '';
             }
+
+            // 将最终使用的昵称保存到本地存储，确保同一浏览器下跨局/重连昵称一致
             if (window.playerIdManager) {
                 window.playerIdManager.saveNickname(nickname);
             }
 
-            // 1. 先请求 HTTP 接口加入房间
-            const wsBase = `wss://ludo-ws.zqr2907629253.workers.dev/ws`;
-            const httpBase = wsBase.replace(/^ws/, 'http').replace(/\/ws$/, '');
-            
-            // 生成或者获取 playerId
-            if (!this.wsClient) {
-                const { WebSocketClient } = await import('./websocketClient.js');
-                this.wsClient = new WebSocketClient();
-            }
-            const pid = this.wsClient.playerId || 'p_' + Math.random().toString(36).slice(2);
+            console.log('发送加入房间请求:', { roomCode, emoji, nickname });
 
-            const res = await fetch(`${httpBase}/api/joinRoom`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: pid, nickname, roomCode })
-            });
-            const data = await res.json();
-            if (data.error) {
-                this.showJoinRoomError(data.error);
-                return;
-            }
-
-            // 2. 连接专属 WS
-            const connected = await this.connectToServer(`${wsBase}?room=${roomCode}`);
-            if (!connected) {
-                this.showJoinRoomError('连接服务器失败');
-                return;
-            }
-
-            // 3. 发送身份确认
-            this.wsClient.sendMessage('identify', { playerId: pid, nickname });
+            // 保存房间号到重连管理器
             reconnectManager.updateRoomCode(roomCode);
+
+            // 发送加入房间请求，等待服务器响应
+            this.wsClient.sendMessage('join_room', {
+                roomCode,
+                nickname,
+                emoji
+            });
 
         } catch (error) {
             console.error('加入房间失败:', error);
