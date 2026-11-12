@@ -23,21 +23,7 @@ export class WebSocketClient {
         // 服务器地址配置 - 根据当前环境动态设置
         // 如果是https，使用wss；如果是http，使用ws
         // 生产环境使用 /ws 路径，开发环境使用 :3001 端口
-        if (typeof window !== 'undefined' && window.location) {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-
-            // 如果是localhost或包含端口号，说明是开发环境，使用3001端口
-            if (host.includes('localhost') || host.includes('127.0.0.1')) {
-                this.serverUrl = `${protocol}//${host.replace(/:\d+/, ':3001')}`;
-            } else {
-                // 生产环境，使用 /ws 路径
-                this.serverUrl = `${protocol}//${host}/ws`;
-            }
-        } else {
-            // fallback
-            this.serverUrl = 'ws://localhost:3001';
-        }
+        this.serverUrl = 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
 
         // 绑定方法上下文
         this.onOpen = this.onOpen.bind(this);

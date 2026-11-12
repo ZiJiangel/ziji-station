@@ -635,7 +635,9 @@ class MultiplayerGameManager {
                     }
                 }
 
-                const socket = new WebSocket(serverUrl);
+                // 如果外部传入了 serverUrl 使用外部的，否则默认连 Worker
+                const finalUrl = serverUrl || 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
+                const socket = new WebSocket(finalUrl);
                 this.wsClient = socket;
 
                 socket.onopen = () => {
