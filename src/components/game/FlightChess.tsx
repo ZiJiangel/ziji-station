@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { toastError } from '../../lib/toast';
 
-// 预设二次元主题（带发光阴影）
 const SKINS = [
   { id: 'miku', name: '初音', color: '#39C5BB', glow: 'rgba(57,197,187,0.8)', icon: 'M' },
   { id: 'rem',  name: '雷姆', color: '#5BA4CF', glow: 'rgba(91,164,207,0.8)', icon: 'R' },
@@ -11,55 +10,46 @@ const SKINS = [
   { id: 'saber', name: 'Saber', color: '#F2C94C', glow: 'rgba(242,201,76,0.8)', icon: 'S' },
 ];
 
-// ── 绝对精确的 15x15 飞行棋坐标系 ──
+// 15x15 标准轨道坐标转 SVG 坐标映射
+// 原项目 viewBox="-95,-95,190,190"，中心为0，格点间隔 12，即 (x - 7) * 12
+const toSVG = (x: number, y: number) => ({
+  x: (x - 7) * 12,
+  y: (y - 7) * 12
+});
 
-// 52格外圈轨道 (顺时针)
 const TRACK: [number, number][] = [
-  // 左臂上侧 (向右)
   [1,6],[2,6],[3,6],[4,6],[5,6],
-  // 上臂左侧 (向上)
   [6,5],[6,4],[6,3],[6,2],[6,1],
-  // 顶边 (向右)
   [6,0],[7,0],[8,0],
-  // 上臂右侧 (向下)
   [8,1],[8,2],[8,3],[8,4],[8,5],
-  // 右臂上侧 (向右)
   [9,6],[10,6],[11,6],[12,6],[13,6],
-  // 右边 (向下)
   [14,6],[14,7],[14,8],
-  // 右臂下侧 (向左)
   [13,8],[12,8],[11,8],[10,8],[9,8],
-  // 下臂右侧 (向下)
   [8,9],[8,10],[8,11],[8,12],[8,13],
-  // 底边 (向左)
   [8,14],[7,14],[6,14],
-  // 下臂左侧 (向上)
   [6,13],[6,12],[6,11],[6,10],[6,9],
-  // 左臂下侧 (向左)
   [5,8],[4,8],[3,8],[2,8],[1,8],
-  // 左边 (向上)
   [0,8],[0,7],[0,6]
 ];
 const TRACK_LEN = 52;
 const FINISH_POS = 58;
 
-// 四色起飞点索引 (红右下, 绿左下, 黄左上, 蓝右上)
+// 0:红 右下, 1:绿 左下, 2:黄 左上, 3:蓝 右上
 const STARTS = [35, 48, 9, 26];
+const PLAYER_CLASSES = ['player-1', 'player-2', 'player-3', 'player-4'];
 
-// 四色终点通道坐标
 const HOME_RUNS = [
-  [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]], // 0:红 右下
-  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],     // 1:绿 左下
-  [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],     // 2:黄 左上
-  [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]  // 3:蓝 右上
+  [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],
+  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+  [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
+  [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
 ];
 
-// 营地内的四个棋子初始坐标
 const YARDS_POS = [
-  [[10,10],[13,10],[10,13],[13,13]], // 0:红 右下
-  [[1,10],[4,10],[1,13],[4,13]],     // 1:绿 左下
-  [[1,1],[4,1],[1,4],[4,4]],         // 2:黄 左上
-  [[10,1],[13,1],[10,4],[13,4]]      // 3:蓝 右上
+  [[10,10],[13,10],[10,13],[13,13]],
+  [[1,10],[4,10],[1,13],[4,13]],
+  [[1,1],[4,1],[1,4],[4,4]],
+  [[10,1],[13,1],[10,4],[13,4]]
 ];
 
 export default function FlightChess({ roomId, initialRoom }: { roomId: string, initialRoom: any }) {
@@ -91,32 +81,30 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     return () => { supabase.removeChannel(channel); };
   }, [roomId]);
 
-  // 计算棋子的绝对网格坐标
-  const getPieceCoords = (pos: number, playerIdx: number, pieceIdx: number, allPieces: any[]) => {
-    let [x, y] = [0, 0];
+  const getPiecePos = (pos: number, playerIdx: number, pieceIdx: number, allPieces: any[]) => {
+    let x = 0, y = 0;
     
     if (pos === 0) {
-      // 在营地，使用预设的 4 个点
       [x, y] = YARDS_POS[playerIdx][pieceIdx];
     } else if (pos > TRACK_LEN) {
-      // 在终点通道
       const homeIdx = pos - TRACK_LEN - 1;
       [x, y] = HOME_RUNS[playerIdx][homeIdx];
     } else {
-      // 在外圈轨道
       const idx = (STARTS[playerIdx] + pos - 1) % TRACK_LEN;
       [x, y] = TRACK[idx];
     }
 
-    // 同格重叠时，稍微错开一点距离，避免完全盖住
+    const svgPt = toSVG(x, y);
+
+    // 同格重叠错位处理
     if (pos > 0 && pos <= TRACK_LEN) {
       const samePosCount = allPieces.filter(p => p.pos === pos).length;
       if (samePosCount > 1) {
-        x += (pieceIdx % 2) * 0.3 - 0.15;
-        y += Math.floor(pieceIdx / 2) * 0.3 - 0.15;
+        svgPt.x += (pieceIdx % 2) * 3 - 1.5;
+        svgPt.y += Math.floor(pieceIdx / 2) * 3 - 1.5;
       }
     }
-    return { x, y };
+    return svgPt;
   };
 
   const joinRoom = async (skin: any) => {
@@ -177,78 +165,7 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
     }
   };
 
-  // 绘制底层格子
-  const renderCell = (x: number, y: number) => {
-    const isTrack = TRACK.some(([tx,ty]) => tx===x && ty===y);
-    const isHomeRun = HOME_RUNS.some(run => run.some(([hx,hy]) => hx===x && hy===y));
-    const isCenter = x >= 6 && x <= 8 && y >= 6 && y <= 8;
-
-    if (isCenter) {
-      // 中心终点区
-      return (
-        <div key={`c-${x}-${y}`} style={{
-          gridColumn: x+1, gridRow: y+1,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div style={{ width: '50%', height: '50%', borderRadius: '50%', background: 'var(--primary)', opacity: 0.1 }} />
-        </div>
-      );
-    }
-
-    if (isTrack || isHomeRun) {
-      let bg = 'var(--bg-elevated)';
-      let border = 'var(--border)';
-      
-      if (isHomeRun) {
-        const owner = HOME_RUNS.findIndex(run => run.some(([hx,hy]) => hx===x && hy===y));
-        bg = `${SKINS[owner].color}30`;
-        border = `${SKINS[owner].color}80`;
-      }
-
-      return (
-        <div key={`c-${x}-${y}`} style={{
-          gridColumn: x+1, gridRow: y+1,
-          background: bg,
-          border: `1px solid ${border}`,
-          borderRadius: 3,
-          margin: 1,
-          boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.05)',
-          // 轨道内的中心小圆点
-          backgroundImage: isTrack ? 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 15%, transparent 20%)' : 'none'
-        }} />
-      );
-    }
-
-    return <div key={`c-${x}-${y}`} style={{ gridColumn: x+1, gridRow: y+1 }} />;
-  };
-
-  const renderBoard = () => {
-    const grid = [];
-    for (let y = 0; y < 15; y++) {
-      for (let x = 0; x < 15; x++) {
-        grid.push(renderCell(x, y));
-      }
-    }
-
-    // 营地背景框
-    const yards = [
-      { x: 9, y: 9, color: SKINS[0].color }, // 红 右下
-      { x: 0, y: 9, color: SKINS[1].color }, // 绿 左下
-      { x: 0, y: 0, color: SKINS[2].color }, // 黄 左上
-      { x: 9, y: 0, color: SKINS[3].color }  // 蓝 右上
-    ].map((bg, i) => (
-      <div key={`bg-${i}`} style={{
-        gridColumn: `${bg.x + 1} / span 6`, gridRow: `${bg.y + 1} / span 6`,
-        background: `${bg.color}15`,
-        border: `2px solid ${bg.color}40`,
-        borderRadius: 16,
-        margin: 4,
-        zIndex: 0
-      }} />
-    ));
-
+  const renderSVGBoard = () => {
     const allPieces: any[] = [];
     players.forEach((p: any, pIdx: number) => {
       p.pieces.forEach((pos: number, pcIdx: number) => {
@@ -256,67 +173,106 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
       });
     });
 
-    const pieceEls = allPieces.map((item) => {
-      const { x, y } = getPieceCoords(item.pos, item.playerIdx, item.pieceIdx, allPieces);
-      const isSelectable = state.phase === 'awaiting_move' && myPlayerIdx === state.turnIndex;
-      
-      return (
-        <motion.div
-          key={`p-${item.playerIdx}-${item.pieceIdx}`}
-          layout
-          initial={{ scale: 0 }}
-          animate={{ scale: 1, left: `${(x / 15) * 100}%`, top: `${(y / 15) * 100}%` }}
-          transition={{ type: 'spring', stiffness: 250, damping: 20 }}
-          onClick={() => { if (isSelectable) handleMove(item.pieceIdx); }}
-          style={{
-            position: 'absolute', width: '6.66%', height: '6.66%',
-            zIndex: 10 + item.pieceIdx,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}
-        >
-          <motion.div
-            whileHover={isSelectable ? { scale: 1.3, zIndex: 30 } : {}}
-            style={{
-              width: '75%', height: '75%',
-              background: `radial-gradient(circle at 30% 30%, ${item.player.color}, ${item.player.color}80)`,
-              borderRadius: '50%',
-              boxShadow: `0 0 12px ${item.player.glow}, inset 0 -2px 4px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.5)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 12, fontWeight: 800,
-              cursor: isSelectable ? 'pointer' : 'default',
-              border: item.pos === FINISH_POS ? '2px solid #fff' : '1px solid rgba(255,255,255,0.3)',
-              textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-            }}
-          >
-            {item.player.icon}
-          </motion.div>
-        </motion.div>
-      );
-    });
-
     return (
-      <div style={{
-        width: '100%', maxWidth: 600, aspectRatio: 1,
-        background: 'var(--surface)', 
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)', padding: 12,
-        position: 'relative',
-        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) inset'
-      }}>
-        <div style={{
-          display: 'grid', gridTemplateColumns: `repeat(15, 1fr)`, gridTemplateRows: `repeat(15, 1fr)`,
-          width: '100%', height: '100%', position: 'relative'
-        }}>
-          {yards}
-          {grid}
-        </div>
-        {pieceEls}
-      </div>
+      <svg viewBox="-95,-95,190,190" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', maxHeight: '80vh' }}>
+        <defs>
+          <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
+            <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <rect id="vr" rx="2" ry="2" x="-5.5" y="-7.5" width="11" height="15" stroke-width="0.8" fill="currentColor" />
+          <rect id="hr" rx="2" ry="2" x="-7.5" y="-5.5" width="15" height="11" stroke-width="0.8" fill="currentColor" />
+          <rect id="vr2" rx="2" ry="2" x="-5" y="-5.5" width="10" height="11" stroke-width="0.8" fill="currentColor" />
+          <rect id="hr2" rx="2" ry="2" x="-5.5" y="-5" width="11" height="10" stroke-width="0.8" fill="currentColor" />
+          <path id="t1" d="M6.16 6.45A0.5 0.5 0 0 1 5.81 7.3H-5.5A2 2 0 0 1 -7.5 5.3V-5.81A0.5 0.5 0 0 1 -6.65 -6.16Z" stroke-width="0.8" fill="currentColor" />
+          <path id="t2" d="M-6.16 6.45A0.5 0.5 0 0 0 -5.81 7.3H5.5A2 2 0 0 0 7.5 5.3V-5.81A0.5 0.5 0 0 0 6.65 -6.16Z" stroke-width="0.8" fill="currentColor" />
+          <path id="t3" d="M6.16 -6.45A0.5 0.5 0 0 0 5.81 -7.3H-5.5A2 2 0 0 0 -7.5 -5.3V5.81A0.5 0.5 0 0 0 -6.65 6.16Z" stroke-width="0.8" fill="currentColor" />
+          <path id="t4" d="M-6.16 -6.45A0.5 0.5 0 0 1 -5.81 -7.3H5.5A2 2 0 0 1 7.5 -5.3V5.81A0.5 0.5 0 0 1 6.65 6.16Z" stroke-width="0.8" fill="currentColor" />
+          <path id="end" d="M0,0L-10,10Q-8,10 -6,10H6Q8,10 10,10L0,0Z" stroke-width="0.6" fill="currentColor" stroke-linejoin="round" stroke-linecap="round" />
+          <g id="start">
+            <rect width="28" height="28" x="-14" y="-14" rx="2" ry="2" stroke-width="0.6" fill="none" />
+            <circle r="4.8" cx="5.8" cy="5.8" stroke-width="0.6" fill="none" />
+            <circle r="4.8" cx="-5.8" cy="5.8" stroke-width="0.6" fill="none" />
+            <circle r="4.8" cx="5.8" cy="-5.8" stroke-width="0.6" fill="none" />
+            <circle r="4.8" cx="-5.8" cy="-5.8" stroke-width="0.6" fill="none" />
+          </g>
+          <g id="chess" transform="scale(0.34)">
+            <circle cx="16.5" cy="16.5" r="14" fill="none" stroke="currentColor" stroke-width="3" />
+            <circle cx="16.5" cy="16.5" r="13" fill="currentColor" class="chess-fill" />
+            <path class="chess-airplane" d="M599.06048 831.309824l12.106752-193.404928 372.860928 184.430592L984.02816 710.206464 617.906176 367.33952 617.906176 151.638016c0-56.974336-46.188544-143.064064-103.158784-143.064064-56.974336 0-103.158784 86.089728-103.158784 143.064064L411.588608 367.33952 45.461504 710.206464l0 112.129024 366.660608-184.430592 14.999552 209.27488c0 5.05344 0.594944 9.892864 1.124352 14.749696l-66.591744 60.348416 0 66.587648 153.986048-50.879488 2.43712-0.80896 147.439616 51.688448 0-66.587648-68.758528-62.253056L599.06048 831.309824z" fill="white" transform="translate(16.5, 16.5) rotate(90) scale(0.018) translate(-512, -512)" />
+          </g>
+        </defs>
+
+        {/* 渲染起飞区 */}
+        {[
+          { x: -68, y: 72, p: 0 }, // 红右下
+          { x: 72, y: -68, p: 1 }, // 绿左下
+          { x: -72, y: -68, p: 2 }, // 黄左上
+          { x: 68, y: 68, p: 3 }   // 蓝右上
+        ].map(s => (
+          <use key={`start-${s.p}`} href="#start" x={s.x} y={s.y} className={PLAYER_CLASSES[s.p]} />
+        ))}
+
+        {/* 渲染外圈 52 格 */}
+        {TRACK.map((pos, idx) => {
+          const { x, y } = toSVG(pos[0], pos[1]);
+          const isV = (y === -80 || y === 80);
+          const href = isV ? '#vr' : '#hr';
+          return <use key={`track-${idx}`} href={href} x={x} y={y} className="track-tile" data-cpos={idx} />;
+        })}
+
+        {/* 渲染终点通道 */}
+        {HOME_RUNS.map((run, pIdx) => 
+          run.map((pos, idx) => {
+            const { x, y } = toSVG(pos[0], pos[1]);
+            const isV = (x === 0);
+            const href = isV ? '#vr2' : '#hr2';
+            return <use key={`home-${pIdx}-${idx}`} href={href} x={x} y={y} className={PLAYER_CLASSES[pIdx]} />;
+          })
+        )}
+
+        {/* 渲染终点三角形 */}
+        {[
+          { rot: 0, p: 0 }, { rot: 90, p: 1 }, { rot: 180, p: 2 }, { rot: 270, p: 3 }
+        ].map(tri => (
+          <use key={`end-${tri.p}`} href="#end" x="0" y="-2" className={PLAYER_CLASSES[tri.p]} transform={`rotate(${tri.rot},0,0) translate(0,3)`} />
+        ))}
+
+        {/* 渲染棋子 */}
+        {allPieces.map(item => {
+          const { x, y } = getPiecePos(item.pos, item.playerIdx, item.pieceIdx, allPieces);
+          const isSelectable = state.phase === 'awaiting_move' && myPlayerIdx === state.turnIndex;
+          return (
+            <motion.g
+              key={`piece-${item.playerIdx}-${item.pieceIdx}`}
+              initial={false}
+              animate={{ x, y }}
+              transition={{ type: 'spring', stiffness: 250, damping: 20 }}
+              onClick={() => { if (isSelectable) handleMove(item.pieceIdx); }}
+              style={{ cursor: isSelectable ? 'pointer' : 'default', zIndex: 10 + item.pieceIdx }}
+            >
+              <use href="#chess" className={PLAYER_CLASSES[item.playerIdx]} filter="url(#neonGlow)" />
+            </motion.g>
+          );
+        })}
+      </svg>
     );
   };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* 全局 SVG 样式注入 */}
+      <style>{`
+        .player-1 { color: #E74C3C; }
+        .player-2 { color: #2ECC71; }
+        .player-3 { color: #F1C40F; }
+        .player-4 { color: #3498DB; }
+        .track-tile { opacity: 0.3; }
+        .chess-fill { fill: currentColor; }
+        .chess-airplane { fill: #fff; }
+        g[onclick]:hover { filter: brightness(1.2); }
+      `}</style>
+      
       <main style={{ flex: 1, padding: '24px 32px', display: 'flex', flexDirection: 'column' }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
           <a href="/arcade" className="btn sm" style={{ textDecoration: 'none' }}>← 返回大厅</a>
@@ -327,7 +283,7 @@ export default function FlightChess({ roomId, initialRoom }: { roomId: string, i
         </header>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {renderBoard()}
+          {renderSVGBoard()}
         </div>
 
         <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
