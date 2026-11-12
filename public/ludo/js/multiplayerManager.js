@@ -957,10 +957,8 @@ class MultiplayerManager {
                     }
                 };
 
-                // 连接到服务器 - 支持环境变量配置
-                const wsUrl = customUrl || (window.location.protocol === 'https:'
-                    ? `wss://${window.location.host}/ws`
-                    : `ws://${window.location.host.replace(/:\d+/, ':3001')}`);
+                // 连接到服务器 - 默认指向 Worker，如果指定了 customUrl 则用指定的
+                const wsUrl = customUrl || 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
                 this.wsClient.connect(wsUrl);
             });
         } catch (error) {
