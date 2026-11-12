@@ -11,9 +11,22 @@ if (!existsSync(P)) {
 }
 
 const cfg = JSON.parse(readFileSync(P, 'utf8'));
+
+// 0. 修复 Windows 下的路径分隔符污染
+cfg.exclude = cfg.exclude.map(r => r.replace(/\\/g, '/'));
+
 const before = cfg.exclude.length;
 
-// 只给目录型路由补斜杠；带扩展名的是文件，不能加
+// 1. 压缩 /ludo/ 下的冗余静态规则，避免超出 100 条上限
+const ludoRules = cfg.exclude.filter(r => r === '/ludo' || r.startsWith('/ludo/'));
+if (ludoRules.length > 0) {
+  // 移除所有 ludo 相关的具体规则
+  cfg.exclude = cfg.exclude.filter(r => r !== '/ludo' && !r.startsWith('/ludo/'));
+  // 合并为一条通配符规则
+  cfg.exclude.push('/ludo/*');
+}
+
+// 2. 只给目录型路由补斜杠；带扩展名的是文件，不能加
 const extra = [];
 for (const r of cfg.exclude) {
   if (r === '/') continue;
@@ -27,4 +40,4 @@ for (const r of cfg.exclude) {
 cfg.exclude = [...new Set([...cfg.exclude, ...extra])];
 writeFileSync(P, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
 
-console.log(`[fix-routes] exclude ${before} → ${cfg.exclude.length} 条`);
+console.log(`[fix-routes] exclude ${before} → ${cfg.exclude.length} 条 (ludo合并了 ${ludoRules.length} 条)`);
