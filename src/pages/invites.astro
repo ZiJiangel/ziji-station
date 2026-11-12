@@ -39,6 +39,7 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import { supabase } from '../lib/supabase';
     import { toastSuccess, toastError } from '../lib/toast';
+    import { confirmDialog } from '../lib/dialog';
 
     let latestLink = '';
 
@@ -153,7 +154,13 @@ import Layout from '../layouts/Layout.astro';
     }
 
     async function revoke(code: string) {
-      if (!confirm(`确定作废 ${code}？作废后该码立即失效。`)) return;
+      const ok = await confirmDialog({
+        title: '作废邀请码',
+        message: `确定作废 <b>${esc(code)}</b> 吗？<br>作废后该码立即失效，不可恢复。`,
+        confirmText: '作废',
+        danger: true
+      });
+      if (!ok) return;
       try {
         const { error } = await supabase.from('invite_codes').delete().eq('code', code);
         if (error) throw error;

@@ -93,7 +93,14 @@ import Layout from '../layouts/Layout.astro';
         list.querySelectorAll('.t-del').forEach(btn => {
           btn.addEventListener('click', async (e) => {
             const id = (e.currentTarget as HTMLElement).dataset.id!;
-            if (!confirm('删除后不可恢复，确定删除？')) return;
+            const { confirmDialog } = await import('../lib/dialog');
+            const okDel = await confirmDialog({
+              title: '删除文章',
+              message: '删除后不可恢复，确定删除？',
+              confirmText: '删除',
+              danger: true
+            });
+            if (!okDel) return;
             try {
               await deleteArticle(id);
               toastSuccess('已删除');

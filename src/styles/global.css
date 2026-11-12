@@ -60,3 +60,29 @@ html.theme-transitioning *::after {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── 通用弹窗 ── */
+.zj-dialog-mask {
+  position: fixed; inset: 0; z-index: 9999;
+  background: oklch(0 0 0 / 0.4);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; transition: opacity var(--dur-base) var(--ease-out);
+}
+.zj-dialog-mask.open { opacity: 1; }
+.zj-dialog {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 24px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 20px 60px oklch(0 0 0 / 0.2);
+  transform: scale(0.95) translateY(10px); transition: all var(--dur-base) var(--ease-spring);
+}
+.zj-dialog-mask.open .zj-dialog { transform: none; }
+.zj-dialog-title { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 12px; }
+.zj-dialog-body { font-size: 14px; color: var(--secondary); line-height: 1.6; margin-bottom: 24px; overflow-wrap: anywhere; }
+.zj-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.zj-dialog .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; }
+.zj-dialog .btn.primary { background: var(--primary); color: var(--bg); border-color: var(--primary); }
+.zj-dialog .btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.zj-dialog .btn.danger:hover { opacity: 0.9; }
