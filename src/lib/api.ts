@@ -256,10 +256,15 @@ export async function createGameRoom(hostId: string, gameType: string) {
 
 /** 获取大厅中正在进行的房间列表 */
 export async function getActiveGameRooms() {
+  // 幽灵房间清理：超过 24 小时仍在 waiting 的房间视为失效。
+  // （无心跳机制时的权宜之计——房主关页面后房间会一直挂着）
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
   const { data, error } = await supabase
     .from('game_rooms')
     .select('*, profiles(username, display_name, avatar_url)')
     .in('status', ['waiting', 'playing'])
+    .or(`status.eq.playing,created_at.gte.${cutoff}`)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];

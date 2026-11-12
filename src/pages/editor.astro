@@ -2,6 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import EditorApp from '../components/EditorApp';
 ---
-<Layout title="工作室" hideNav={true}>
+<Layout title="工作室" hideNav={true} noindex={true}>
   <EditorApp client:only="react" />
 </Layout>

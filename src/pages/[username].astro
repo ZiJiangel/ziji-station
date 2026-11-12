@@ -46,7 +46,13 @@ const avatar = profile.avatar_url;
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
 ---
 
-<Layout title={displayName + ' 的主页'} hideNav={true}>
+<Layout
+  title={displayName + ' 的主页'}
+  description={bio}
+  ogType="profile"
+  ogImage={avatar || '/favicon.svg'}
+  hideNav={true}
+>
   <header class="pub-header">
     <a href="/" class="back-link">← 返回大厅</a>
     <span class="nav-title">{displayName}</span>

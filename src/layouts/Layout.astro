@@ -1,7 +1,18 @@
 ---
 import '../styles/global.css';
 
-const { title = '朋友们的数字客厅', description = '朋友们的数字客厅', hideNav = false } = Astro.props;
+const {
+  title = '朋友们的数字客厅',
+  description = '朋友们的数字客厅',
+  hideNav = false,
+  ogType = 'website',
+  ogImage = '/favicon.svg',
+  noindex = false,
+} = Astro.props;
+
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://ziji-station.pages.dev';
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const ogImageUrl = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).toString();
 ---
 
 <html lang="zh-CN">
@@ -10,7 +21,23 @@ const { title = '朋友们的数字客厅', description = '朋友们的数字客
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <title>{title}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:site_name" content="子骥的小站" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
     <script is:inline define:vars={{ SB_URL: import.meta.env.PUBLIC_SUPABASE_URL, SB_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY }}>
       window.__ZJ_CFG = { url: SB_URL, key: SB_KEY };
     </script>
