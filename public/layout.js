@@ -131,35 +131,28 @@ function refreshAuth() {
     av.title = u;
     if (profileLink) profileLink.setAttribute('href', '/' + u);
 
-    // 管理员入口：优先读缓存，老用户走 token 兜底
+    // 管理员入口：不做任何前端缓存，每次强依赖真实 Token 向后端查证
     var adminLink = document.getElementById('menu-admin');
     if (adminLink) {
-      var role = localStorage.getItem('ziji_role');
-      if (role) {
-        adminLink.style.display = role === 'admin' ? 'block' : 'none';
-      } else {
-        adminLink.style.display = 'none';
-        var authTokenKey = Object.keys(localStorage).find(function(k) { return k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0; });
-        var cfg = window.__ZJ_CFG;
-        if (authTokenKey && cfg && cfg.url && cfg.key && sessionStr) {
-          try {
-            var authData = JSON.parse(localStorage.getItem(authTokenKey));
-            var accessToken = authData.access_token;
-            if (accessToken) {
-              fetch(cfg.url + '/rest/v1/profiles?select=role&id=eq.' + encodeURIComponent(sessionStr), {
-                headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + accessToken }
-              })
-                .then(function (r) { return r.ok ? r.json() : []; })
-                .then(function (rows) {
-                  if (Array.isArray(rows) && rows[0]) {
-                    var isAdmin = rows[0].role === 'admin';
-                    localStorage.setItem('ziji_role', rows[0].role || 'member');
-                    adminLink.style.display = isAdmin ? 'block' : 'none';
-                  }
-                }).catch(function () {});
-            }
-          } catch (e) {}
-        }
+      adminLink.style.display = 'none';
+      var authTokenKey = Object.keys(localStorage).find(function(k) { return k.indexOf('sb-') === 0 && k.indexOf('-auth-token') > 0; });
+      var cfg = window.__ZJ_CFG;
+      if (authTokenKey && cfg && cfg.url && cfg.key && sessionStr) {
+        try {
+          var authData = JSON.parse(localStorage.getItem(authTokenKey));
+          var accessToken = authData.access_token;
+          if (accessToken) {
+            fetch(cfg.url + '/rest/v1/profiles?select=role&id=eq.' + encodeURIComponent(sessionStr), {
+              headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + accessToken }
+            })
+              .then(function (r) { return r.ok ? r.json() : []; })
+              .then(function (rows) {
+                if (Array.isArray(rows) && rows[0] && rows[0].role === 'admin') {
+                  adminLink.style.display = 'block';
+                }
+              }).catch(function () {});
+          }
+        } catch (e) {}
       }
     }
 
@@ -180,7 +173,6 @@ function refreshAuth() {
       logoutBtn.addEventListener('click', function () {
         localStorage.removeItem('ziji_uid');
         localStorage.removeItem('ziji_user');
-        localStorage.removeItem('ziji_role');
         var al = document.getElementById('menu-admin');
         if (al) { al.style.display = 'none'; }
         window.location.href = '/';
