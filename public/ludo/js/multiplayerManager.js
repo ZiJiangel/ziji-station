@@ -2522,7 +2522,7 @@ class MultiplayerManager {
             if (!connected) return;
 
             // 告诉服务器我是谁，并获取房间状态
-            this.wsClient.sendMessage('identify', { playerId: pid });
+            this.wsClient.sendMessage('identify', { playerId: pid, nickname, color: 1 });
             
         } catch (error) {
             console.error('创建房间失败:', error);
@@ -2640,7 +2640,7 @@ class MultiplayerManager {
             }
 
             // 3. 发送身份确认
-            this.wsClient.sendMessage('identify', { playerId: pid });
+            this.wsClient.sendMessage('identify', { playerId: pid, nickname });
             reconnectManager.updateRoomCode(roomCode);
                 nickname,
                 emoji

@@ -636,7 +636,12 @@ class MultiplayerGameManager {
                 }
 
                 // 如果外部传入了 serverUrl 使用外部的，否则默认连 Worker
-                const finalUrl = serverUrl || 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
+                let finalUrl = serverUrl || 'wss://ludo-ws.zqr2907629253.workers.dev/ws';
+                // 确保 url 带上了 room 参数
+                if (!finalUrl.includes('room=')) {
+                    const rc = this.roomCode || this.gameSessionId;
+                    if (rc) finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'room=' + rc;
+                }
                 const socket = new WebSocket(finalUrl);
                 this.wsClient = socket;
 
@@ -645,6 +650,15 @@ class MultiplayerGameManager {
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
                     this.startWsHeartbeat();
+                    
+                    // 对局页连上后立刻表明身份
+                    const myPlayer = this.players.get(this.playerId);
+                    this.sendMessage('identify', { 
+                        playerId: this.playerId, 
+                        nickname: myPlayer?.nickname || '玩家',
+                        color: myPlayer?.color
+                    });
+
                     // 一上来就把前后台状态报给服务端：一进后台的页面不该被服务端等着演完
                     this.reportVisibility();
                     // 发送待发送的消息队列
