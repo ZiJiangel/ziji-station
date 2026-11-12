@@ -2642,9 +2642,6 @@ class MultiplayerManager {
             // 3. 发送身份确认
             this.wsClient.sendMessage('identify', { playerId: pid, nickname });
             reconnectManager.updateRoomCode(roomCode);
-                nickname,
-                emoji
-            });
 
         } catch (error) {
             console.error('加入房间失败:', error);
