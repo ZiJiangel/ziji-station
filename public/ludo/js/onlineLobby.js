@@ -134,7 +134,7 @@ export async function createRoom(roomName) {
   return res.id;
 }
 
-export async function listRooms() {
+export function listRooms() {
   // Worker 暂不持久化房间索引；只返回本地曾加入过的房间
   const raw = localStorage.getItem('ludo_online_rooms') || '[]';
   try { return JSON.parse(raw); } catch { return []; }
