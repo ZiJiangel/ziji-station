@@ -1,10 +1,37 @@
+# Cloudflare Pages 项目配置（V2 build system）
+# 基础内容来自线上 `wrangler pages download config ziji-station`，
+# 加入 GAME_ROOMS 绑定，让 /game-ws/* 走同域，绕开部分网络对 workers.dev 的 DNS 污染。
 name = "ziji-station"
-compatibility_date = "2024-11-01"
-compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-10"
+
+[placement]
+mode = "off"
 
 [vars]
 PUBLIC_SUPABASE_URL = "https://wgtquypjypkaegrcsmsa.supabase.co"
 PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM"
+
+# 飞行棋联机：绑定已部署的 fq-game Worker 里的 GameRoom namespace
+[[durable_objects.bindings]]
+name = "GAME_ROOMS"
+class_name = "GameRoom"
+script_name = "fq-game"
+
+[env.production]
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production.placement]
+mode = "off"
+[env.production.vars]
+PUBLIC_SUPABASE_URL = "https://wgtquypjypkaegrcsmsa.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_YmnctfZ7j0SY-3qCrlwwTg_o5CQuzmM"
+
+[[env.production.durable_objects.bindings]]
+name = "GAME_ROOMS"
+class_name = "GameRoom"
+script_name = "fq-game"
 
 [observability]
 enabled = true

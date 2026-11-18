@@ -8,7 +8,16 @@
  * - 房间号用 Worker 返回的 UUID，兼容原页面的 ?room= 参数。
  */
 
-const WORKER = 'https://fq-game.zqr2907629253.workers.dev';
+// 同域代理，绕开部分网络环境对 workers.dev 的 DNS 污染。
+// Pages 的 /game-ws/* 由 scripts/wrap-game-worker.mjs 包装后转给 fq-game Worker。
+// 本地开发可直接指向 http://127.0.0.1:8787。
+const WORKER = (() => {
+  try {
+    const h = location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') return 'http://127.0.0.1:8787';
+  } catch { /* non-browser */ }
+  return location.origin + '/game-ws';
+})();
 
 function api(path, opts) {
   return fetch(WORKER + path, opts).then(async (res) => {
