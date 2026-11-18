@@ -234,19 +234,4 @@ Astro.response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300');
   }
 </style>
 
-<script>
-  function bindVinyl() {
-    const vinyl = document.querySelector('.vinyl') as HTMLElement;
-    const btn = document.querySelector('.play-btn') as HTMLButtonElement;
-    if (!vinyl || !btn || btn.dataset.bound === '1') return;
-    btn.dataset.bound = '1';
-    let playing = false;
-    btn.addEventListener('click', () => {
-      playing = !playing;
-      btn.textContent = playing ? '⏸' : '▶';
-      vinyl.style.animationPlayState = playing ? 'running' : 'paused';
-    });
-  }
-  bindVinyl();
-  document.addEventListener('astro:page-load', bindVinyl);
-</script>
+<!-- 音乐播放由 MusicBlock.astro 的 bindMusic() 统一处理，此处不再重复绑定 -->

@@ -57,7 +57,7 @@ import LatticeLoader from '../components/fx/LatticeLoader';
 
   <script>
     import { getFeed } from '../lib/api';
-    import { sanitizeText } from '../lib/sanitize';
+    import { sanitizeText, safeUrl } from '../lib/sanitize';
 
     function fmtTime(s: string) {
       const d = new Date(s);
@@ -110,9 +110,10 @@ import LatticeLoader from '../components/fx/LatticeLoader';
             </a>
           `;
         }
-        const imgs = item.images && item.images.length
-          ? `<div class="fc-imgs">${item.images.slice(0, 3).map((img: string) =>
-              `<div class="fc-img"><img src="${img}" loading="lazy" alt=""/></div>`).join('')}</div>`
+        const safeImgs = (item.images || []).map((img: string) => safeUrl(img)).filter(Boolean);
+        const imgs = safeImgs.length
+          ? `<div class="fc-imgs">${safeImgs.slice(0, 3).map((src: string) =>
+              `<div class="fc-img"><img src="${src}" loading="lazy" alt=""/></div>`).join('')}</div>`
           : '';
         return `
           <a class="feed-card moment" href="${href}" ${s}>

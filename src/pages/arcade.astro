@@ -77,6 +77,7 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import { getActiveGameRooms, createGameRoom } from '../lib/api';
     import { toast, toastError } from '../lib/toast';
+    import { sanitizeText } from '../lib/sanitize';
 
     // --- 反应速度 ---
     const arena = document.getElementById('reaction-arena');
@@ -197,7 +198,7 @@ import Layout from '../layouts/Layout.astro';
         }
         tbody.innerHTML = rooms.map(r => {
           const p = r.profiles || {};
-          const name = p.display_name || p.username || '匿名';
+          const name = sanitizeText(p.display_name || p.username || '匿名');
           return `
             <tr>
               <td><b>${GAME_NAMES[r.game_type] || r.game_type}</b></td>

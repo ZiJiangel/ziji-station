@@ -1,0 +1,5 @@
+{
+  "name": "fq-game-worker",
+  "private": true,
+  "type": "module"
+}

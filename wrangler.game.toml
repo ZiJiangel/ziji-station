@@ -1,0 +1,18 @@
+# 飞行棋联机 Worker — 与站点 Pages 部署分离
+# 部署：pnpm exec wrangler deploy -c wrangler.game.toml
+# 本地：pnpm exec wrangler dev -c wrangler.game.toml --port 8787
+name = "fq-game"
+main = "worker/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "GAME_ROOMS"
+class_name = "GameRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoom"]
+
+[observability]
+enabled = true

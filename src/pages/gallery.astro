@@ -15,13 +15,16 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { getFeed } from '../lib/api';
+    import { safeUrl } from '../lib/sanitize';
 
     async function loadGallery() {
       const el = document.getElementById('gallery-grid');
       if (!el) return;
       try {
         const { moments } = await getFeed(100);
-        const allImages = moments.flatMap(m => m.images || []);
+        const allImages = moments.flatMap(m => m.images || [])
+          .map((url: string) => safeUrl(url))
+          .filter(Boolean) as string[];
         
         if (allImages.length === 0) {
           el.innerHTML = '<div class="empty" style="grid-column: 1 / -1;">还没有人发过照片。</div>';
@@ -36,7 +39,7 @@ import Layout from '../layouts/Layout.astro';
 
         el.querySelectorAll('.ph').forEach(p => {
           p.addEventListener('click', () => {
-            const url = (p as HTMLElement).dataset.url;
+            const url = safeUrl((p as HTMLElement).dataset.url || '');
             if (!url) return;
             let box = document.getElementById('lightbox');
             if (!box) {

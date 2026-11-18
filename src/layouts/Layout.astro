@@ -10,6 +10,9 @@ const {
   noindex = false,
 } = Astro.props;
 
+// 联机 Worker 地址（fq-game，部署于 2026-11-18）
+// 本地开发时 gameClient 会优先用 127.0.0.1:8787，此处仅作生产默认值
+const gameWorkerUrl = 'https://fq-game.zqr2907629253.workers.dev';
 const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://ziji-station.pages.dev';
 const canonical = new URL(Astro.url.pathname, siteUrl).toString();
 const ogImageUrl = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).toString();
@@ -38,8 +41,9 @@ const ogImageUrl = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteU
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageUrl} />
-    <script is:inline define:vars={{ SB_URL: import.meta.env.PUBLIC_SUPABASE_URL, SB_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY }}>
+    <script is:inline define:vars={{ SB_URL: import.meta.env.PUBLIC_SUPABASE_URL, SB_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY, GAME_WORKER: gameWorkerUrl }}>
       window.__ZJ_CFG = { url: SB_URL, key: SB_KEY };
+      window.__FQ_GAME_WORKER__ = GAME_WORKER;
     </script>
     <script is:inline>
       (function () {

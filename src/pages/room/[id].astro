@@ -2,6 +2,7 @@
 export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
+import OnlineRoom from '../../components/game/OnlineRoom';
 import FlightChess from '../../components/game/FlightChess';
 
 const { id } = Astro.params;
@@ -17,8 +18,16 @@ if (!room) return Astro.redirect('/arcade');
 
 const GAME_NAMES: Record<string, string> = { ludo: '飞行棋', doudizhu: '斗地主', monopoly: '大富翁' };
 const gameName = GAME_NAMES[room.game_type] || room.game_type;
+const online = Astro.url.searchParams.get('mode') === 'online';
 ---
 
 <Layout title={gameName + ' · 房间'} hideNav={true}>
-  <FlightChess client:only="react" roomId={id} initialRoom={room} />
+  <div style="max-width:640px;margin:18px auto 0;display:flex;gap:8px;align-items:center">
+    <a href={`/room/${id}`} class={!online ? 'chip on' : 'chip'}>单机视图</a>
+    <a href={`/room/${id}?mode=online`} class={online ? 'chip on' : 'chip'}>联机视图</a>
+    <span style="margin-left:auto;font-size:12px;color:var(--text-muted)">{gameName}</span>
+  </div>
+  {online
+    ? <OnlineRoom client:only="react" roomId={id} />
+    : <FlightChess client:only="react" roomId={id} initialRoom={room} />}
 </Layout>

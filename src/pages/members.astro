@@ -15,6 +15,7 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { supabase } from '../lib/supabase';
+    import { sanitizeText } from '../lib/sanitize';
 
     async function loadMembers() {
       const el = document.getElementById('members-content');
@@ -51,16 +52,20 @@ import Layout from '../layouts/Layout.astro';
           </div>
           <div class="card" style="padding:2px 18px">
             <div class="people">
-              ${users.map((u, i) => `
+              ${users.map((u, i) => {
+                const username = sanitizeText(u.username || '');
+                const displayName = sanitizeText(u.display_name || username);
+                const bio = u.bio ? sanitizeText(u.bio) : '这个人很懒，什么都没写。';
+                return `
                 <div class="person" style="--i:${i}">
-                  <div class="avatar-sm" style="width:46px;height:46px;font-size:18px;background:${colors[i % colors.length]};color:oklch(0.99 0 0)">${u.username.charAt(0).toUpperCase()}</div>
+                  <div class="avatar-sm" style="width:46px;height:46px;font-size:18px;background:${colors[i % colors.length]};color:oklch(0.99 0 0)">${username.charAt(0).toUpperCase()}</div>
                   <div style="flex:1;min-width:0">
-                    <div class="pn">${u.display_name || u.username}</div>
-                    <div class="pm">@${u.username} · 成员</div>
-                    <div class="pm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.bio || '这个人很懒，什么都没写。'}</div>
+                    <div class="pn">${displayName}</div>
+                    <div class="pm">@${username} · 成员</div>
+                    <div class="pm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${bio}</div>
                   </div>
-                </div>
-              `).join('')}
+                </div>`;
+              }).join('')}
             </div>
           </div>
         `;

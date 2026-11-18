@@ -58,7 +58,7 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { getMyArticles, createArticle, deleteArticle, createMoment } from '../lib/api';
-    import { sanitizeText } from '../lib/sanitize';
+    import { sanitizeText, safeUrl } from '../lib/sanitize';
     import { toast, toastSuccess, toastError } from '../lib/toast';
     import { uploadImage } from '../lib/upload';
 
@@ -83,7 +83,7 @@ import Layout from '../layouts/Layout.astro';
             <div class="time">${new Date(a.published_at).toLocaleDateString('zh-CN')}</div>
             <div class="content">
               <a href="/post/${a.id}" target="_blank" class="t-title">${sanitizeText(a.title)}</a>
-              ${a.cover_url ? `<img class="t-cover" src="${a.cover_url}" alt="" loading="lazy" />` : ''}
+              ${safeUrl(a.cover_url || '') ? `<img class="t-cover" src="${safeUrl(a.cover_url)}" alt="" loading="lazy" />` : ''}
               <p>${sanitizeText(a.summary || '')}</p>
               <button type="button" class="t-del" data-id="${a.id}" aria-label="删除文章">删除</button>
             </div>

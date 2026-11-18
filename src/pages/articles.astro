@@ -19,7 +19,7 @@ import Layout from '../layouts/Layout.astro';
 
   <script>
     import { getFeed } from '../lib/api';
-    import { sanitizeText } from '../lib/sanitize';
+    import { sanitizeText, safeUrl } from '../lib/sanitize';
 
     function fmtDate(s: string) {
       return new Date(s).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -46,7 +46,7 @@ import Layout from '../layouts/Layout.astro';
                   <span>${name}</span><span>·</span><span>${fmtDate(a.published_at)}</span>
                 </div>
               </div>
-              ${a.cover_url ? `<div class="li-side"><img src="${a.cover_url}" style="width:100%;height:100%;object-fit:cover;"/></div>` : ''}
+              ${safeUrl(a.cover_url || '') ? `<div class="li-side"><img src="${safeUrl(a.cover_url)}" style="width:100%;height:100%;object-fit:cover;"/></div>` : ''}
             </div>
           `;
         }).join('');

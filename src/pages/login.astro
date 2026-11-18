@@ -108,6 +108,13 @@ import Layout from '../layouts/Layout.astro';
         submitBtn.textContent = mode === 'login' ? '进入主站' : '创建账号';
       }
     });
+
+    // 邀请链接 ?code=XXX 自动切到注册模式并预填邀请码
+    const inviteCode = new URLSearchParams(window.location.search).get('code');
+    if (inviteCode) {
+      applyMode('register');
+      inviteInput.value = inviteCode.trim().toUpperCase();
+    }
   </script>
 
   <style>

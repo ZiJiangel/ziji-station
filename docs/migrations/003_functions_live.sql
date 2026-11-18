@@ -1,0 +1,57 @@
+-- ============================================================
+-- Functions: live Supabase (authoritative signature list)
+-- 对齐日期：2026-11-18
+-- 来源：pg_proc 只读查询（函数名 / 参数 / 返回 / security definer）
+-- 说明：函数体原文无法从 anon key 导出。本文件记录线上实际存在的签名与权限，
+--       函数体来源指向仓库中已有的写入脚本；fc_* 三个函数仓库无定义，已标注。
+-- ============================================================
+
+-- 线上实际存在的 12 个函数（均为 security definer）：
+--
+-- | 函数 | 参数 | 返回 | 函数体来源 |
+-- | admin_ban_user | target_uid uuid, ban boolean | boolean | docs/admin_v2.sql |
+-- | admin_delete_user | target_uid uuid | boolean | docs/admin_v2.sql |
+-- | consume_invite_code | p_code text | boolean | docs/invite_codes.sql:37 |
+-- | consume_invite_code | p_code text, p_uid uuid | boolean | docs/invite_codes.sql:113 |
+-- | create_invite_code | p_note text | text | docs/invite_codes.sql:61 |
+-- | fc_move_piece | p_room_id uuid, p_piece_idx integer | jsonb | 仓库无定义 |
+-- | fc_roll_dice | p_room_id uuid | jsonb | 仓库无定义 |
+-- | fc_skip_turn | p_room_id uuid | jsonb | 仓库无定义 |
+-- | handle_new_user | (无参数) | trigger | 仓库无定义（注册触发器） |
+-- | is_admin | (无参数) | boolean | docs/admin.sql |
+-- | rls_auto_enable | (无参数) | event_trigger | 仓库无定义（建表自动开 RLS） |
+-- | verify_invite_code | p_code text | boolean | docs/invite_codes.sql:94 |
+
+-- ---------- 已知函数：按仓库脚本重建 ----------
+-- 依次执行以下现有脚本即可恢复对应函数：
+--   docs/admin.sql            → is_admin, admin_update_profiles
+--   docs/admin_v2.sql         → admin_ban_user, admin_delete_user
+--   docs/invite_codes.sql     → verify_invite_code, consume_invite_code(两个重载), create_invite_code
+
+-- ---------- 未知函数体：需要单独导出 ----------
+-- 以下 5 个函数在线上存在，但仓库没有定义：
+--   fc_roll_dice / fc_skip_turn / fc_move_piece / handle_new_user / rls_auto_enable
+--
+-- 其中 fc_* 三个已由受控探测确认：
+--   fc_roll_dice   → 存在，但调用时报 42883:
+--                    function jsonb_set(jsonb, unknown, text) does not exist
+--                    即函数体内 jsonb_set 第三参未转成 jsonb，掷骰必失败
+--   fc_skip_turn   → 存在，200 null
+--   fc_move_piece  → 存在，200 null
+--
+-- handle_new_user 是注册时自动建 profile 的触发器；线上 profiles 为空而
+-- articles/pages 有真实 user_id，可能与该函数未正确触发有关，需核对。
+-- rls_auto_enable 是 event trigger，建表自动开 RLS，001_baseline_live.sql
+-- 已显式开启 8 张表的 RLS，重建时不需要它。
+
+-- 若需导出完整函数体，在 SQL Editor 执行：
+-- select p.proname, pg_get_functiondef(p.oid) as definition
+-- from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+-- where n.nspname = 'public' and p.proname in
+--   ('fc_roll_dice','fc_skip_turn','fc_move_piece','handle_new_user','rls_auto_enable')
+-- order by p.proname;
+
+-- ---------- 联机重做后的处置 ----------
+-- 如果采用 Durable Objects 方案，fc_* 三个函数将被服务端权威裁决取代，
+-- 无需恢复；此时应从线上 drop 掉，避免留着有 bug 的旧入口。
+-- 本文件只做记录，不执行 drop。
