@@ -1,0 +1,163 @@
+/* 在线联机面板 / 对局条 — 独立样式，不改动主样式表 */
+.fq-online-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .55);
+  padding: 20px;
+}
+.fq-online-card {
+  width: min(460px, 100%);
+  background: var(--bg-panel, #1c2430);
+  color: var(--text-primary, #e8eef2);
+  border: 1px solid var(--border, rgba(255,255,255,.12));
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+.fq-online-title {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.fq-online-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.fq-online-tip {
+  font-size: 13px;
+  opacity: .7;
+  margin: 0 0 18px;
+  line-height: 1.6;
+}
+.fq-online-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.fq-online-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  background: var(--bg-input, rgba(255,255,255,.05));
+  color: inherit;
+  font: inherit;
+}
+.fq-online-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.fq-online-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.fq-online-btn.primary {
+  background: var(--accent, #4da3ff);
+  border-color: transparent;
+  color: #fff;
+}
+.fq-online-btn:disabled { opacity: .45; cursor: not-allowed; }
+.fq-online-status { font-size: 12px; opacity: .7; min-height: 18px; margin-top: 10px; }
+.fq-online-sub { font-size: 12px; opacity: .6; margin: 16px 0 6px; }
+.fq-online-room {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  margin: 4px 0;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,.1));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.fq-online-game {
+  position: fixed;
+  inset: 0;
+  z-index: 4900;
+  overflow: auto;
+  padding: 20px;
+  background: var(--bg, #101720);
+  color: var(--text-primary, #e8eef2);
+}
+.fq-online-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+.fq-online-bar button {
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.fq-online-board {
+  max-width: 640px;
+  margin: 0 auto;
+  border: 1px solid var(--border, rgba(255,255,255,.1));
+  border-radius: 12px;
+  padding: 12px 18px;
+}
+.fq-online-board .fq-online-row { padding: 10px 0; border-bottom: 1px solid var(--border, rgba(255,255,255,.08)); }
+.fq-online-board .fq-online-row:last-child { border-bottom: 0; }
+.fq-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.fq-dot.p1 { background: #d9453f; }
+.fq-dot.p2 { background: #2f9e63; }
+.fq-dot.p3 { background: #d9a92e; }
+.fq-dot.p4 { background: #3a72c4; }
+.fq-piece {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  border: 2px solid var(--border, rgba(255,255,255,.2));
+  background: rgba(255,255,255,.03);
+  color: inherit;
+  cursor: default;
+  font-size: 12px;
+}
+.fq-piece.movable { cursor: pointer; outline: 2px solid currentColor; outline-offset: 2px; }
+.fq-piece.done { background: rgba(255,255,255,.1); }
+.fq-online-action {
+  max-width: 640px;
+  margin: 16px auto;
+  display: flex;
+  justify-content: center;
+}
+.fq-online-action button {
+  padding: 12px 28px;
+  border-radius: 9px;
+  border: 1px solid var(--border, rgba(255,255,255,.15));
+  background: var(--accent, #4da3ff);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.fq-online-action button:disabled { opacity: .4; cursor: not-allowed; }

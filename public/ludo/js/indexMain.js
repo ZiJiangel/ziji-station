@@ -1046,16 +1046,7 @@ class PlayerSetup {
         const rulesBackBtn = document.getElementById('rulesBackBtn');
         const configTitle = document.getElementById('configTitle');
 
-        // 在线联机
-        if (menuOnlineBtn) {
-            menuOnlineBtn.addEventListener('click', () => {
-                this.currentMode = 'online';
-                if (configTitle) configTitle.textContent = '房间列表';
-                if (mainMenuContainer) mainMenuContainer.style.display = 'none';
-                if (playerConfigWrapper) playerConfigWrapper.style.display = 'block';
-                this.showOnlineMultiplayerConfig();
-            });
-        }
+        // 在线联机入口由 onlineEntry.js 接管（对接新的 Durable Objects Worker）
 
         // 人机对战
         if (menuAiBtn) {
